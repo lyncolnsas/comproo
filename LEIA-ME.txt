@@ -1,0 +1,33 @@
+==============================================
+MIKROGESTOR VOUCHER - GUIA DE INSTALACAO
+==============================================
+
+Como este projeto usa o SQLite, ele e extremamente facil de copiar e rodar em qualquer maquina Windows, sem necessidade de instalar ou configurar servidores de banco de dados complexos como o MySQL ou XAMPP.
+
+PASSO A PASSO PARA USAR EM OUTRA MAQUINA:
+
+1. REQUISITOS:
+- A unica coisa que voce precisa instalar na nova maquina e o Node.js.
+- Baixe e instale a versao recomendada (LTS) do site oficial: https://nodejs.org/
+
+2. INSTALACAO AUTOMATIZADA:
+- Na pasta principal do projeto, de um duplo clique no arquivo:
+  >> setup.bat
+- Esse script vai automaticamente:
+  a) Configurar o arquivo de ambiente (.env)
+  b) Baixar todas as dependencias do projeto
+  c) Inicializar o banco de dados local SQLite
+  d) Criar o usuario padrao do administrador
+
+3. INICIANDO O SISTEMA:
+- Apos rodar o setup com sucesso, de um duplo clique no arquivo:
+  >> start.bat
+- O sistema sera iniciado na porta 80.
+- Basta abrir o seu navegador e acessar: http://localhost
+
+4. DADOS DE ACESSO PADRAO:
+O script de setup cria automaticamente o seguinte usuario administrador caso nao exista:
+- Usuario: admin
+- Senha: 123
+
+Para rodar em outra maquina no futuro, basta copiar a pasta inteira do projeto (voce pode ate apagar a pasta "node_modules" para a copia ficar mais leve) e repetir os passos 2 e 3.

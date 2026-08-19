@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  name      String?
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+}
+
+model Router {
+  id        String   @id @default(uuid())
+  name      String
+  host      String
+  user      String
+  password  String
+  port      Int      @default(8728)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model FinanceLog {
+  id           String   @id @default(uuid())
+  batchComment String
+  totalRevenue Float
+  qty          Int
+  createdAt    DateTime @default(now())
+}
+
+model Voucher {
+  id        String   @id @default(uuid())
+  code      String
+  profile   String
+  price     Float?
+  routerId  String?
+  createdAt DateTime @default(now())
+}
+
+model HotspotLead {
+  id               String    @id @default(uuid())
+  name             String
+  phone            String?
+  birthDate        DateTime?
+  email            String?
+  cpf              String?
+  gender           String?
+  password         String?   // The custom password chosen by the user
+  customFieldValue String?
+  hotspotUser      String    @unique // The generated username in MikroTik
+  createdAt        DateTime  @default(now())
+}

@@ -24,10 +24,36 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.onerror = function(message, source, lineno, colno, error) {
+                var errInfo = "ERRO DE JS:\\n" + message + "\\nLinha: " + lineno + "\\nCol: " + colno + "\\nOrigem: " + source;
+                alert(errInfo);
+                return false;
+              };
+              window.onunhandledrejection = function(event) {
+                var errInfo = "PROMISE REJEITADA:\\n" + (event.reason ? (event.reason.message || event.reason) : event);
+                alert(errInfo);
+              };
+              window.addEventListener('error', function(event) {
+                if (event.target && (event.target.tagName === 'SCRIPT' || event.target.tagName === 'LINK')) {
+                  var type = event.target.tagName;
+                  var url = event.target.src || event.target.href;
+                  alert("ERRO DE CARREGAMENTO (" + type + "):\\nFalha ao obter o arquivo: " + url + "\\n\\nVerifique se o seu dispositivo tem conectividade e permissão para acessar o servidor.");
+                }
+              }, true);
+            `
+          }}
+        />
+      </head>
+      <body className="min-h-full flex flex-col">
+        {children}
+      </body>
     </html>
   );
 }

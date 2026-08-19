@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# caddy reverse proxy binary (baixar via Instalar_Caddy.bat)
+/caddy/

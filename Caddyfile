@@ -1,0 +1,16 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Caddyfile — Proxy Reverso MikroGestor
+#
+# Caddy ouve na porta 80 e repassa para o Next.js na porta 3000.
+# Injeta X-Real-IP com o IP do cliente — usado por getAdminIp() no backend
+# para identificar o servidor e fazer o bypass/ARP no MikroTik.
+#
+# Iniciar: caddy\caddy.exe run --config Caddyfile
+# ─────────────────────────────────────────────────────────────────────────────
+
+:80 {
+	reverse_proxy localhost:3000 {
+		# X-Real-IP não é injetado por padrão — configuramos explicitamente
+		header_up X-Real-IP {remote_host}
+	}
+}
