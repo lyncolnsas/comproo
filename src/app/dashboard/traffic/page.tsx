@@ -129,28 +129,33 @@ export default function TrafficMonitor() {
       />
     );
   }
-
   return (
-    <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-6 animate-fade-in">
-      {/* Page Header as a Rack Module */}
-      <header className="retro-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="rack-screw" />
-          <span className="led led-green animate-led-pulse" />
-          <div>
-            <div style={{ color: 'var(--led-green)', fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-              ▶ SYSTEM // NETWORK DIAGNOSTICS
-            </div>
-            <h1 style={{ fontFamily: 'Orbitron, sans-serif', color: 'white', fontSize: '1.25rem', fontWeight: 900 }}>
-              Monitor de Tráfego Real-Time
-            </h1>
-          </div>
+    <main className="w-full p-4 md:p-6 max-w-6xl mx-auto space-y-6 animate-fade-in">
+      {/* Page Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p
+            className="text-[10px] font-bold uppercase tracking-widest mb-1"
+            style={{ color: '#10b981' }}
+          >
+            ▶ SYSTEM // NETWORK DIAGNOSTICS
+          </p>
+          <h1
+            className="text-2xl font-black tracking-tight text-white"
+            style={{ fontFamily: 'Orbitron, sans-serif' }}
+          >
+            Monitor de Tráfego
+          </h1>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Monitoramento em tempo real de interfaces e consumo de banda
+          </p>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-3 self-start sm:self-auto">
           <div className="text-left md:text-right">
-            <label className="block text-[8px] font-bold text-slate-450 uppercase tracking-widest mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
-              Interface Port
-            </label>
+            <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+              INTERFACE PORT
+            </span>
             <select 
               value={selectedIface} 
               onChange={(e) => {
@@ -160,16 +165,16 @@ export default function TrafficMonitor() {
                 setPeakTx(0);
                 setHistory([]);
               }} 
-              className="retro-input py-1.5 px-3 text-xs min-w-[180px]"
+              className="aurora-input py-1.5 px-3 text-xs min-w-[180px]"
+              style={{ background: '#0a0a18' }}
             >
               {interfaces.map((i, idx) => (
-                <option key={`${i.id || i.name}-${idx}`} value={i.name} className="bg-[#0c0c18] text-[#7dd3fc]">
+                <option key={`${i.id || i.name}-${idx}`} value={i.name}>
                   {i.name} ({i.type})
                 </option>
               ))}
             </select>
           </div>
-          <div className="rack-screw" />
         </div>
       </header>
 
@@ -177,28 +182,26 @@ export default function TrafficMonitor() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* RX Card (Download) */}
-        <div className="retro-card">
-          <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '2px solid #0a0a18', background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-            <div className="rack-screw" />
-            <span className="led led-green animate-led-pulse" />
-            <span className="font-mono text-xs font-bold text-slate-450 uppercase tracking-wider">RX_CHANNEL_DOWNLINK</span>
-            <div className="ml-auto rack-screw" />
+        <div className="aurora-card overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/5 bg-white/[0.01] flex items-center justify-between">
+            <span className="text-xs font-semibold text-emerald-400 font-mono tracking-wider">RX_CHANNEL_DOWNLINK</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" style={{ boxShadow: '0 0 6px #10b981' }} />
           </div>
-          <div className="p-5 space-y-4">
-            <div className="retro-display p-5 text-center">
-              <span className="block text-[8px] uppercase tracking-widest mb-1" style={{ color: 'var(--display-dim)' }}>CURRENT_BANDWIDTH</span>
-              <p className="text-3xl md:text-4xl font-bold tracking-tight text-emerald-400" style={{ textShadow: '0 0 10px rgba(52, 211, 153, 0.3)' }}>
+          <div className="p-6 space-y-4">
+            <div className="p-5 text-center bg-white/[0.02] border border-white/5 rounded-2xl">
+              <span className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">CURRENT_BANDWIDTH</span>
+              <p className="text-3xl md:text-4xl font-black tracking-tight text-emerald-400 font-mono" style={{ textShadow: '0 0 12px rgba(16, 185, 129, 0.2)' }}>
                 {trafficData ? formatBps(trafficData.rx) : '0.00 bps'}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="retro-stat-box">
-                <span className="block text-[8px] text-slate-500 uppercase tracking-wider mb-1">Peak RX</span>
-                <span className="text-sm font-bold text-[#7dd3fc]">{formatBps(peakRx)}</span>
+              <div className="p-4 bg-white/[0.01] border border-white/5 rounded-xl text-center">
+                <span className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">Peak RX</span>
+                <span className="text-sm font-bold text-slate-200 font-mono">{formatBps(peakRx)}</span>
               </div>
-              <div className="retro-stat-box">
-                <span className="block text-[8px] text-slate-500 uppercase tracking-wider mb-1">Link State</span>
-                <span className="text-xs font-bold uppercase text-emerald-400 flex items-center justify-center gap-1">
+              <div className="p-4 bg-white/[0.01] border border-white/5 rounded-xl text-center">
+                <span className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">Link State</span>
+                <span className="text-xs font-bold uppercase text-emerald-455 flex items-center justify-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
                   CONNECTED
                 </span>
@@ -208,28 +211,26 @@ export default function TrafficMonitor() {
         </div>
 
         {/* TX Card (Upload) */}
-        <div className="retro-card">
-          <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '2px solid #0a0a18', background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-            <div className="rack-screw" />
-            <span className="led led-blue animate-led-pulse" />
-            <span className="font-mono text-xs font-bold text-slate-450 uppercase tracking-wider">TX_CHANNEL_UPLINK</span>
-            <div className="ml-auto rack-screw" />
+        <div className="aurora-card overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/5 bg-white/[0.01] flex items-center justify-between">
+            <span className="text-xs font-semibold text-indigo-400 font-mono tracking-wider">TX_CHANNEL_UPLINK</span>
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" style={{ boxShadow: '0 0 6px #3b82f6' }} />
           </div>
-          <div className="p-5 space-y-4">
-            <div className="retro-display p-5 text-center">
-              <span className="block text-[8px] uppercase tracking-widest mb-1" style={{ color: 'var(--display-dim)' }}>CURRENT_BANDWIDTH</span>
-              <p className="text-3xl md:text-4xl font-bold tracking-tight text-blue-450" style={{ textShadow: '0 0 10px rgba(59, 130, 246, 0.3)' }}>
+          <div className="p-6 space-y-4">
+            <div className="p-5 text-center bg-white/[0.02] border border-white/5 rounded-2xl">
+              <span className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">CURRENT_BANDWIDTH</span>
+              <p className="text-3xl md:text-4xl font-black tracking-tight text-blue-400 font-mono" style={{ textShadow: '0 0 12px rgba(59, 130, 246, 0.2)' }}>
                 {trafficData ? formatBps(trafficData.tx) : '0.00 bps'}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="retro-stat-box">
-                <span className="block text-[8px] text-slate-500 uppercase tracking-wider mb-1">Peak TX</span>
-                <span className="text-sm font-bold text-[#7dd3fc]">{formatBps(peakTx)}</span>
+              <div className="p-4 bg-white/[0.01] border border-white/5 rounded-xl text-center">
+                <span className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">Peak TX</span>
+                <span className="text-sm font-bold text-slate-200 font-mono">{formatBps(peakTx)}</span>
               </div>
-              <div className="retro-stat-box">
-                <span className="block text-[8px] text-slate-500 uppercase tracking-wider mb-1">Link State</span>
-                <span className="text-xs font-bold uppercase text-blue-400 flex items-center justify-center gap-1">
+              <div className="p-4 bg-white/[0.01] border border-white/5 rounded-xl text-center">
+                <span className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">Link State</span>
+                <span className="text-xs font-bold uppercase text-blue-400 flex items-center justify-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block animate-pulse"></span>
                   ACTIVE
                 </span>
@@ -241,31 +242,27 @@ export default function TrafficMonitor() {
       </div>
 
       {/* Recharts Traffic Plot Container */}
-      <div className="retro-card">
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '2px solid #0a0a18', background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-          <div className="flex items-center gap-3">
-            <div className="rack-screw" />
-            <div>
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Osciloscópio de Tráfego</h3>
-              <p className="text-[10px] text-slate-400 font-mono">Medição real-time // amostragem 2.0s</p>
-            </div>
+      <div className="aurora-card overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 bg-white/[0.01]">
+          <div>
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Osciloscópio de Tráfego</h3>
+            <p className="text-xs text-white/30 mt-0.5">Medição real-time // amostragem 2.0s</p>
           </div>
           <div className="flex gap-4 text-[10px] font-bold font-mono">
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 text-emerald-400">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
               RX (Download)
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 text-blue-400">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
               TX (Upload)
             </span>
-            <div className="rack-screw" />
           </div>
         </div>
 
         {/* Display Plot Chassis */}
-        <div className="p-5">
-          <div className="retro-display p-4 h-80 w-full relative">
+        <div className="p-6">
+          <div className="h-80 w-full relative">
             {mounted && history.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <AreaChart data={history} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -279,25 +276,25 @@ export default function TrafficMonitor() {
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#101a2d" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff08" />
                   <XAxis 
                     dataKey="time" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fill: '#4a70b0', fontSize: 9, fontFamily: 'Share Tech Mono, monospace' }}
+                    tick={{ fill: '#8f9bb3', fontSize: 10, fontFamily: 'Share Tech Mono, monospace' }}
                   />
                   <YAxis 
                     axisLine={false} 
                     tickLine={false} 
                     tickFormatter={formatYAxis}
-                    tick={{ fill: '#4a70b0', fontSize: 9, fontFamily: 'Share Tech Mono, monospace' }}
+                    tick={{ fill: '#8f9bb3', fontSize: 10, fontFamily: 'Share Tech Mono, monospace' }}
                   />
                   <Tooltip content={<CustomTooltip />} />
                   <Area 
                     type="monotone" 
                     dataKey="rx" 
                     stroke="#10b981" 
-                    strokeWidth={2}
+                    strokeWidth={2.5}
                     fillOpacity={1} 
                     fill="url(#colorRx)" 
                   />
@@ -305,7 +302,7 @@ export default function TrafficMonitor() {
                     type="monotone" 
                     dataKey="tx" 
                     stroke="#3b82f6" 
-                    strokeWidth={2}
+                    strokeWidth={2.5}
                     fillOpacity={1} 
                     fill="url(#colorTx)" 
                   />
@@ -319,9 +316,9 @@ export default function TrafficMonitor() {
                 Aguardando leitura de canais de dados...
               </div>
             )}
-          </div>
         </div>
       </div>
-    </main>
-  );
+    </div>
+  </main>
+);
 }

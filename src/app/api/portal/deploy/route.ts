@@ -3,6 +3,7 @@ import { getSessionCredentials } from '@/lib/session';
 import path from 'path';
 import fs from 'fs';
 import * as ftp from 'basic-ftp';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   const client = new ftp.Client();
@@ -11,16 +12,57 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const ftpPort = parseInt(body.ftpPort) || 21;
 
-    // Get active router credentials from cookies
-    const credentials = await getSessionCredentials();
+    // Get active router credentials from cookies or fallback to active database router
+    let credentials: { ip: string; user: string; pass: string };
+    try {
+      credentials = await getSessionCredentials();
+    } catch (e) {
+      const activeRouter = await prisma.router.findFirst({ where: { active: true } });
+      if (activeRouter) {
+        credentials = {
+          ip: activeRouter.host,
+          user: activeRouter.user,
+          pass: activeRouter.password
+        };
+      } else {
+        return NextResponse.json({ 
+          success: false, 
+          message: 'Nenhum roteador conectado ou ativo para realizar o deploy.' 
+        }, { status: 401 });
+      }
+    }
 
-    // Check if the local hotspot directory exists
-    const localHotspotDir = path.join(process.cwd(), 'hotspot');
+    const template = body.template || 'default';
+    const safeName = template.replace(/[^a-zA-Z0-9_-]/g, '');
+    const localHotspotDir = path.join(process.cwd(), 'hotspot', safeName);
+    
     if (!fs.existsSync(localHotspotDir)) {
       return NextResponse.json({ 
         success: false, 
-        message: 'A pasta local "hotspot" não foi encontrada no servidor.' 
+        message: `A pasta local "${safeName}" não foi encontrada no servidor.` 
       }, { status: 400 });
+    }
+
+    // Auto-detect server base URL and update media paths in login.html before deploy
+    try {
+      const dbSystemUrl = await prisma.systemConfig.findUnique({ where: { key: 'SYSTEM_URL' } });
+      let serverBaseUrl = dbSystemUrl?.value;
+      if (!serverBaseUrl) {
+        const lanIp = credentials.ip.startsWith('192.168.') || credentials.ip.startsWith('10.') ? credentials.ip : '192.168.88.254';
+        serverBaseUrl = `http://${lanIp}`;
+      }
+      
+      const loginHtmlPath = path.join(localHotspotDir, 'login.html');
+      if (fs.existsSync(loginHtmlPath)) {
+        let html = fs.readFileSync(loginHtmlPath, 'utf8');
+        html = html.replace(/http:\/\/192\.168\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
+        html = html.replace(/http:\/\/10\.\d+\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
+        // Ensure relative media endpoints have absolute server base URL
+        html = html.replace(/(src|href|poster|url\(['"]?)\/(api\/portal\/(bg|logo)|uploads\/[^'"]+)/gi, `$1${serverBaseUrl}/$2`);
+        fs.writeFileSync(loginHtmlPath, html, 'utf8');
+      }
+    } catch (err) {
+      console.warn('Could not pre-process media URLs for deploy:', err);
     }
 
     // Connect to MikroTik via FTP
@@ -50,35 +92,78 @@ export async function POST(request: Request) {
     // Ensure remote directory exists
     await client.ensureDir(remotePath);
 
-    // Clean old ad media files from the MikroTik router to free up space
+    // Helper function to recursively upload hotspot code files while strictly excluding ALL media/binary asset files
+    async function uploadHotspotDirFiltered(ftpClient: ftp.Client, localDir: string, targetRemoteDir: string) {
+      await ftpClient.ensureDir(targetRemoteDir);
+      const items = fs.readdirSync(localDir, { withFileTypes: true });
+
+      for (const item of items) {
+        const localPath = path.join(localDir, item.name);
+        const remotePathFile = `${targetRemoteDir}/${item.name}`;
+
+        if (item.isDirectory()) {
+          await uploadHotspotDirFiltered(ftpClient, localPath, remotePathFile);
+        } else if (item.isFile()) {
+          const ext = path.extname(item.name).toLowerCase();
+          const mediaExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico', '.mp4', '.mov', '.avi', '.webm', '.mkv', '.mp3', '.wav'];
+          if (mediaExts.includes(ext)) {
+            console.log(`Skipping media file upload to MikroTik flash (hosted on central server): ${item.name}`);
+            continue;
+          }
+          if (['.log', '.tmp'].includes(ext)) {
+            console.log(`Skipping temporary/log file upload to MikroTik flash: ${item.name}`);
+            continue;
+          }
+
+          const stats = fs.statSync(localPath);
+          // Skip files larger than 1MB to prevent RouterOS disk space issues
+          if (stats.size > 1 * 1024 * 1024) {
+            console.warn(`Skipping large file (${(stats.size / 1024 / 1024).toFixed(2)} MB) to save router flash: ${item.name}`);
+            continue;
+          }
+
+          await ftpClient.uploadFrom(localPath, remotePathFile);
+        }
+      }
+    }
+
+    // Purge ALL media files from the MikroTik router storage to keep /hotspot ultra light
     try {
       const remoteFiles = await client.list(remotePath);
-      const localFiles = fs.readdirSync(localHotspotDir);
       
       for (const file of remoteFiles) {
         if (file.isFile || file.type === 1) {
           const fileName = file.name;
-          const isAdFile = fileName.startsWith('ad_');
-          const isMediaFile = (fileName.endsWith('.mp4') || fileName.endsWith('.mov') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png') || fileName.endsWith('.webp')) && fileName !== 'human.png';
+          const isMedia = fileName.match(/\.(png|jpg|jpeg|gif|webp|svg|ico|mp4|mov|avi|webm|mkv|mp3|wav)$/i);
           
-          if ((isAdFile || isMediaFile) && !localFiles.includes(fileName)) {
-            console.log(`Deleting stale remote file: ${remotePath}/${fileName}`);
-            // Use path.posix to join remote paths safely
+          if (isMedia) {
+            console.log(`Purging remote media file from MikroTik router storage: ${remotePath}/${fileName}`);
             const remoteFilePath = remotePath.endsWith('/') ? `${remotePath}${fileName}` : `${remotePath}/${fileName}`;
             await client.remove(remoteFilePath).catch(err => {
-              console.warn(`Could not delete remote file ${fileName}:`, err);
+              console.warn(`Could not delete remote media file ${fileName}:`, err);
             });
           }
         }
       }
     } catch (err) {
-      console.warn('Could not clean old remote media files:', err);
+      console.warn('Could not purge remote media files:', err);
     }
 
-    // Sync directory recursively (will transfer human.png, login.html, etc. correctly as binary)
-    await client.uploadFromDir(localHotspotDir, remotePath);
+    // Sync directory recursively with video/large file filtering
+    await uploadHotspotDirFiltered(client, localHotspotDir, remotePath);
 
     client.close();
+
+    // Salvar o último template oficialmente no banco de dados
+    try {
+      await prisma.systemConfig.upsert({
+        where: { key: 'LAST_DEPLOYED_TEMPLATE' },
+        update: { value: safeName },
+        create: { key: 'LAST_DEPLOYED_TEMPLATE', value: safeName }
+      });
+    } catch (e) {
+      console.warn('Falha ao salvar LAST_DEPLOYED_TEMPLATE no DB:', e);
+    }
 
     return NextResponse.json({ 
       success: true, 
@@ -96,6 +181,8 @@ export async function POST(request: Request) {
       errorMsg = 'Tempo limite de conexão esgotado (Timeout). Verifique se o roteador está acessível na porta FTP.';
     } else if (error.message && error.message.includes('530')) {
       errorMsg = 'Usuário ou senha do FTP incorretos (Erro 530).';
+    } else if (error.message && (error.message.includes('452') || error.message.includes('No space left'))) {
+      errorMsg = 'Espaço em disco insuficiente no MikroTik (Erro 452). A memória flash do roteador está cheia. Abra o WinBox em "Files" e remova arquivos antigos do armazenamento interno do MikroTik.';
     }
 
     return NextResponse.json({ success: false, message: errorMsg }, { status: 500 });

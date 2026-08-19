@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="utf-8">
+  <title>Login</title>
+  <meta http-equiv="pragma" content="no-cache" />
+  <meta http-equiv="expires" content="-1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="no">
+  <meta name="format-detection" content="telephone=no">
+
+  <script src="md5.js"></script>
+
+  <!-- ============================================================
+       ESTILOS BASE (permanentes – nunca substituídos pelo route.ts)
+       ============================================================ -->
+  <style>
+    /* ====== DESIGN TOKENS DEFAULT ====== */
+    :root {
+      --brand: #f97316;
+      --brand-dark: #ea580c;
+      --bg: #0a0e17;
+      --ink: #fff7ed;
+      --text-muted:     #6b7280;
+      --btn-primary:    #2563eb;
+      --btn-secondary:  #10b981;
+      --trialButtonBg:  #1E90FF;
+      --trialButtonText:#FFFFFF;
+      --glass-opacity:  100%;
+      --glass-blur:     0px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      min-width: 300px;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* ====== TOP BAR ====== */
+    #heading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: color-mix(in srgb, var(--brand) var(--glass-opacity), transparent);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      width: 100%;
+      height: 60px;
+      position: fixed;
+      left: 0; right: 0; top: 0;
+      box-shadow: 0 4px 6px rgba(0,0,0,.15);
+      z-index: 10;
+      border-bottom: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
+    }
+    #heading img { height: 40px; width: auto; }
+
+    /* ====== CONTAINER ====== */
+    .container {
+      width: 100%;
+      max-width: 420px;
+      margin-top: 80px;
+      padding: 0 15px 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 1;
+    }
+
+    /* ====== LOGO ====== */
+    .logo {
+      max-width: 120px;
+      max-height: 120px;
+      object-fit: contain;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.2));
+    }
+
+    /* ====== CARD ====== */
+    #box {
+      width: 100%;
+      background: color-mix(in srgb, var(--bg) var(--glass-opacity), transparent);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.12);
+      border: 1px solid color-mix(in srgb, var(--bg) 30%, rgba(255,255,255,0.2));
+    }
+
+    /* ====== INPUTS ====== */
+    .input-group { margin-bottom: 15px; }
+
+    input[type="text"],
+    input[type="password"] {
+      border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+      color: var(--ink);
+      background: color-mix(in srgb, var(--bg) 80%, transparent);
+      backdrop-filter: blur(calc(var(--glass-blur) / 2));
+      -webkit-backdrop-filter: blur(calc(var(--glass-blur) / 2));
+      height: 48px;
+      font-size: 16px;
+      display: block;
+      width: 100%;
+      border-radius: 10px;
+      padding: 0 16px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
+    }
+
+    /* ====== BUTTONS ====== */
+    .actions { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+
+    .btn {
+      border: 0;
+      height: 48px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: transform .1s, filter .2s;
+      text-decoration: none;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-login { background: var(--btn-primary);   color: #fff; }
+    .btn-login:hover { filter: brightness(0.88); }
+    .btn-cad   { background: var(--btn-secondary); color: #fff; }
+    .btn-cad:hover   { filter: brightness(0.88); }
+
+    /* ====== FOOTER ====== */
+    .footer { text-align: center; color: var(--text-muted); margin-top: 20px; font-size: 13px; }
+
+    /* ====== ERROR ====== */
+    .err {
+      background: color-mix(in srgb, #ef4444 10%, transparent);
+      border: 1px solid #fecaca;
+      color: #ef4444;
+      padding: 10px 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 14px;
+      width: 100%;
+    }
+    .err:empty {
+      display: none !important;
+    }
+
+    /* ====== TRIAL MODAL ====== */
+    #trialModal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 200000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    #trialModal.open { display: flex; }
+    .trial-modal-box {
+      background: #1a1a2e;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 28px 24px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .trial-modal-box h3   { color: var(--brand); font-size: 18px; margin-bottom: 10px; }
+    .trial-modal-box p    { color: #a0a0b0; font-size: 14px; margin-bottom: 22px; line-height: 1.5; }
+    .trial-modal-actions  { display: flex; gap: 10px; }
+    .trial-modal-actions button {
+      flex: 1; height: 46px; border-radius: 10px; font-weight: bold;
+      font-size: 14px; border: none; cursor: pointer; transition: filter 0.2s;
+    }
+    .trial-modal-actions button:hover { filter: brightness(0.9); }
+    #trialConfirmBtn { background: var(--btn-primary); color: #fff; }
+    #trialCancelBtn  { background: rgba(255,255,255,0.1); color: #ccc; }
+  </style>
+
+  <!-- ============================================================
+       ZONA DE ESTILOS DO AD CAROUSEL
+       route.ts substitui TODO o conteúdo entre os marcadores abaixo
+       ============================================================ -->
+  <style>
+/* AdCarouselStyles */
+
+/* EndAdCarouselStyles */
+  </style>
+
+  <!-- ============================================================
+       CORES DINÂMICAS – route.ts sobrescreve este bloco inteiro
+       ============================================================ -->
+  <!-- MIKROGESTOR COLORS -->
+<style>
+  :root {
+    --brand: #f97316;
+    --brand-dark: #ea580c;
+    --bg: #0a0e17;
+    --ink: #fff7ed;
+    --text-muted: #fdba74;
+    --btn-primary: #f97316;
+    --btn-primary-text: #0a0e17;
+    --btn-secondary: #0284c7;
+    --btn-secondary-text: #000000;
+    --trialButtonBg: #f97316;
+    --trialButtonText: #0a0e17;
+    --card-bg: #101827;
+    --card-border: #f97316;
+    --input-bg: #070c14;
+    --input-text: #fff7ed;
+    --input-border: #7c2d12;
+    --input-placeholder: #fb923c;
+    --glass-opacity: 10%;
+    --glass-blur: 0px;
+  }
+
+  /* ====== STUDIO INSPECTOR & UNIVERSAL THEME STYLING ====== */
+  body, input, button, select, textarea, h1, h2, h3, p, span { font-family: "Inter", "Inter", -apple-system, sans-serif !important; }
+
+  /* ====== BRAND / HEADING / LOGO STYLING ====== */
+  #mg-live-brand-container, .brand-container {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 20px !important;
+    width: 100% !important;
+    text-align: center !important;
+    animation: mgFadeZoom 1.5s cubic-bezier(0.25, 1, 0.5, 1) 1s both !important;
+  }
+
+  #heading, header.top-bar, .header-bar {
+    display: none !important;
+  }
+  .container, #main, .wrap {
+    margin-top: 24px !important;
+  }
+
+  
+  .logo, #logo, img.brand-logo {
+    display: block !important;
+    max-width: 320px !important;
+    max-height: 320px !important;
+    padding: 0px !important;
+    object-fit: contain !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  
+
+  #mg-live-brand-text, .brand-title-text, #mg-live-brand-container div {
+    display: none !important;
+  }
+
+  #box, .login-card, .card, body[class*="theme-"] #box {
+    background: color-mix(in srgb, var(--card-bg) var(--glass-opacity), transparent) !important;
+    border: 1px solid var(--card-border) !important;
+    backdrop-filter: blur(var(--glass-blur)) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+    border-radius: 20px 20px 20px 20px !important;
+    padding: 24px 24px 24px 24px !important;
+    border-width: 1px !important; border-style: solid !important;
+  }
+
+  #box h1, #box h2, #box h3, .card h1, .card h2, .card h3, .title, body[class*="theme-"] #box h1 {
+    color: var(--ink) !important;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0px !important;
+    text-align: center !important;
+  }
+
+  #box p, .subtitle, .card p, .instructions, .text-muted, body[class*="theme-"] #box p {
+    color: var(--text-muted) !important;
+  }
+
+  input[type="text"], input[type="password"], select, .form-input, body[class*="theme-"] input {
+    background-color: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border-color: var(--input-border) !important;
+    height: 44px !important; min-height: 44px !important;
+    border-radius: 10px !important;
+    border-width: 1px !important;
+  }
+
+  input::placeholder {
+    color: var(--input-placeholder) !important;
+    opacity: 0.8 !important;
+  }
+
+  .btn-login, input[type="submit"], button[type="submit"], .btn-primary, body[class*="theme-"] .btn-login {
+    background-color: var(--btn-primary) !important;
+    color: var(--btn-primary-text) !important;
+    border-color: var(--btn-primary) !important;
+    border-radius: 12px 12px 12px 12px !important;
+    padding: 12px 20px 12px 20px !important;
+    height: 46px !important; min-height: 46px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  #btnSignup, .btn-register, .btn-secondary, body[class*="theme-"] #btnSignup {
+    background-color: var(--btn-secondary) !important;
+    color: var(--btn-secondary-text) !important;
+    border-color: var(--btn-secondary) !important;
+    border-radius: 12px 12px 12px 12px !important;
+    height: 46px !important; min-height: 46px !important;
+  }
+
+  #trial-container button, .btn-trial {
+    background-color: var(--trialButtonBg) !important;
+    color: var(--trialButtonText) !important;
+  }
+
+  
+/* Correção de tipografia para evitar sobreposição pelo Studio */
+#mg-live-brand-text *,
+.brand-title-text * {
+  font-family: inherit !important;
+}
+
+</style>
+<!-- END MIKROGESTOR COLORS -->
+
+
+  <!-- ============================================================
+       ESTILOS EXCLUSIVOS DO TEMA DEFAULT
+       ============================================================ -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    
+      body.theme-default {
+        font-family: 'Inter', sans-serif !important;
+        background: #ffffff !important;
+      }
+      body.theme-default #box {
+        border-radius: 16px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important;
+        border: 1px solid #f1f5f9 !important;
+      }
+    
+  </style>
+  
+
+  <!-- ============================================================
+       ESTILOS EXCLUSIVOS DO TEMA DEFAULT
+       ============================================================ -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    
+      body.theme-default {
+        font-family: 'Inter', sans-serif !important;
+        background: #ffffff !important;
+      }
+      body.theme-default #box {
+        border-radius: 16px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.06) !important;
+        border: 1px solid #f1f5f9 !important;
+      }
+    
+  </style>
+  
+
+  <!-- ============================================================
+       ESTILOS EXCLUSIVOS DO TEMA WIFIELBARRIO
+       ============================================================ -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lilita+One&family=DM+Sans:wght@500;700&display=swap');
+    
+      body.theme-WifiElBarrio {
+        font-family: 'DM Sans', sans-serif !important;
+        background: linear-gradient(135deg, #ffedd5 0%, #fef3c7 100%) !important;
+        color: #1e293b !important;
+      }
+      body.theme-WifiElBarrio h3, body.theme-WifiElBarrio .title {
+        font-family: 'Lilita One', cursive !important;
+      }
+      body.theme-WifiElBarrio #box {
+        background: #ffffff !important;
+        border: 3px solid #c2410c !important;
+        border-radius: 20px !important;
+        box-shadow: 8px 8px 0px #fbbf24 !important;
+      }
+      body.theme-WifiElBarrio input[type="text"],
+      body.theme-WifiElBarrio input[type="password"] {
+        border: 2px solid #fdba74 !important;
+        border-radius: 12px !important;
+      }
+      body.theme-WifiElBarrio .btn {
+        border-radius: 12px !important;
+      }
+      body.theme-WifiElBarrio .btn-login {
+        background: #c2410c !important;
+      }
+      body.theme-WifiElBarrio .btn-cad {
+        background: #1d4ed8 !important;
+      }
+    
+  </style>
+  
+</head>
+
+<body class="login theme-default">
+
+  <!-- ============================================================
+       FUNDO CUSTOMIZADO (vídeo de fundo)
+       route.ts injeta <video> aqui quando bg.type === 'video'
+       ============================================================ -->
+  <!-- CustomBackground -->
+
+<!-- EndCustomBackground -->
+
+  <!-- ============================================================
+       BLOCO DA PUBLICIDADE
+       route.ts substitui TODO o conteúdo entre os marcadores abaixo
+       ============================================================ -->
+  <!-- AdCarouselBlock -->
+
+<!-- EndAdCarouselBlock -->
+
+  <!-- ============================================================
+       FUNDO CUSTOMIZADO CSS (imagem)
+       route.ts atualiza a URL de bg aqui para imagens
+       ============================================================ -->
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- MIKROGESTOR BG -->
+<style>html,body,html body[class],body[class*="theme-"],.wrapper,.login-wrapper,.main-container,.page-container,.theme-layout,#wrapper,.bg-overlay,.background-overlay,main,.main,.content,.login-panel,.form-signin,.box-login,.container-fluid,.page-bg,.content-wrapper,section,article,.login-box,.card-body,canvas,#mg-live-canvas,#mg-fx-niche,div[class*="container"],div[class*="wrapper"],div[class*="login"],div[class*="bg"],div[class*="main"],div[class*="content"],div[class*="page"]{background:transparent!important;background-color:transparent!important;background-image:none!important}</style>
+<video id="mikrogestor-bg-video" autoplay muted loop playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5-page" preload="auto" style="position:fixed;top:0;left:0;width:100vw;height:100vh;min-width:100%;min-height:100%;z-index:-999;object-fit:cover;pointer-events:none;">
+  <source src="http://portal.wifi.local/api/portal/bg?template=WifiElBarrio" type="video/mp4">
+</video>
+<script>
+(function(){
+  function mgStartBg(){
+    var d=document.getElementById('mg-debug-overlay');
+    if(d&&d.parentNode)d.parentNode.removeChild(d);
+    var v=document.getElementById('mikrogestor-bg-video');
+    if(!v)return;
+    v.muted=true;v.defaultMuted=true;v.playsInline=true;
+    var p=v.play();
+    if(p&&typeof p.catch==='function'){
+      p.catch(function(){
+        function u(){v.play();document.removeEventListener('touchstart',u);document.removeEventListener('click',u);}
+        document.addEventListener('touchstart',u,{once:true,passive:true});
+        document.addEventListener('click',u,{once:true,passive:true});
+      });
+    }
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',mgStartBg);}else{mgStartBg();}
+  window.addEventListener('load',mgStartBg);
+})();
+</script>
+<!-- END MIKROGESTOR BG -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!-- ============================================================
+       AUTENTICAÇÃO CHAP (MikroTik MD5)
+       ============================================================ -->
+  $(if chap-id)
+  <form name="sendin" action="$(link-login-only)" method="post" style="display:none">
+    <input type="hidden" name="username" />
+    <input type="hidden" name="password" />
+    <input type="hidden" name="dst"   value="$(link-orig)" />
+    <input type="hidden" name="popup" value="true" />
+  </form>
+  <script>
+    function doLogin() {
+      document.sendin.username.value = document.login.username.value;
+      document.sendin.password.value = hexMD5('$(chap-id)' + document.login.password.value + '$(chap-challenge)');
+      document.sendin.submit();
+      return false;
+    }
+  </script>
+  $(endif)
+
+  <!-- ============================================================
+       HEADER
+       ============================================================ -->
+  <div id="heading">
+    <svg style="height: 28px; width: 28px; fill: #ffffff;" viewBox="0 0 24 24"><path d="M12 3C6.95 3 2.5 5.56 0 9.42l2.36 2.36C4.12 8.44 7.78 6.5 12 6.5s7.88 1.94 9.64 5.28L24 9.42C21.5 5.56 17.05 3 12 3zm0 5c-3.31 0-6.29 1.52-8.25 3.91l2.36 2.36C7.39 12.87 9.53 12 12 12s4.61.87 5.89 2.27l2.36-2.36C18.29 9.52 15.31 8 12 8zm0 5c-1.38 0-2.5 1.12-2.5 2.5v.5H9c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1h-.5v-.5c0-1.38-1.12-2.5-2.5-2.5zm1 3h-2v-.5c0-.55.45-1 1-1s1 .45 1 1v.5z"/></svg>
+  </div>
+
+  <!-- ============================================================
+       FORMULÁRIO DE LOGIN
+       ============================================================ -->
+  <div class="container">
+
+    <!-- MIKROGESTOR_BRAND_BLOCK -->
+<div id="mg-live-brand-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; text-align: center; animation: mgFadeZoom 1.5s cubic-bezier(0.25, 1, 0.5, 1) 1s both;"></div>
+<!-- END_MIKROGESTOR_BRAND_BLOCK -->
+
+    $(if error)<div class="err">$(error)</div>$(endif)
+
+    <form name="login" action="$(link-login-only)" method="post"
+          $(if chap-id) onSubmit="return doLogin()" $(endif)
+          style="width:100%;">
+      <input type="hidden" name="dst"   value="$(link-orig)" />
+      <input type="hidden" name="popup" value="true" />
+
+      <div id="box">
+        <div class="input-group">
+          <input id="user" name="username" type="text"
+                 value="$(username)" placeholder="Usuário"
+                 autocomplete="username" autocapitalize="none" autofocus>
+        </div>
+        <div class="input-group">
+          <input id="pass" name="password" type="password"
+                 placeholder="Senha" autocomplete="current-password">
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-login">Conectar</button>
+
+          <!-- MIKROGESTOR_REGISTER_BTN -->
+<button id="btnSignup" class="btn btn-cad" type="button" style="display: flex; width: 100%; border-radius: 8px; padding: 10px; cursor: pointer; font-weight: bold; border: none; font-size: 14px; background: var(--btn-secondary, #0284c7); color: #fff;" onclick="window.location.href='http://portal.wifi.local/portal/register?link-login-only=$(link-login-only)&link-orig=$(link-orig)&t=' + new Date().getTime()">Cadastre-se aqui</button>
+<!-- END_MIKROGESTOR_REGISTER_BTN -->
+        </div>
+
+        <div class="footer">
+          <!-- MIKROGESTOR_TRIAL_BLOCK -->
+<div id="trial-container" style="display: none; flex-direction: column; align-items: center; gap: 8px; margin-top: 15px; width: 100%; text-align: center;">
+$(if trial == 'yes')
+<div style="font-size: 13px; color: var(--text-muted, #6b7280);">Acesso de teste disponível, </div>
+<button type="button" class="btn" style="background-color: var(--trialButtonBg, #f97316); color: var(--trialButtonText, #0a0e17); width: 100%; border-radius: 8px; padding: 10px; font-weight: bold; cursor: pointer; border: none; font-size: 14px;" onclick="openTrialModal()">clique aqui</button>
+$(endif)
+</div>
+<!-- END_MIKROGESTOR_TRIAL_BLOCK -->
+
+          <br>
+          <span style="opacity:0.6; font-size:11px;">IP: $(ip) &bull; MAC: $(mac)</span>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ============================================================
+       TRIAL MODAL (permanente – route.ts atualiza apenas os textos
+       via regex nos IDs: trialModalTitle, trialModalMsg,
+       trialCancelBtn, trialConfirmBtn)
+       ============================================================ -->
+  <div id="trialModal">
+    <div class="trial-modal-box">
+      <h3 id="trialModalTitle">Acesso de Teste</h3>
+      <p  id="trialModalMsg">Tem certeza de que deseja liberar o acesso grátis por 30 minutos?</p>
+      <div class="trial-modal-actions">
+        <button id="trialCancelBtn"  onclick="closeTrialModal()">Não, Voltar</button>
+        <button id="trialConfirmBtn" onclick="doTrialLogin()">Sim, Conectar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       JS PERMANENTE – Trial Modal
+       Este bloco NÃO tem marcadores de ad → nunca é tocado pelo route.ts
+       ============================================================ -->
+  <script>
+    function openTrialModal() {
+      var modal = document.getElementById('trialModal') || document.getElementById('trial-modal');
+      if (!modal) return;
+      modal.classList.add('open');
+      modal.style.display = 'flex';
+      
+      var btn = document.getElementById('trialConfirmBtn') || document.getElementById('trial-modal-confirm');
+      if (!btn) return;
+
+      if (!btn.getAttribute('data-orig-text')) {
+        btn.setAttribute('data-orig-text', btn.innerText.trim() || 'Sim, Conectar');
+      }
+      var origText = btn.getAttribute('data-orig-text');
+
+      btn.disabled = true;
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+
+      var timeLeft = 10;
+      btn.innerText = 'Aguarde (' + timeLeft + 's)...';
+
+      if (window._trialTimer) clearInterval(window._trialTimer);
+      window._trialTimer = setInterval(function() {
+        timeLeft--;
+        if (timeLeft > 0) {
+          btn.innerText = 'Aguarde (' + timeLeft + 's)...';
+        } else {
+          clearInterval(window._trialTimer);
+          window._trialTimer = null;
+          btn.disabled = false;
+          btn.style.pointerEvents = 'auto';
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
+          btn.innerText = origText;
+        }
+      }, 1000);
+    }
+
+    function closeTrialModal() {
+      var modal = document.getElementById('trialModal') || document.getElementById('trial-modal');
+      if (modal) {
+        modal.classList.remove('open');
+        modal.style.display = 'none';
+      }
+      if (window._trialTimer) {
+        clearInterval(window._trialTimer);
+        window._trialTimer = null;
+      }
+      var btn = document.getElementById('trialConfirmBtn') || document.getElementById('trial-modal-confirm');
+      if (btn) {
+        var origText = btn.getAttribute('data-orig-text');
+        if (origText) btn.innerText = origText;
+        btn.disabled = false;
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      }
+    }
+    function doTrialLogin() {
+      if (typeof confirmTrialLogin === 'function') {
+        confirmTrialLogin();
+      } else {
+        window.location.href = '$(link-login-only)?username=$(trial-user)&password=$(trial-password)&dst=$(link-orig)&popup=true';
+      }
+    }
+  </script>
+
+  <!-- ============================================================
+       ZONA DO SCRIPT DA PUBLICIDADE
+       route.ts substitui TODO o conteúdo entre os marcadores abaixo.
+       O fallback abaixo esconde o modal caso route.ts não tenha
+       injetado nenhum conteúdo (template recém-restaurado).
+       ============================================================ -->
+  <script>
+/* AdCarouselScript */
+
+/* EndAdCarouselScript */
+  </script>
+
+
+<!-- MIKROGESTOR EFFECTS -->
+<link href="fonts/fonts.css" rel="stylesheet">
+
+
+
+<div id="mg-badges-bar" style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:12px;">
+  <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:12px;background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">📶 Wi-Fi Comunitário</span><span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:12px;background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);">🤝 Conexão do Bairro</span><span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:bold;padding:3px 8px;border-radius:12px;background:rgba(245,158,11,0.15);color:#fcd34d;border:1px solid rgba(245,158,11,0.3);">🟢 $(logged-in) online</span>
+</div>
+
+<style>
+#box, .login-card, .card { border-radius: 20px !important; clip-path: none !important; }
+
+#box, .login-card, .card {
+  position: relative !important;
+  box-shadow: 0 0 25px #f9731640, inset 0 0 15px #f9731620 !important;
+}
+#box::before, .login-card::before, .card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(90deg, #f97316, #0284c7, #f97316, #f97316);
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: mgBorderBeam 4s linear infinite;
+  pointer-events: none;
+}
+@keyframes mgBorderBeam {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.btn-login, #btnSignup, button[type="submit"], input[type="submit"] {
+  position: relative !important;
+  overflow: hidden !important;
+}
+.btn-login::after, #btnSignup::after, button[type="submit"]::after {
+  content: '' !important;
+  position: absolute !important;
+  top: -50% !important;
+  left: -60% !important;
+  width: 40% !important;
+  height: 200% !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent) !important;
+  transform: rotate(30deg) !important;
+  animation: mgShimmerSweep 3.5s infinite !important;
+  pointer-events: none !important;
+}
+@keyframes mgShimmerSweep {
+  0% { left: -60%; }
+  30% { left: 140%; }
+  100% { left: 140%; }
+}
+
+#box h1, .card h1, #heading h1, .title {
+  background: linear-gradient(135deg, #f97316, #0284c7, #f97316, #f97316) !important;
+  background-size: 300% 300% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  animation: mgTitleGradient 6s ease infinite alternate !important;
+}
+@keyframes mgTitleGradient {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+</style>
+<script>
+
+</script>
+<!-- END MIKROGESTOR EFFECTS -->
+</body>
+</html>

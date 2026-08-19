@@ -3,7 +3,9 @@ echo ========================================================
 echo INICIANDO MIKROGESTOR VOUCHER...
 echo ========================================================
 echo.
-echo O sistema estara disponivel em: http://localhost:80
+echo Servidor disponivel em:
+echo - Local: http://localhost
+echo - Rede:  http://^<SEU_IP_LAN^>
 echo.
 call npm run dev
 pause

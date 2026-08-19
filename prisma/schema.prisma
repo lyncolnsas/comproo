@@ -55,5 +55,48 @@ model HotspotLead {
   password         String?   // The custom password chosen by the user
   customFieldValue String?
   hotspotUser      String    @unique // The generated username in MikroTik
+  whatsappNumber   String?   // Used for Baileys messaging
+  optInCourses     Boolean   @default(true) // Consent to receive course info
+  drawnInRaffle    Boolean   @default(false) // Flag to prevent duplicate drawing
   createdAt        DateTime  @default(now())
+  payments         Payment[]
+}
+
+model Payment {
+  id               String      @id @default(uuid())
+  leadId           String
+  lead             HotspotLead @relation(fields: [leadId], references: [id])
+  pixId            String?     @unique // Mercado Pago Payment ID
+  pixPayload       String?     // PIX Copy Paste
+  pixQrCodeBase64  String?     // QR Code Image
+  status           String      @default("pending") // pending, approved, rejected
+  amount           Float
+  voucherCode      String?     // The generated voucher after payment
+  profile          String?     // The selected profile/plan for WhatsApp flows
+  macAddress       String?     // The MAC address used to drop IP Binding after payment
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model WhatsappPlan {
+  id        String   @id @default(uuid())
+  title     String   // e.g. "1 Hora", "1 Dia"
+  profile   String   // MikroTik Profile exactly as typed
+  price     Float
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model SystemConfig {
+  key   String @id
+  value String
+}
+
+model WhatsappInstance {
+  id        String   @id @default(uuid())
+  name      String   @default("WhatsApp")
+  number        String?  // O número em si após conectar
+  status        String   @default("disconnected")
+  profilePicUrl String?
+  createdAt     DateTime @default(now())
 }

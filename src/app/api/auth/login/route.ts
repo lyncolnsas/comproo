@@ -6,6 +6,8 @@ export async function POST(request: Request) {
   try {
     const { username, password } = await request.json();
     
+    const isHttps = request.url.startsWith('https://') || request.headers.get('x-forwarded-proto') === 'https';
+
     // Fallback original para garantir que o usuário não fique trancado fora do sistema
     if (username === 'mikrogestor' && password === '1234') {
       const token = await signJwt({ username: 'mikrogestor', name: 'Admin Fallback' });
@@ -13,8 +15,8 @@ export async function POST(request: Request) {
       const response = NextResponse.json({ success: true, name: 'Admin Fallback' });
       response.cookies.set('system_auth', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: isHttps,
+        sameSite: 'lax',
         maxAge: 8 * 60 * 60, // 8 hours
         path: '/',
       });
@@ -32,8 +34,8 @@ export async function POST(request: Request) {
       const response = NextResponse.json({ success: true, name: user.name });
       response.cookies.set('system_auth', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: isHttps,
+        sameSite: 'lax',
         maxAge: 8 * 60 * 60, // 8 hours
         path: '/',
       });

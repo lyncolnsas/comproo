@@ -10,8 +10,9 @@ export async function middleware(request: NextRequest) {
     path === '/' || 
     path.startsWith('/api/auth') || 
     path.startsWith('/portal/register') || 
-    path.startsWith('/api/portal/config') || 
-    path.startsWith('/api/portal/register') ||
+    path.startsWith('/portal/verify') || 
+    path.startsWith('/api/portal/') || 
+    path.startsWith('/api/webhook') ||
     path.startsWith('/uploads/');
   
   const token = request.cookies.get('system_auth')?.value;
@@ -28,8 +29,13 @@ export async function middleware(request: NextRequest) {
   if (token) {
     const payload = await verifyJwt(token);
     
-    // Se o token for inválido, limpa o cookie e redireciona
+    // Se o token for inválido, limpa o cookie e redireciona/rejeita
     if (!payload) {
+      if (path.startsWith('/api/')) {
+        const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        response.cookies.delete('system_auth');
+        return response;
+      }
       const response = NextResponse.redirect(new URL('/', request.url));
       response.cookies.delete('system_auth');
       return response;

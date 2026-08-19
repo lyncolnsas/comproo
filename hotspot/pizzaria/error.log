@@ -1,0 +1,42 @@
+# MikroGestor Diagnostic Log
+# Registros de eventos e erros do Autocadastro / API
+
+[2026-05-25T15:26:29.229Z] [START_REGISTRATION] {"name":"Http Test User","username":"httptestuser","password":"***","cpf":"11122233344","gender":"Homem","email":"httptest@example.com","birthDate":"1990-01-01","customFieldValue":"Http Test"}
+[2026-05-25T15:26:29.235Z] [DB_SAVE_SUCCESS] {"leadId":"285ee799-ae8b-4bbc-a157-c12803029b1c","hotspotUser":"httptestuser"}
+[2026-05-25T15:26:29.236Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-05-25T15:26:30.045Z] [MIKROTIK_USER_CREATED] {"username":"httptestuser","result":{"$$path":"/ip/hotspot/user","id":"*18","name":"httptestuser","password":"password123","profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Nome: Http Test User | Email: httptest@example.com | Nasc: 1990-01-01 | Gen: Homem | Resp: Http Test"}}
+[2026-05-25T15:26:30.045Z] [SUCCESS] {"username":"httptestuser"}
+[2026-05-25T15:26:30.065Z] [START_REGISTRATION] {"name":"Http Test User","username":"httptestuser","password":"***","cpf":"11122233344","gender":"Homem","email":"httptest@example.com","birthDate":"1990-01-01","customFieldValue":"Http Test"}
+[2026-05-25T15:26:30.066Z] [DB_SAVE_SUCCESS] {"leadId":"285ee799-ae8b-4bbc-a157-c12803029b1c","hotspotUser":"httptestuser"}
+[2026-05-25T15:26:30.067Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-05-25T15:26:30.467Z] [MIKROTIK_USER_EXISTS] {"username":"httptestuser","id":"*18"}
+[2026-05-25T15:26:30.774Z] [MIKROTIK_USER_REMOVED] {"username":"httptestuser"}
+[2026-05-25T15:26:31.127Z] [MIKROTIK_USER_CREATED] {"username":"httptestuser","result":{"$$path":"/ip/hotspot/user","id":"*19","name":"httptestuser","password":"password123","profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Nome: Http Test User | Email: httptest@example.com | Nasc: 1990-01-01 | Gen: Homem | Resp: Http Test"}}
+[2026-05-25T15:26:31.127Z] [SUCCESS] {"username":"httptestuser"}
+[2026-05-25T15:45:13.627Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","username":"Lyncoln ","password":"***","confirmPassword":"123"}
+[2026-05-25T15:45:13.636Z] [DB_SAVE_SUCCESS] {"leadId":"660caed4-228f-473b-80c6-98c305b62596","hotspotUser":"lyncoln"}
+[2026-05-25T15:45:13.637Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-05-25T15:45:14.131Z] [MIKROTIK_USER_CREATED] {"username":"lyncoln","result":{"$$path":"/ip/hotspot/user","id":"*1A","name":"lyncoln","password":123,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-05-25T15:45:14.132Z] [SUCCESS] {"username":"lyncoln"}
+[2026-05-25T15:49:06.458Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","username":"Lyncoln ","password":"***","confirmPassword":"123"}
+[2026-05-25T15:49:06.463Z] [DB_SAVE_SUCCESS] {"leadId":"6fee0e7c-63a5-49ff-baf3-fde12e60b79a","hotspotUser":"lyncoln"}
+[2026-05-25T15:49:06.464Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-05-25T15:49:06.733Z] [MIKROTIK_USER_CREATED] {"username":"lyncoln","result":{"$$path":"/ip/hotspot/user","id":"*1B","name":"lyncoln","password":123,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-05-25T15:49:06.734Z] [SUCCESS] {"username":"lyncoln"}
+[2026-05-25T16:09:30.626Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","name":"Lyncoln ","email":"lyncoln.sas2@gmail.com","ddd":"99","celular":"991561407","birthDay":"20","birthMonth":"07","birthYear":"1985","cpf":"01408181380","gender":"Homem","password":"***","confirmPassword":"123","customFieldValue":"Jjsbbdkdb"}
+[2026-05-25T16:09:30.632Z] [DB_SAVE_SUCCESS] {"leadId":"2c5ee373-e276-4725-9d02-a9c2fe515658","hotspotUser":"99991561407"}
+[2026-05-25T16:09:30.633Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-05-25T16:09:31.345Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*1D","name":99991561407,"password":123,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Nome: Lyncoln  | Email: lyncoln.sas2@gmail.com | Nasc: 1985-07-20 | CPF: 01408181380 | Gen: Homem | Resp: Jjsbbdkdb"}}
+[2026-05-25T16:09:31.346Z] [SUCCESS] {"username":"99991561407"}
+[2026-05-25T16:28:44.300Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","name":"Jornalista IAP","email":"adriane92garcia@gmail.com","ddd":"99","celular":"91561407","birthDay":"20","birthMonth":"07","birthYear":"1985","cpf":"5548464","gender":"Homem","password":"***","confirmPassword":"123","customFieldValue":""}
+[2026-05-25T16:28:44.301Z] [VALIDATION_FAILED] CPF deve conter exatamente 11 dígitos.
+[2026-05-25T16:29:03.381Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","name":"Jornalista IAP","email":"adriane92garcia@gmail.com","ddd":"99","celular":"91561407","birthDay":"20","birthMonth":"07","birthYear":"1985","cpf":"554664545548464","gender":"Homem","password":"***","confirmPassword":"123","customFieldValue":""}
+[2026-05-25T16:29:03.381Z] [VALIDATION_FAILED] CPF deve conter exatamente 11 dígitos.
+[2026-05-25T16:29:55.604Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","name":"Jornalista IAP","email":"adriane92garcia@gmail.com","ddd":"99","celular":"991561407","birthDay":"20","birthMonth":"07","birthYear":"1985","cpf":"01408181380","gender":"Homem","password":"***","confirmPassword":"123","customFieldValue":"Ghznmzvz"}
+[2026-05-25T16:29:55.609Z] [DB_SAVE_SUCCESS] {"leadId":"2c5ee373-e276-4725-9d02-a9c2fe515658","hotspotUser":"99991561407"}
+[2026-05-25T16:29:55.609Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-05-25T16:29:55.993Z] [MIKROTIK_USER_EXISTS] {"username":"99991561407","id":"*1D"}
+[2026-05-25T16:29:56.196Z] [MIKROTIK_USER_REMOVED] {"username":"99991561407"}
+[2026-05-25T16:29:56.467Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*1E","name":99991561407,"password":123,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Nome: Jornalista IAP | Email: adriane92garcia@gmail.com | Nasc: 1985-07-20 | CPF: 01408181380 | Gen: Homem | Resp: Ghznmzvz"}}
+[2026-05-25T16:29:56.468Z] [SUCCESS] {"username":"99991561407"}
+[2026-05-25T16:29:56.468Z] [APPLE_CNA_REDIRECT] {"redirectUrl":"http://192.168.88.1/login?username=99991561407&password=123&dst=https%3A%2F%2Fwww.instagram.com%2Fexpressao.devida%2F","userAgent":"Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148","linkOrig":""}

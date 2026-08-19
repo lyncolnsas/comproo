@@ -1,0 +1,128 @@
+{
+  "businessName": "Wi-Fi Grand Hotel & Resort",
+  "message": "Desfrute de uma estadia inesquecível. Conecte-se à nossa rede de alta velocidade para hóspedes.",
+  "systemUrl": "http://portal.wifi.local",
+  "colors": {
+    "brand": "#d97706",
+    "brandDark": "#b45309",
+    "bg": "#020617",
+    "ink": "#fef3c7",
+    "muted": "#fde68a",
+    "blue": "#d97706",
+    "loginButtonText": "#ffffff",
+    "green": "#2563eb",
+    "registerButtonText": "#ffffff",
+    "trialButtonBg": "#d97706",
+    "trialButtonText": "#ffffff",
+    "cardBg": "#0f172a",
+    "cardBorder": "#d97706",
+    "inputBg": "#070b14",
+    "inputText": "#fef3c7",
+    "inputBorder": "#78350f",
+    "inputPlaceholder": "#fcd34d",
+    "glassOpacity": 92,
+    "glassBlur": 18
+  },
+  "effects": {
+    "bgEffect": "luxury-bubbles",
+    "bgEffectSpeed": "slow",
+    "cardShape": "rounded",
+    "cardNoiseTexture": false,
+    "cardGlowBorder": true,
+    "cardTilt3d": false,
+    "btnShimmer": true,
+    "btnPulse": false,
+    "titleGradient": true
+  },
+  "social": {
+    "whatsappEnabled": false,
+    "whatsappNumber": "",
+    "whatsappMessage": "Olá! Preciso de suporte para acessar o Wi-Fi.",
+    "instagramUrl": "",
+    "facebookUrl": "",
+    "googleMapsUrl": ""
+  },
+  "badges": {
+    "showWifiSpeed": true,
+    "wifiSpeedText": "⭐ Fibra Óptica Hóspede VIP",
+    "showSecurityBadge": true,
+    "securityText": "🔒 Conexão WPA3 Segura",
+    "showConnectedCount": false,
+    "connectedCountNumber": "64"
+  },
+  "customCode": {
+    "customCss": ""
+  },
+  "bg": {
+    "type": "image",
+    "url": "/api/portal/bg?template=default&t=1781805722272"
+  },
+  "ad": {
+    "type": "video",
+    "mediaUrl": "/uploads/ad_1781809396452.mp4",
+    "targetUrl": "",
+    "items": [
+      {
+        "url": "/uploads/ad_media_1.jpeg",
+        "type": "image",
+        "targetUrl": ""
+      },
+      {
+        "url": "/uploads/ad_media_2.jpeg",
+        "type": "image",
+        "targetUrl": ""
+      },
+      {
+        "url": "/uploads/ad_media_3.JPG",
+        "type": "image",
+        "targetUrl": ""
+      },
+      {
+        "url": "",
+        "type": "image",
+        "targetUrl": ""
+      },
+      {
+        "url": "",
+        "type": "image",
+        "targetUrl": ""
+      }
+    ],
+    "timerEnabled": false,
+    "timerDuration": 5
+  },
+  "fields": {
+    "nameEnabled": true,
+    "nameRequired": true,
+    "phoneEnabled": true,
+    "phoneRequired": false,
+    "birthDateEnabled": true,
+    "birthDateRequired": false,
+    "emailEnabled": true,
+    "emailRequired": false,
+    "cpfEnabled": true,
+    "cpfRequired": false,
+    "genderEnabled": true,
+    "genderRequired": true,
+    "passwordEnabled": true,
+    "passwordRequired": true,
+    "customFieldEnabled": true,
+    "customFieldLabel": "Qula curso deseja ?",
+    "customFieldRequired": false,
+    "optInCoursesEnabled": true,
+    "optInCoursesLabel": "Eu aceito receber informações dos cursos"
+  },
+  "enabled": true,
+  "redirectUrl": "",
+  "registerButtonText": "Cadastre-se aqui",
+  "registerTitle": "Wi-Fi Grátis",
+  "registerSubtitle": "Cadastre-se abaixo para liberar o acesso à internet",
+  "registerSubmitText": "Cadastrar e Conectar",
+  "termsText": "Ao se cadastrar, você concorda com nossos Termos de Uso e Política de Privacidade.",
+  "trialEnabled": true,
+  "trialText": "Acesso de teste disponível, ",
+  "trialLinkText": "clique aqui",
+  "trialModalTitle": "Acesso de Teste",
+  "trialModalMessage": "Tem certeza de que deseja liberar o acesso grátis por 30 minutos?",
+  "trialModalConfirmText": "Sim, Conectar"
+}

@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import os from 'os';
+import path from 'path';
+import fs from 'fs';
+import { prisma } from '@/lib/prisma';
 import { getMikrotikClient, getSessionCredentials, MikrotikSessionError } from '@/lib/session';
 import { MikrotikAPI } from '@/lib/routeros';
 import { routerErrorResponse } from '@/lib/api-error';
@@ -354,19 +357,20 @@ export async function POST(request: Request) {
   // ── Step tracker ────────────────────────────────────────────────────────────
   type StepStatus = 'pending' | 'success' | 'failed' | 'skipped' | 'running';
   const steps: { name: string; label: string; status: StepStatus; message: string }[] = [
-    { name: 'wan_dhcp',      label: '🌐 WAN: Configurar cliente DHCP',               status: 'pending', message: '' },
-    { name: 'bridge_create', label: '🌉 Criar/Verificar Bridge LAN',                  status: 'pending', message: '' },
-    { name: 'admin_bypass',  label: '🔓 ARP + Bypass do Sistema Administrador',       status: 'pending', message: '' },
-    { name: 'set_ip',        label: '📍 Definir IP no Gateway',                       status: 'pending', message: '' },
-    { name: 'ip_pool',       label: '🏊 Pool de IPs para Clientes',                   status: 'pending', message: '' },
-    { name: 'dhcp_net',      label: '🌐 Rede DHCP',                                   status: 'pending', message: '' },
-    { name: 'dhcp_server',   label: '⚙️ Servidor DHCP',                              status: 'pending', message: '' },
-    { name: 'hs_profile',    label: '🛡️ Perfil do Servidor Hotspot',                 status: 'pending', message: '' },
-    { name: 'hs_server',     label: '📡 Servidor Hotspot',                            status: 'pending', message: '' },
-    { name: 'user_profile',  label: '👤 Perfil de Usuário Padrão',                   status: 'pending', message: '' },
-    { name: 'nat',           label: '🔀 NAT Masquerade via WAN',                      status: 'pending', message: '' },
-    { name: 'provision_signature', label: '✍️ Gravar Assinatura MikroGestor',        status: 'pending', message: '' },
-    { name: 'bridge_ports',  label: '🔌 Mover Portas LAN e Reiniciar Roteador',      status: 'pending', message: '' },
+    { name: 'wan_dhcp',      label: '[ REDE ] WAN: Configurar cliente DHCP',               status: 'pending', message: '' },
+    { name: 'bridge_create', label: '[ BRIDGE ] Criar/Verificar Bridge LAN',                  status: 'pending', message: '' },
+    { name: 'admin_bypass',  label: '[ ACESSO ] ARP + Bypass do Sistema Administrador',       status: 'pending', message: '' },
+    { name: 'set_ip',        label: '[ IP ] Definir IP no Gateway',                       status: 'pending', message: '' },
+    { name: 'ip_pool',       label: '[ POOL ] Pool de IPs para Clientes',                   status: 'pending', message: '' },
+    { name: 'dhcp_net',      label: '[ REDE ] Rede DHCP',                                   status: 'pending', message: '' },
+    { name: 'dhcp_server',   label: '[ CONFIG ] Servidor DHCP',                              status: 'pending', message: '' },
+    { name: 'hs_profile',    label: '[ FIREWALL ] Perfil do Servidor Hotspot',                 status: 'pending', message: '' },
+    { name: 'hs_server',     label: '[ HOTSPOT ] Servidor Hotspot',                            status: 'pending', message: '' },
+    { name: 'user_profile',  label: '[ PERFIL ] Perfil de Usuário Padrão',                   status: 'pending', message: '' },
+    { name: 'nat',           label: '[ NAT ] NAT Masquerade via WAN',                      status: 'pending', message: '' },
+    { name: 'update_media_urls', label: '[ MÍDIA ] Atualizar IP do Servidor nos Templates', status: 'pending', message: '' },
+    { name: 'provision_signature', label: '[ LOG ] Gravar Assinatura MikroGestor',        status: 'pending', message: '' },
+    { name: 'bridge_ports',  label: '[ CONEXÃO ] Mover Portas LAN e Reiniciar Roteador',      status: 'pending', message: '' },
   ];
 
   const ok    = (name: string, msg: string) => { const s = steps.find(x => x.name === name); if (s) { s.status = 'success'; s.message = msg; } };
@@ -571,6 +575,10 @@ export async function POST(request: Request) {
           updateParams['address-pool'] = POOL;
           needsUpdate = true;
         }
+        if (existingDhcp['add-arp'] !== 'yes' && existingDhcp['add-arp'] !== true) {
+          updateParams['add-arp'] = 'yes';
+          needsUpdate = true;
+        }
         if (needsUpdate) {
           await (mk as any).client?.menu('/ip/dhcp-server').where('.id', existingDhcp.id).update(updateParams);
           ok('dhcp_server', `Servidor DHCP "${existingDhcp.name}" reativado/atualizado em "${BRIDGE}".`);
@@ -662,10 +670,10 @@ export async function POST(request: Request) {
         });
 
         const statusMsg: Record<string, string> = {
-          created:      `✅ Servidor "${HS}" criado e ativo na interface "${BRIDGE}".`,
-          enabled:      `⚡ Servidor "${HS}" encontrado (desabilitado) — habilitado com sucesso.`,
-          already_active: `✓ Servidor hotspot em "${BRIDGE}" já está ativo.`,
-          updated:      `🔄 Servidor "${HS}" atualizado e ativo.`,
+          created:      `[ OK ] Servidor "${HS}" criado e ativo na interface "${BRIDGE}".`,
+          enabled:      `[ RAPIDO ] Servidor "${HS}" encontrado (desabilitado) — habilitado com sucesso.`,
+          already_active: `[ OK ] Servidor hotspot em "${BRIDGE}" já está ativo.`,
+          updated:      `[ REINICIANDO ] Servidor "${HS}" atualizado e ativo.`,
         };
 
         // Limpeza de outros servidores hotspot antigos
@@ -700,6 +708,45 @@ export async function POST(request: Request) {
     try {
       skip('nat', 'NAT Masquerade e regras de WAN são gerenciados manualmente.');
     } catch (e) { fail('nat', e); }
+
+    // Passo 11: Atualizar IP do Servidor para Mídias nos Templates
+    try {
+      const detectedServerIp = adminIp || '192.168.88.254';
+      const serverBaseUrl = `http://${detectedServerIp}`;
+      await prisma.systemConfig.upsert({
+        where: { key: 'SYSTEM_URL' },
+        update: { value: serverBaseUrl },
+        create: { key: 'SYSTEM_URL', value: serverBaseUrl }
+      });
+      
+      const hotspotDir = path.join(process.cwd(), 'hotspot');
+      if (fs.existsSync(hotspotDir)) {
+        const templates = fs.readdirSync(hotspotDir);
+        for (const t of templates) {
+          const cfgPath = path.join(hotspotDir, t, 'config.json');
+          if (fs.existsSync(cfgPath)) {
+            try {
+              const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+              cfg.systemUrl = serverBaseUrl;
+              fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2), 'utf8');
+            } catch (err) {}
+          }
+
+          const loginHtmlPath = path.join(hotspotDir, t, 'login.html');
+          if (fs.existsSync(loginHtmlPath)) {
+            try {
+              let html = fs.readFileSync(loginHtmlPath, 'utf8');
+              html = html.replace(/http:\/\/192\.168\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
+              html = html.replace(/http:\/\/10\.\d+\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
+              fs.writeFileSync(loginHtmlPath, html, 'utf8');
+            } catch (err) {}
+          }
+        }
+      }
+      ok('update_media_urls', `IP do servidor (${serverBaseUrl}) gravado e aplicado a todas as mídias dos templates.`);
+    } catch (e: any) {
+      warn('update_media_urls', `Falha ao atualizar IP de mídias: ${e?.message || e}`);
+    }
 
     // Passo 12: Gravar Assinatura
     try {

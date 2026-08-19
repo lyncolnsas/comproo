@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
 import RouterOffline from '@/components/RouterOffline';
+import StudioInspector, { StudioState } from '@/components/portal/StudioInspector';
+import { BrandConfig } from '@/components/portal/DynamicLogoEditor';
+import { Layers, Sparkles, Upload, Type, Eye, Check, Sliders, Palette } from 'lucide-react';
 
 const LEADS_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b'];
 
@@ -46,7 +49,270 @@ interface Colors {
   muted: string;
   blue: string; // Login button
   green: string; // Register button
+  trialButtonBg?: string;
+  trialButtonText?: string;
+  cardBg?: string;
+  cardBorder?: string;
+  inputBg?: string;
+  inputText?: string;
+  inputBorder?: string;
+  inputPlaceholder?: string;
+  loginButtonText?: string;
+  registerButtonText?: string;
+  glassOpacity: number; // 0–100 (%) transparency for glass effect
+  glassBlur: number;    // blur in px for backdrop-filter
 }
+
+interface EffectsConfig {
+  bgEffect: string;
+  bgEffectSpeed: 'slow' | 'normal' | 'fast';
+  cardShape: 'rounded' | 'square' | 'pill' | 'scifi-cut';
+  cardNoiseTexture: boolean;
+  cardGlowBorder: boolean;
+  cardTilt3d: boolean;
+  btnShimmer: boolean;
+  btnPulse: boolean;
+  titleGradient: boolean;
+}
+
+interface SocialConfig {
+  whatsappEnabled: boolean;
+  whatsappNumber: string;
+  whatsappMessage: string;
+  instagramUrl: string;
+  facebookUrl: string;
+  googleMapsUrl: string;
+}
+
+interface BadgesConfig {
+  showWifiSpeed: boolean;
+  wifiSpeedText: string;
+  showSecurityBadge: boolean;
+  securityText: string;
+  showConnectedCount: boolean;
+  connectedCountNumber: string;
+}
+
+interface CustomCodeConfig {
+  customCss: string;
+}
+
+const COLOR_PRESETS = [
+  {
+    name: 'Cyberpunk Neon',
+    icon: '⚡',
+    desc: 'Visual futurista escuro com ciano e roxo neon',
+    colors: {
+      brand: '#8b5cf6',
+      brandDark: '#6d28d9',
+      bg: '#090a0f',
+      ink: '#f8fafc',
+      muted: '#94a3b8',
+      blue: '#6366f1',
+      loginButtonText: '#ffffff',
+      green: '#06b6d4',
+      registerButtonText: '#090a0f',
+      trialButtonBg: '#ec4899',
+      trialButtonText: '#ffffff',
+      cardBg: '#12131f',
+      cardBorder: '#8b5cf6',
+      inputBg: '#18192b',
+      inputText: '#f8fafc',
+      inputBorder: '#3b3d60',
+      inputPlaceholder: '#64748b',
+      glassOpacity: 85,
+      glassBlur: 16
+    }
+  },
+  {
+    name: 'Ocean Sapphire',
+    icon: '🌊',
+    desc: 'Tons marinhos modernos com vidro fosco e azul royal',
+    colors: {
+      brand: '#0284c7',
+      brandDark: '#0369a1',
+      bg: '#0f172a',
+      ink: '#f8fafc',
+      muted: '#94a3b8',
+      blue: '#0284c7',
+      loginButtonText: '#ffffff',
+      green: '#14b8a6',
+      registerButtonText: '#ffffff',
+      trialButtonBg: '#38bdf8',
+      trialButtonText: '#0f172a',
+      cardBg: '#1e293b',
+      cardBorder: '#38bdf8',
+      inputBg: '#0f172a',
+      inputText: '#f8fafc',
+      inputBorder: '#334155',
+      inputPlaceholder: '#64748b',
+      glassOpacity: 90,
+      glassBlur: 12
+    }
+  },
+  {
+    name: 'Emerald Tech',
+    icon: '🍃',
+    desc: 'Verde esmeralda refinado e acabamento dark minimalista',
+    colors: {
+      brand: '#059669',
+      brandDark: '#047857',
+      bg: '#060d0a',
+      ink: '#f0fdf4',
+      muted: '#86efac',
+      blue: '#10b981',
+      loginButtonText: '#060d0a',
+      green: '#34d399',
+      registerButtonText: '#060d0a',
+      trialButtonBg: '#059669',
+      trialButtonText: '#ffffff',
+      cardBg: '#0c1a14',
+      cardBorder: '#059669',
+      inputBg: '#060d0a',
+      inputText: '#f0fdf4',
+      inputBorder: '#166534',
+      inputPlaceholder: '#4ade80',
+      glassOpacity: 90,
+      glassBlur: 14
+    }
+  },
+  {
+    name: 'Sunset Ember',
+    icon: '🔥',
+    desc: 'Gradiente quente de alta energia com âmbar e laranja',
+    colors: {
+      brand: '#ea580c',
+      brandDark: '#c2410c',
+      bg: '#180d08',
+      ink: '#fff7ed',
+      muted: '#fdba74',
+      blue: '#f97316',
+      loginButtonText: '#ffffff',
+      green: '#eab308',
+      registerButtonText: '#180d08',
+      trialButtonBg: '#fb923c',
+      trialButtonText: '#180d08',
+      cardBg: '#27140b',
+      cardBorder: '#ea580c',
+      inputBg: '#180d08',
+      inputText: '#fff7ed',
+      inputBorder: '#7c2d12',
+      inputPlaceholder: '#fb923c',
+      glassOpacity: 88,
+      glassBlur: 10
+    }
+  },
+  {
+    name: 'Luxury Gold',
+    icon: '👑',
+    desc: 'Preto piano premium e detalhes metálicos em dourado nobre',
+    colors: {
+      brand: '#d97706',
+      brandDark: '#b45309',
+      bg: '#0a0a0a',
+      ink: '#fef3c7',
+      muted: '#fde68a',
+      blue: '#d97706',
+      loginButtonText: '#000000',
+      green: '#eab308',
+      registerButtonText: '#000000',
+      trialButtonBg: '#f59e0b',
+      trialButtonText: '#000000',
+      cardBg: '#141414',
+      cardBorder: '#d97706',
+      inputBg: '#0a0a0a',
+      inputText: '#fef3c7',
+      inputBorder: '#78350f',
+      inputPlaceholder: '#d97706',
+      glassOpacity: 92,
+      glassBlur: 15
+    }
+  },
+  {
+    name: 'Clean Corporate',
+    icon: '⚪',
+    desc: 'Visual corporativo claro, cristalino e de alta legibilidade',
+    colors: {
+      brand: '#2563eb',
+      brandDark: '#1d4ed8',
+      bg: '#f8fafc',
+      ink: '#0f172a',
+      muted: '#64748b',
+      blue: '#2563eb',
+      loginButtonText: '#ffffff',
+      green: '#10b981',
+      registerButtonText: '#ffffff',
+      trialButtonBg: '#3b82f6',
+      trialButtonText: '#ffffff',
+      cardBg: '#ffffff',
+      cardBorder: '#e2e8f0',
+      inputBg: '#f8fafc',
+      inputText: '#0f172a',
+      inputBorder: '#cbd5e1',
+      inputPlaceholder: '#94a3b8',
+      glassOpacity: 100,
+      glassBlur: 0
+    }
+  },
+  {
+    name: 'Dark Violet Pro',
+    icon: '🔮',
+    desc: 'Design sofisticado em roxo escuro com excelente contraste',
+    colors: {
+      brand: '#7c3aed',
+      brandDark: '#6d28d9',
+      bg: '#0c0a17',
+      ink: '#f5f3ff',
+      muted: '#c4b5fd',
+      blue: '#7c3aed',
+      loginButtonText: '#ffffff',
+      green: '#a855f7',
+      registerButtonText: '#ffffff',
+      trialButtonBg: '#8b5cf6',
+      trialButtonText: '#ffffff',
+      cardBg: '#161226',
+      cardBorder: '#7c3aed',
+      inputBg: '#0e0b1c',
+      inputText: '#f5f3ff',
+      inputBorder: '#4c1d95',
+      inputPlaceholder: '#8b5cf6',
+      glassOpacity: 88,
+      glassBlur: 14
+    }
+  }
+];
+
+const NICHE_EFFECTS = [
+  { id: 'none', icon: '🚫', name: 'Nenhum', niche: 'Fundo Padrão' },
+  { id: 'cardio-pulse', icon: '🏋️', name: 'Cardio Pulse & Fitness', niche: 'Academia & Crossfit' },
+  { id: 'divine-rays', icon: '⛪', name: 'Raios Divinos Celestial', niche: 'Igrejas & Templos' },
+  { id: 'medical-vital', icon: '🏥', name: 'Vital Monitor & Saúde', niche: 'Clínicas & Consultórios' },
+  { id: 'woodfire-embers', icon: '🍕', name: 'Brasas Forneria & Pizza', niche: 'Pizzarias & Churrascarias' },
+  { id: 'luxury-bubbles', icon: '🥂', name: 'Champagne & Hotel VIP', niche: 'Hotéis & Pousadas' },
+  { id: 'stadium-lights', icon: '⚽', name: 'Holofotes de Estádio', niche: 'Futebol & Arenas' },
+  { id: 'digital-ocean', icon: '🌊', name: 'Ciber Oceano & Cloud', niche: 'Startups & Data Centers' },
+  { id: 'cinema-marquee', icon: '🍿', name: 'Cinema & Marquee Retrô', niche: 'Cinemas & Entretenimento' },
+  { id: 'chalk-constellation', icon: '🎓', name: 'Constelação Acadêmica', niche: 'Escolas & Cursos' },
+  { id: 'traffic-radar', icon: '📡', name: 'Radar Tático & NOC', niche: 'Provedores & Redes' },
+  { id: 'hex-shield', icon: '🛡️', name: 'Escudo Hex Cibersegurança', niche: 'Segurança & Defesa' },
+  { id: 'lock-crypto', icon: '🔐', name: 'Criptografia WPA3', niche: 'Hotspot Seguro' },
+  { id: 'fiber-optic', icon: '💡', name: 'Fótons Fibra Óptica', niche: 'Telecom & ISP' },
+  { id: 'synthwave-arcade', icon: '🕹️', name: 'Synthwave 80s Sunset', niche: 'Gamers & Lojas Geek' },
+  { id: 'barrio-sunset', icon: '🌆', name: 'Sunset Urbano Bokeh', niche: 'Cafés & Bistrôs' },
+  { id: 'community-bubbles', icon: '🫧', name: 'Bolhas Comunitárias', niche: 'Praças & Coworking' },
+  { id: 'workspace-ribbons', icon: '🏛️', name: 'Fitas Minimal Coworking', niche: 'Escritórios & Coworking' },
+  { id: 'sunset-glass', icon: '🌇', name: 'Lounge Sunset Âmbar', niche: 'Bares & Lounges' },
+  { id: 'nougat-fluid', icon: '📱', name: 'Material Flow Orgânico', niche: 'Mobile & Tech' },
+  { id: 'prisma-holo', icon: '🌈', name: 'Prisma Holográfico Laser', niche: 'Moda & Estilo' },
+  { id: 'aurora', icon: '🌌', name: 'Aurora Borealis', niche: 'Geral Fluido' },
+  { id: 'particles', icon: '⚡', name: 'Constelação Cyber', niche: 'Tech Geral' },
+  { id: 'matrix', icon: '💻', name: 'Matrix Digital Rain', niche: 'Hacker & Dev' },
+  { id: 'cyber-grid', icon: '🕹️', name: 'Grid 3D Synthwave', niche: 'Retro Gaming' },
+  { id: 'floating-orbs', icon: '🔮', name: 'Orbes de Vidro', niche: 'Design Moderno' },
+  { id: 'fireflies', icon: '✨', name: 'Vaga-lumes Neon', niche: 'Natureza & Parques' },
+  { id: 'warp-stars', icon: '🚀', name: 'Warp Stars 3D', niche: 'Espaço & Velocidade' },
+  { id: 'wave-mesh', icon: '🌊', name: 'Ondas Fluidas', niche: 'Gradiente Cromático' },
+];
 
 interface AdItem {
   url: string;
@@ -61,6 +327,11 @@ interface AdConfig {
   items?: AdItem[];
   timerEnabled?: boolean;
   timerDuration?: number;
+}
+
+interface BgConfig {
+  type: 'default' | 'image' | 'video';
+  url: string;
 }
 
 interface FieldsConfig {
@@ -81,6 +352,8 @@ interface FieldsConfig {
   customFieldEnabled: boolean;
   customFieldLabel: string;
   customFieldRequired: boolean;
+  optInCoursesEnabled: boolean;
+  optInCoursesLabel: string;
 }
 
 interface SimulatorVideoProps {
@@ -125,6 +398,17 @@ export default function PortalEditor() {
   const [leadsData, setLeadsData] = useState<any>(null);
   const [leadsLoading, setLeadsLoading] = useState(true);
   const [leadsError, setLeadsError] = useState('');
+  
+  // --- DEPLOY MODAL STATE ---
+  const [deployModal, setDeployModal] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  
+  useEffect(() => {
+    if (deployModal) {
+      const timer = setTimeout(() => setDeployModal(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [deployModal]);
+
   const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
   const [leadsMounted, setLeadsMounted] = useState(false);
 
@@ -531,18 +815,59 @@ export default function PortalEditor() {
 
   // App settings states
   // App settings states
+  const [template, setTemplate] = useState('default');
+
+  // Load saved template on mount, prioritando o último template oficialmente subido ao MikroTik (SystemConfig)
+  useEffect(() => {
+    const initTemplate = async () => {
+      try {
+        const res = await fetch('/api/portal/templates');
+        const data = await res.json();
+        if (data.success && data.lastDeployedTemplate) {
+          setTemplate(data.lastDeployedTemplate);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('mikrogestor_last_template', data.lastDeployedTemplate);
+          }
+          return;
+        }
+      } catch (err) {
+        console.warn('Could not fetch last deployed template from API, falling back to localStorage:', err);
+      }
+      
+      if (typeof window !== 'undefined') {
+        const savedTemplate = localStorage.getItem('mikrogestor_last_template');
+        if (savedTemplate) {
+          setTemplate(savedTemplate);
+        }
+      }
+    };
+    initTemplate();
+  }, []);
   const [businessName, setBusinessName] = useState('Super Wi-Fi');
   const [message, setMessage] = useState('Bem-vindo à nossa rede gratuita. Insira o seu voucher para navegar.');
   const [systemUrl, setSystemUrl] = useState('');
   const [ftpPort, setFtpPort] = useState('21');
+  const [activeColorCategory, setActiveColorCategory] = useState<'presets' | 'identity' | 'card' | 'inputs' | 'buttons' | 'typography'>('presets');
   const [colors, setColors] = useState<Colors>({
-    brand: '#00897b',
-    brandDark: '#00796b',
-    bg: '#fafafa',
-    ink: '#0b1220',
-    muted: '#6b7280',
+    brand: '#2563eb',
+    brandDark: '#1d4ed8',
+    bg: '#ffffff',
+    ink: '#0f172a',
+    muted: '#64748b',
     blue: '#2563eb',
-    green: '#10b981'
+    green: '#10b981',
+    trialButtonBg: '#1E90FF',
+    trialButtonText: '#FFFFFF',
+    cardBg: '#ffffff',
+    cardBorder: 'rgba(0,0,0,0.08)',
+    inputBg: '#ffffff',
+    inputText: '#0f172a',
+    inputBorder: '#e2e8f0',
+    inputPlaceholder: '#94a3b8',
+    loginButtonText: '#ffffff',
+    registerButtonText: '#ffffff',
+    glassOpacity: 100,
+    glassBlur: 0
   });
   const [ad, setAd] = useState<AdConfig>({
     type: 'none',
@@ -552,6 +877,11 @@ export default function PortalEditor() {
     timerEnabled: false,
     timerDuration: 5
   });
+  
+  const [bg, setBg] = useState<BgConfig>({
+    type: 'default',
+    url: ''
+  });
   const [showSimulatedAd, setShowSimulatedAd] = useState(true);
   const [simulatedTimer, setSimulatedTimer] = useState(0);
   const [simulatedActiveIndex, setSimulatedActiveIndex] = useState(0);
@@ -559,6 +889,7 @@ export default function PortalEditor() {
   // Customizable registration texts and global enabled states
   const [enabled, setEnabled] = useState(true);
   const [redirectUrl, setRedirectUrl] = useState('');
+  const [loginButtonLabel, setLoginButtonLabel] = useState('Conectar');
   const [registerButtonText, setRegisterButtonText] = useState('Cadastre-se aqui');
   const [registerTitle, setRegisterTitle] = useState('Wi-Fi Grátis');
   const [registerSubtitle, setRegisterSubtitle] = useState('Cadastre-se abaixo para liberar o acesso à internet');
@@ -590,11 +921,90 @@ export default function PortalEditor() {
     passwordRequired: true,
     customFieldEnabled: false,
     customFieldLabel: 'Como nos conheceu?',
-    customFieldRequired: false
+    customFieldRequired: false,
+    optInCoursesEnabled: true,
+    optInCoursesLabel: 'Eu aceito receber informações dos cursos'
   });
 
+  // Visual Effects State
+  const [effects, setEffects] = useState<EffectsConfig>({
+    bgEffect: 'none',
+    bgEffectSpeed: 'normal',
+    cardShape: 'rounded',
+    cardNoiseTexture: false,
+    cardGlowBorder: false,
+    cardTilt3d: false,
+    btnShimmer: true,
+    btnPulse: false,
+    titleGradient: false,
+  });
+
+  // Social & Badges & Pro Code States
+  const [social, setSocial] = useState<SocialConfig>({
+    whatsappEnabled: false,
+    whatsappNumber: '',
+    whatsappMessage: 'Olá! Preciso de suporte para acessar o Wi-Fi.',
+    instagramUrl: '',
+    facebookUrl: '',
+    googleMapsUrl: '',
+  });
+
+  const [badges, setBadges] = useState<BadgesConfig>({
+    showWifiSpeed: true,
+    wifiSpeedText: '🚀 Turbo Launch 5G',
+    showSecurityBadge: true,
+    securityText: '🔒 Ultra Fast Portal',
+    showConnectedCount: false,
+    connectedCountNumber: '42',
+  });
+
+  const [customCode, setCustomCode] = useState<CustomCodeConfig>({
+    customCss: '',
+  });
+
+  const [studio, setStudio] = useState<StudioState>({
+    activeComponent: 'submit_button',
+    fontFamily: 'Inter',
+    titleFontSize: 22,
+    titleFontWeight: '700',
+    titleLineHeight: 1.2,
+    titleLetterSpacing: 0,
+    titleAlign: 'center',
+    titleItalic: false,
+    titleUnderline: false,
+    btnFontSize: 14,
+    btnFontWeight: '600',
+    btnLetterSpacing: 0.5,
+    btnHeight: 46,
+    btnPaddingTop: 12,
+    btnPaddingRight: 20,
+    btnPaddingBottom: 12,
+    btnPaddingLeft: 20,
+    btnRadiusTL: 12,
+    btnRadiusTR: 12,
+    btnRadiusBR: 12,
+    btnRadiusBL: 12,
+    btnBorderWidth: 0,
+    cardRadiusTL: 20,
+    cardRadiusTR: 20,
+    cardRadiusBR: 20,
+    cardRadiusBL: 20,
+    cardPaddingTop: 24,
+    cardPaddingRight: 24,
+    cardPaddingBottom: 24,
+    cardPaddingLeft: 24,
+    cardBorderWidth: 1,
+    cardBorderStyle: 'solid',
+    cardGap: 16,
+    inputHeight: 44,
+    inputRadius: 10,
+    inputBorderWidth: 1
+  });
+
+  const [viewportMode, setViewportMode] = useState<'mobile' | 'tablet' | 'desktop'>('mobile');
+
   // UI/Interactive states
-  const [activeTab, setActiveTab] = useState<'design' | 'logo' | 'fields' | 'ad' | 'ftp'>('design');
+  const [activeTab, setActiveTab] = useState<'studio' | 'fields' | 'ad' | 'custom' | 'ftp'>('studio');
   const [previewScreen, setPreviewScreen] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
   const [deploying, setDeploying] = useState(false);
@@ -603,10 +1013,169 @@ export default function PortalEditor() {
   
   // Set client-side cache buster safely on client mount after hydration
   useEffect(() => {
-    setLogoPreviewUrl('/api/portal/logo?t=' + Date.now());
+    setLogoPreviewUrl(`/api/portal/logo?template=${template}&t=` + Date.now());
+  }, [template]);
+
+  const [brand, setBrand] = useState<BrandConfig>({
+    headerStyle: 'hidden',
+    displayMode: 'both',
+    logoBg: 'none',
+    logoBgCustomColor: '#ffffff',
+    logoShape: 'rounded',
+    logoPadding: 8,
+    logoSize: 100,
+    logoBorder: false,
+    logoShadow: true,
+    titleText: 'Super Wi-Fi',
+    subtitleText: '',
+    fontFamily: 'Outfit',
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: 0,
+    lineHeight: 1.2,
+    textColor: '#ffffff',
+    textAlign: 'center',
+    textTransform: 'none',
+    textEffect: 'gradient-metal',
+    entranceAnimation: 'fade-zoom',
+    animationDuration: 1.2,
+    animationDelay: 0.1,
+    animationEasing: 'smooth',
+    continuousEffect: 'none',
+    taglineFontFamily: 'Outfit',
+    taglineFontSize: 12,
+    taglineColor: '#94a3b8',
+    taglineLetterSpacing: 0,
+    badgeStyle: 'none'
+  });
+
+  const handleTriggerReplay = useCallback(() => {
+    const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({ type: 'REPLAY_ANIMATION' }, '*');
+    }
   }, []);
+
+  // Sync configuration to iframe preview
+  const broadcastLivePreview = useCallback(() => {
+    const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        type: 'LIVE_PREVIEW',
+        colors,
+        bg,
+        effects,
+        studio,
+        brand,
+        social,
+        badges,
+        customCode,
+        enabled,
+        loginButtonLabel,
+        registerButtonText,
+        businessName,
+        message,
+        trialEnabled,
+        trialText,
+        trialLinkText,
+        trialModalTitle,
+        trialModalMsg: trialModalMessage,
+        trialModalCancelText,
+        trialModalConfirmText,
+        fields,
+        registerTitle,
+        registerSubtitle,
+        registerSubmitText,
+        termsText
+      }, '*');
+    }
+  }, [colors, bg, effects, studio, brand, social, badges, customCode, enabled, loginButtonLabel, registerButtonText, businessName, message, trialEnabled, trialText, trialLinkText, trialModalTitle, trialModalMessage, trialModalCancelText, trialModalConfirmText, fields, registerTitle, registerSubtitle, registerSubmitText, termsText]);
+
+  useEffect(() => {
+    broadcastLivePreview();
+  }, [broadcastLivePreview]);
+
+  useEffect(() => {
+    const handleReadyHandshake = (event: MessageEvent) => {
+      if (event.data?.type === 'IFRAME_READY') {
+        broadcastLivePreview();
+      }
+    };
+    window.addEventListener('message', handleReadyHandshake);
+    return () => window.removeEventListener('message', handleReadyHandshake);
+  }, [broadcastLivePreview]);
+
+  // Live Inspector (Raio-X) State
+  interface InspectedElementInfo {
+    target: string;
+    cardId: string;
+    title: string;
+    editableProps?: string[];
+  }
+
+  const [inspectedElement, setInspectedElement] = useState<InspectedElementInfo | null>(null);
+  const [hoveredCardTarget, setHoveredCardTarget] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleInspectorMessage = (event: MessageEvent) => {
+      if (!event.data) return;
+      if (event.data.type === 'PREVIEW_ELEMENT_HOVER') {
+        setInspectedElement({
+          target: event.data.target,
+          cardId: event.data.cardId,
+          title: event.data.title,
+          editableProps: event.data.editableProps || []
+        });
+      } else if (event.data.type === 'PREVIEW_ELEMENT_LEAVE') {
+        setInspectedElement(null);
+      } else if (event.data.type === 'PREVIEW_ELEMENT_CLICK') {
+        const cardId = event.data.cardId;
+        if (cardId === 'fields') {
+          setActiveTab('fields');
+          setPreviewScreen('register');
+        } else if (cardId === 'ad') {
+          setActiveTab('ad');
+        } else {
+          setActiveTab('studio');
+          setPreviewScreen('login');
+          setTimeout(() => {
+            const cardEl = document.getElementById('card-' + cardId);
+            if (cardEl) {
+              cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              cardEl.classList.remove('editor-card-active-flash');
+              void cardEl.offsetWidth;
+              cardEl.classList.add('editor-card-active-flash');
+              setTimeout(() => cardEl.classList.remove('editor-card-active-flash'), 2500);
+
+              // Auto-focus first input/select in the selected card
+              const focusEl = cardEl.querySelector('input:not([type="checkbox"]), select') as HTMLElement;
+              if (focusEl) {
+                focusEl.focus();
+              }
+            }
+          }, 80);
+        }
+      }
+    };
+
+    window.addEventListener('message', handleInspectorMessage);
+    return () => window.removeEventListener('message', handleInspectorMessage);
+  }, []);
+
+  const handleCardHover = useCallback((target: string | null) => {
+    setHoveredCardTarget(target);
+    const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        type: target ? 'INSPECTOR_HOVER_CARD' : 'INSPECTOR_CLEAR',
+        target
+      }, '*');
+    }
+  }, []);
+
   const [adUploadLoading, setAdUploadLoading] = useState(false);
   const [logoUploadLoading, setLogoUploadLoading] = useState(false);
+  const [bgUploadLoading, setBgUploadLoading] = useState(false);
   const [simulatorMuted, setSimulatorMuted] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -618,7 +1187,7 @@ export default function PortalEditor() {
     const loadConfig = async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/portal/config');
+        const res = await fetch(`/api/portal/config?template=${template}`);
         const data = await res.json();
         if (data.success && data.config) {
           const c = data.config;
@@ -626,7 +1195,14 @@ export default function PortalEditor() {
           if (c.message) setMessage(c.message);
           if (c.systemUrl) setSystemUrl(c.systemUrl);
           if (c.colors) setColors(prev => ({ ...prev, ...c.colors }));
+          if (c.effects) setEffects(prev => ({ ...prev, ...c.effects }));
+          if (c.social) setSocial(prev => ({ ...prev, ...c.social }));
+          if (c.badges) setBadges(prev => ({ ...prev, ...c.badges }));
+          if (c.customCode) setCustomCode(prev => ({ ...prev, ...c.customCode }));
+          if (c.studio) setStudio(prev => ({ ...prev, ...c.studio }));
+          if (c.brand) setBrand(prev => ({ ...prev, ...c.brand }));
           if (c.ad) setAd(prev => ({ ...prev, ...c.ad }));
+          if (c.bg) setBg(prev => ({ ...prev, ...c.bg }));
           if (c.fields) setFields(prev => ({ ...prev, ...c.fields }));
           
           if (c.enabled !== undefined) setEnabled(c.enabled);
@@ -666,7 +1242,7 @@ export default function PortalEditor() {
 
     loadConfig();
     fetchServerIp();
-  }, []);
+  }, [template]);
 
   // Reset simulated ad preview on ad or tab change
   useEffect(() => {
@@ -746,6 +1322,7 @@ export default function PortalEditor() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', 'logo');
+    formData.append('template', template);
 
     try {
       const res = await fetch('/api/portal/upload', {
@@ -754,7 +1331,7 @@ export default function PortalEditor() {
       });
       const data = await res.json();
       if (data.success) {
-        setLogoPreviewUrl('/api/portal/logo?t=' + Date.now());
+        setLogoPreviewUrl(`/api/portal/logo?template=${template}&t=` + Date.now());
         alert('Logo atualizada com sucesso!');
       } else {
         alert('Erro ao enviar logo: ' + data.message);
@@ -767,6 +1344,74 @@ export default function PortalEditor() {
     }
   };
 
+  // Upload Bg handler (Supports video up to 35MB and image up to 10MB)
+  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isVideo = file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.webm') || file.type.startsWith('video/');
+    const maxLimit = isVideo ? 35 * 1024 * 1024 : 10 * 1024 * 1024;
+
+    if (file.size > maxLimit) {
+      alert(`O arquivo excede o limite máximo de ${isVideo ? '35 MB para vídeos' : '10 MB para imagens'}.`);
+      return;
+    }
+
+    setBgUploadLoading(true);
+
+    try {
+      const res = await fetch(`/api/portal/upload?type=bg&template=${template}&filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file
+      });
+      const data = await res.json();
+      if (data.success && data.fileUrl) {
+        const newBg: BgConfig = {
+          type: isVideo ? 'video' : 'image',
+          url: data.fileUrl + '?t=' + Date.now()
+        };
+        setBg(newBg);
+        alert('Mídia de fundo enviada e ativada com sucesso!');
+      } else {
+        alert('Erro ao enviar fundo: ' + (data.message || 'Falha no servidor.'));
+      }
+    } catch (err: any) {
+      alert('Falha ao enviar arquivo: ' + (err?.message || 'Erro de conexão.'));
+    } finally {
+      setBgUploadLoading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  // Remove Bg media from server and disk to free space
+  const handleBgRemove = async () => {
+    if (!confirm('Deseja realmente remover a mídia de fundo e apagar o arquivo do servidor para liberar espaço?')) {
+      return;
+    }
+
+    setBgUploadLoading(true);
+    try {
+      const res = await fetch(`/api/portal/upload?type=bg&template=${template}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBg({
+          type: 'default',
+          url: ''
+        });
+        alert(data.message || 'Mídia removida com sucesso!');
+      } else {
+        alert('Erro ao remover mídia: ' + data.message);
+      }
+    } catch (err: any) {
+      alert('Falha ao remover mídia: ' + (err?.message || 'Erro de rede.'));
+    } finally {
+      setBgUploadLoading(false);
+    }
+  };
+
   // Upload Ad Image handler
   const handleAdUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -775,7 +1420,7 @@ export default function PortalEditor() {
     setAdUploadLoading(true);
 
     try {
-      const res = await fetch(`/api/portal/upload?type=ad&filename=${encodeURIComponent(file.name)}`, {
+      const res = await fetch(`/api/portal/upload?type=ad&template=${template}&filename=${encodeURIComponent(file.name)}`, {
         method: 'POST',
         headers: {
           'Content-Type': file.type || 'application/octet-stream'
@@ -808,7 +1453,7 @@ export default function PortalEditor() {
     setAdUploadLoading(true);
 
     try {
-      const res = await fetch(`/api/portal/upload?type=ad&filename=${encodeURIComponent(file.name)}`, {
+      const res = await fetch(`/api/portal/upload?type=ad&template=${template}&filename=${encodeURIComponent(file.name)}`, {
         method: 'POST',
         headers: {
           'Content-Type': file.type || 'application/octet-stream'
@@ -841,7 +1486,7 @@ export default function PortalEditor() {
     setAdUploadLoading(true);
 
     try {
-      const res = await fetch(`/api/portal/upload?type=ad&slot=${slot}&filename=${encodeURIComponent(file.name)}`, {
+      const res = await fetch(`/api/portal/upload?type=ad&slot=${slot}&template=${template}&filename=${encodeURIComponent(file.name)}`, {
         method: 'POST',
         headers: {
           'Content-Type': file.type || 'application/octet-stream'
@@ -914,7 +1559,7 @@ export default function PortalEditor() {
   const handleCleanUploads = async () => {
     setAdUploadLoading(true);
     try {
-      const res = await fetch('/api/portal/upload', {
+      const res = await fetch(`/api/portal/upload?template=${template}`, {
         method: 'DELETE'
       });
       const data = await res.json();
@@ -934,7 +1579,7 @@ export default function PortalEditor() {
   const handleSaveConfig = async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/portal/config', {
+      const res = await fetch(`/api/portal/config?template=${template}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -942,6 +1587,13 @@ export default function PortalEditor() {
           message,
           systemUrl,
           colors,
+          effects,
+          studio,
+          brand,
+          social,
+          badges,
+          customCode,
+          bg,
           ad,
           fields,
           enabled,
@@ -983,7 +1635,7 @@ export default function PortalEditor() {
 
     try {
       // 1. Save locally first to compile HTML/CSS
-      const saveRes = await fetch('/api/portal/config', {
+      const saveRes = await fetch(`/api/portal/config?template=${template}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -991,6 +1643,13 @@ export default function PortalEditor() {
           message,
           systemUrl,
           colors,
+          effects,
+          studio,
+          brand,
+          social,
+          badges,
+          customCode,
+          bg,
           ad,
           fields,
           enabled,
@@ -1011,7 +1670,7 @@ export default function PortalEditor() {
       });
       const saveData = await saveRes.json();
       if (!saveData.success) {
-        alert('Falha ao salvar configurações locais. Deploy cancelado.');
+        setDeployModal({ type: 'error', message: 'Falha ao salvar configurações locais. Deploy cancelado.' });
         setDeploying(false);
         return;
       }
@@ -1020,17 +1679,17 @@ export default function PortalEditor() {
       const res = await fetch('/api/portal/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ftpPort })
+        body: JSON.stringify({ ftpPort, template })
       });
       const data = await res.json();
 
       if (data.success) {
-        alert(data.message);
+        setDeployModal({ type: 'success', message: data.message });
       } else {
-        alert('Erro no Deploy: ' + data.message);
+        setDeployModal({ type: 'error', message: 'Erro no Deploy: ' + data.message });
       }
     } catch (err) {
-      alert('Erro na comunicação com a API de Deploy.');
+      setDeployModal({ type: 'error', message: 'Erro na comunicação com a API de Deploy.' });
     } finally {
       setDeploying(false);
     }
@@ -1272,25 +1931,17 @@ export default function PortalEditor() {
             {/* Tabs Selector */}
             <div className="flex flex-wrap gap-2 p-3 bg-[#0a0a18]/20 border-b border-[#0a0a18] overflow-x-auto">
               <button 
-                onClick={() => setActiveTab('design')}
+                onClick={() => { setActiveTab('studio'); setPreviewScreen('login'); }}
                 type="button"
                 className={`retro-btn text-xs py-1.5 px-3 ${
-                  activeTab === 'design' ? 'retro-btn-primary' : 'retro-btn-dark'
+                  activeTab === 'studio' ? 'retro-btn-primary' : 'retro-btn-dark'
                 }`}
               >
-                🎨 Cores & Textos
+                🎨 Studio Inspector (Figma UI)
               </button>
+
               <button 
-                onClick={() => setActiveTab('logo')}
-                type="button"
-                className={`retro-btn text-xs py-1.5 px-3 ${
-                  activeTab === 'logo' ? 'retro-btn-primary' : 'retro-btn-dark'
-                }`}
-              >
-                👤 Logo do Hotspot
-              </button>
-              <button 
-                onClick={() => setActiveTab('fields')}
+                onClick={() => { setActiveTab('fields'); setPreviewScreen('register'); }}
                 type="button"
                 className={`retro-btn text-xs py-1.5 px-3 ${
                   activeTab === 'fields' ? 'retro-btn-primary' : 'retro-btn-dark'
@@ -1298,17 +1949,29 @@ export default function PortalEditor() {
               >
                 📋 Form de Cadastro
               </button>
+
               <button 
-                onClick={() => setActiveTab('ad')}
+                onClick={() => { setActiveTab('ad'); setPreviewScreen('login'); }}
                 type="button"
                 className={`retro-btn text-xs py-1.5 px-3 ${
                   activeTab === 'ad' ? 'retro-btn-primary' : 'retro-btn-dark'
                 }`}
               >
-                📢 Publicidade
+                📢 Publicidade & Mídia
               </button>
+
               <button 
-                onClick={() => setActiveTab('ftp')}
+                onClick={() => { setActiveTab('custom'); setPreviewScreen('login'); }}
+                type="button"
+                className={`retro-btn text-xs py-1.5 px-3 ${
+                  activeTab === 'custom' ? 'retro-btn-primary' : 'retro-btn-dark'
+                }`}
+              >
+                💻 CSS Pro
+              </button>
+
+              <button 
+                onClick={() => { setActiveTab('ftp'); setPreviewScreen('login'); }}
                 type="button"
                 className={`retro-btn text-xs py-1.5 px-3 ${
                   activeTab === 'ftp' ? 'retro-btn-primary' : 'retro-btn-dark'
@@ -1319,574 +1982,605 @@ export default function PortalEditor() {
             </div>
 
             {/* Tab Contents */}
-            <div className="p-8 flex-1 min-h-[460px]">
+            <div className="p-4 flex-1 min-h-[460px] spotlight-container">
               
-              {/* TAB 1: DESIGN & CORES */}
-              {activeTab === 'design' && (
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Nome do Estabelecimento</label>
-                    <input 
-                      type="text" 
-                      value={businessName} 
-                      onChange={(e) => setBusinessName(e.target.value)} 
-                      placeholder="Ex: Hotel Atlântico, Restaurante Central"
-                      className="retro-input w-full px-4 py-3 bg-slate-950 text-emerald-400 border border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all" 
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Mensagem de Boas-Vindas</label>
-                    <textarea 
-                      value={message} 
-                      onChange={(e) => setMessage(e.target.value)} 
-                      placeholder="Instruções de acesso para o seu usuário..."
-                      className="retro-input w-full px-4 py-3 bg-slate-950 text-emerald-400 border border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none" 
-                      rows={3}
-                    ></textarea>
-                  </div>
-
-                  <div className="border-t border-slate-800 pt-6">
-                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Paleta de Cores do Portal</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      
-                      {/* Brand Color */}
-                      <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-850 flex items-center justify-between shadow-inner">
-                        <div>
-                          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wide">Cor Principal</span>
-                          <span className="text-[10px] text-emerald-400 font-mono">{colors.brand}</span>
-                        </div>
-                        <input 
-                          type="color" 
-                          value={colors.brand}
-                          onChange={(e) => handleColorChange('brand', e.target.value)}
-                          className="w-10 h-10 border-0 rounded cursor-pointer p-0 bg-transparent"
-                        />
-                      </div>
-
-                      {/* Brand Dark Color */}
-                      <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-850 flex items-center justify-between shadow-inner">
-                        <div>
-                          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wide">Principal Escura (Hover/Sombra)</span>
-                          <span className="text-[10px] text-emerald-400 font-mono">{colors.brandDark}</span>
-                        </div>
-                        <input 
-                          type="color" 
-                          value={colors.brandDark}
-                          onChange={(e) => handleColorChange('brandDark', e.target.value)}
-                          className="w-10 h-10 border-0 rounded cursor-pointer p-0 bg-transparent"
-                        />
-                      </div>
-
-                      {/* Body Background */}
-                      <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-850 flex items-center justify-between shadow-inner">
-                        <div>
-                          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wide">Cor de Fundo da Página</span>
-                          <span className="text-[10px] text-emerald-400 font-mono">{colors.bg}</span>
-                        </div>
-                        <input 
-                          type="color" 
-                          value={colors.bg}
-                          onChange={(e) => handleColorChange('bg', e.target.value)}
-                          className="w-10 h-10 border-0 rounded cursor-pointer p-0 bg-transparent"
-                        />
-                      </div>
-
-                      {/* Button Login (Blue) */}
-                      <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-850 flex items-center justify-between shadow-inner">
-                        <div>
-                          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wide">Botão "Login"</span>
-                          <span className="text-[10px] text-emerald-400 font-mono">{colors.blue}</span>
-                        </div>
-                        <input 
-                          type="color" 
-                          value={colors.blue}
-                          onChange={(e) => handleColorChange('blue', e.target.value)}
-                          className="w-10 h-10 border-0 rounded cursor-pointer p-0 bg-transparent"
-                        />
-                      </div>
-
-                      {/* Button Register (Green) */}
-                      <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-850 flex items-center justify-between shadow-inner">
-                        <div>
-                          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wide">Botão "Cadastro"</span>
-                          <span className="text-[10px] text-emerald-400 font-mono">{colors.green}</span>
-                        </div>
-                        <input 
-                          type="color" 
-                          value={colors.green}
-                          onChange={(e) => handleColorChange('green', e.target.value)}
-                          className="w-10 h-10 border-0 rounded cursor-pointer p-0 bg-transparent"
-                        />
-                      </div>
-
-                      {/* Text/Ink Color */}
-                      <div className="bg-slate-900 p-3.5 rounded-xl border border-slate-850 flex items-center justify-between shadow-inner">
-                        <div>
-                          <span className="block text-xs font-bold text-slate-400 uppercase tracking-wide">Texto Principal</span>
-                          <span className="text-[10px] text-emerald-400 font-mono">{colors.ink}</span>
-                        </div>
-                        <input 
-                          type="color" 
-                          value={colors.ink}
-                          onChange={(e) => handleColorChange('ink', e.target.value)}
-                          className="w-10 h-10 border-0 rounded cursor-pointer p-0 bg-transparent"
-                        />
-                      </div>
-
-                    </div>
-                  </div>
+              {/* TAB: STUDIO INSPECTOR */}
+              {activeTab === 'studio' && (
+                <div className="space-y-6 animate-fade-in">
+                  <StudioInspector
+                    template={template}
+                    setTemplate={setTemplate}
+                    businessName={businessName}
+                    setBusinessName={setBusinessName}
+                    message={message}
+                    setMessage={setMessage}
+                    colors={colors}
+                    setColors={setColors}
+                    effects={effects}
+                    setEffects={setEffects}
+                    studio={studio}
+                    setStudio={setStudio}
+                    social={social}
+                    setSocial={setSocial}
+                    badges={badges}
+                    setBadges={setBadges}
+                    bg={bg}
+                    setBg={setBg}
+                    handleBgUpload={handleBgUpload}
+                    handleBgRemove={handleBgRemove}
+                    bgUploadLoading={bgUploadLoading}
+                    COLOR_PRESETS={COLOR_PRESETS}
+                    NICHE_EFFECTS={NICHE_EFFECTS}
+                    hoveredTarget={hoveredCardTarget || inspectedElement?.target}
+                    onCardHover={handleCardHover}
+                  />
                 </div>
               )}
 
-              {/* TAB 2: LOGO / AVATAR */}
-              {activeTab === 'logo' && (
-                <div className="space-y-6">
-                  <div className="bg-amber-950/20 border border-amber-900/30 text-amber-450 rounded-xl p-4 text-xs flex gap-2">
-                    <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <div>
-                      <span className="font-bold">Diretriz da Imagem de Avatar:</span>
-                      <p className="mt-1 text-xs text-amber-400 font-mono">
-                        Para melhor visualização no portal, utilize uma imagem quadrada com fundo transparente (.png) e tamanho máximo sugerido de 250x250px.
-                      </p>
+              {/* TAB: CSS PRO LIVE */}
+              {activeTab === 'custom' && (
+                <div className="space-y-6 animate-fade-in">
+                  <div 
+                    data-focus-section="CSS Customizado"
+                    className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 space-y-4 spotlight-card"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">💻</span>
+                        <span className="text-xs font-bold text-slate-200 uppercase tracking-wide">Editor de CSS Customizado (Live Injection)</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">
+                        TEMPO REAL
+                      </span>
                     </div>
-                  </div>
+                    <p className="text-xs text-slate-400">
+                      Adicione regras CSS personalizadas que serão injetadas instantaneamente no portal captive. Use classes como <code className="text-indigo-300">.card</code>, <code className="text-indigo-300">.btn</code>, <code className="text-indigo-300">body</code> ou seletores próprios.
+                    </p>
 
-                  <div className="flex flex-col md:flex-row items-center gap-6 p-6 border-2 border-dashed border-slate-800 rounded-2xl bg-slate-900/40 shadow-inner">
-                    <div className="w-24 h-24 bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow-inner flex items-center justify-center relative shrink-0">
-                      {logoUploadLoading ? (
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"></div>
-                      ) : (
-                        <img src={logoPreviewUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 text-center md:text-left">
-                      <span className="block font-black text-slate-200 uppercase tracking-widest text-xs">Avatar Central do Hotspot</span>
-                      <p className="text-xs text-slate-400 mt-1 font-mono">Isso substituirá o arquivo "human.png" nas pastas do portal.</p>
-                      
-                      <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={logoUploadLoading}
-                        className="retro-btn retro-btn-primary mt-4 px-4 py-2 text-xs uppercase tracking-wider"
-                      >
-                        {logoUploadLoading ? 'Enviando...' : 'Fazer Upload do Logo'}
-                      </button>
-
-                      <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleLogoUpload} 
-                        accept="image/*" 
-                        className="hidden" 
+                    <div 
+                      data-focus-label="Editor de Código CSS"
+                      className="relative spotlight-field rounded-xl"
+                    >
+                      <textarea
+                        rows={12}
+                        value={customCode.customCss}
+                        onChange={(e) => setCustomCode({ customCss: e.target.value })}
+                        placeholder={`/* Exemplo de CSS customizado */\n.card {\n  transform: scale(1.02);\n  border-color: #10b981 !important;\n}\n\n.btn {\n  letter-spacing: 2px;\n  text-transform: uppercase;\n}`}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-emerald-300 outline-none focus:border-emerald-500 resize-y leading-relaxed shadow-inner"
+                        spellCheck={false}
                       />
                     </div>
                   </div>
                 </div>
               )}
+
+
 
               {/* TAB 3: CAMPOS DE CADASTRO (LEADS) */}
               {activeTab === 'fields' && (
-                <div className="space-y-6">
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-400 font-mono">
-                    <p className="leading-relaxed">
-                      Ative e defina quais campos os clientes devem preencher na tela de Auto-Cadastro para a liberação da conexão. 
-                      Os dados capturados serão arquivados na base de leads para visualização de relatórios.
-                    </p>
+                <div className="space-y-4 animate-fade-in spotlight-group">
+                  <div className="bg-[#12141d] border border-[#232738] rounded-xl p-3.5 text-xs text-slate-400 font-mono flex items-center justify-between gap-3 shadow-md">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]"></span>
+                      <p className="leading-tight text-[11px]">
+                        Ative e defina quais campos os clientes devem preencher na tela de Auto-Cadastro. Os dados capturados alimentam a base de leads em tempo real.
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-400 font-mono bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded shrink-0">
+                      LEADS ENGINE
+                    </span>
                   </div>
 
-                  {/* Configurações Gerais de Auto-Cadastro */}
-                  <div className="p-4 rounded-xl border border-slate-800 bg-slate-900 space-y-4 shadow-inner">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                      <div>
-                        <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">Habilitar Auto-Cadastro</span>
-                        <span className="text-[10px] text-slate-450 font-mono">Exibe ou oculta o botão de cadastro de novos clientes na tela de login.</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={enabled}
-                        onChange={(e) => setEnabled(e.target.checked)}
-                        className="rounded border-slate-800 text-slate-950 accent-emerald-500 w-5 h-5 cursor-pointer"
-                      />
-                    </div>
+                  {/* 2-COLUMN GRID FOR REGISTRATION SETTINGS */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 items-start">
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Redirecionamento Pós-Login (Link / WhatsApp)</label>
-                        <input
-                          type="text"
-                          value={redirectUrl}
-                          onChange={(e) => setRedirectUrl(e.target.value)}
-                          placeholder="Ex: https://wa.me/5511999999999 ou site da empresa"
-                          className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Texto do Botão de Cadastro (Login)</label>
-                        <input
-                          type="text"
-                          value={registerButtonText}
-                          onChange={(e) => setRegisterButtonText(e.target.value)}
-                          placeholder="Ex: Cadastre-se aqui"
-                          className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Configurações de Acesso de Teste Grátis (Free / Trial) */}
-                  <div className="p-4 rounded-xl border border-slate-800 bg-slate-900 space-y-4 shadow-inner">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                      <div>
-                        <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">Habilitar Acesso Grátis (Free / Trial)</span>
-                        <span className="text-[10px] text-slate-450 font-mono">Exibe ou oculta a opção de acesso de teste gratuito no rodapé da tela de login.</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={trialEnabled}
-                        onChange={(e) => setTrialEnabled(e.target.checked)}
-                        className="rounded border-slate-800 text-slate-950 accent-emerald-500 w-5 h-5 cursor-pointer"
-                      />
-                    </div>
-
-                    {trialEnabled && (
-                      <div className="space-y-4 pt-2 border-t border-slate-800">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* CARD 1: Configurações Gerais de Auto-Cadastro */}
+                    <div 
+                      data-focus-section="Auto-Cadastro Geral"
+                      className="bg-[#161a27] rounded-xl border border-[#262c42] p-4 space-y-3.5 shadow-sm spotlight-card"
+                    >
+                      <div className="flex items-center justify-between border-b border-[#23283c] pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-cyan-400 font-mono text-xs">❖</span>
                           <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Texto de Teste Grátis</label>
-                            <input
-                              type="text"
-                              value={trialText}
-                              onChange={(e) => setTrialText(e.target.value)}
-                              placeholder="Ex: Acesso de teste disponível, "
-                              className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Texto do Link de Teste Grátis</label>
-                            <input
-                              type="text"
-                              value={trialLinkText}
-                              onChange={(e) => setTrialLinkText(e.target.value)}
-                              placeholder="Ex: clique aqui"
-                              className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                            />
+                            <span className="block font-bold text-xs text-white uppercase tracking-wider">Habilitar Auto-Cadastro</span>
+                            <span className="text-[10px] text-slate-400 font-mono">Exibe o botão de cadastro no login</span>
                           </div>
                         </div>
+                        <input
+                          type="checkbox"
+                          checked={enabled}
+                          onChange={(e) => setEnabled(e.target.checked)}
+                          className="w-5 h-5 rounded accent-emerald-500 cursor-pointer"
+                        />
+                      </div>
 
-                        <div className="border-t border-slate-800 pt-3 space-y-4">
-                          <span className="block font-black text-xs text-slate-350 uppercase tracking-widest">Personalização do Modal de Confirmação (Free / Trial)</span>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Título do Modal</label>
+                      <div className="space-y-2.5">
+                        <div 
+                          data-focus-label="Link de Redirecionamento Pós-Login"
+                          className="spotlight-field rounded-xl"
+                        >
+                          <label className="block text-[10px] font-mono text-slate-400 mb-1">Redirecionamento Pós-Login (Link / WhatsApp)</label>
+                          <input
+                            type="text"
+                            value={redirectUrl}
+                            onChange={(e) => setRedirectUrl(e.target.value)}
+                            placeholder="Ex: https://wa.me/5511999999999 ou site"
+                            className="w-full bg-[#0f1118] text-emerald-400 font-mono text-xs px-3 py-2 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
+                          />
+                        </div>
+                        <div 
+                          data-focus-label="Texto do Botão de Cadastro"
+                          className="spotlight-field rounded-xl"
+                        >
+                          <label className="block text-[10px] font-mono text-slate-400 mb-1">Texto do Botão de Cadastro (Login)</label>
+                          <input
+                            type="text"
+                            value={registerButtonText}
+                            onChange={(e) => setRegisterButtonText(e.target.value)}
+                            placeholder="Ex: Cadastre-se aqui"
+                            className="w-full bg-[#0f1118] text-slate-200 text-xs px-3 py-2 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CARD 2: Textos da Tela de Auto-Cadastro */}
+                    <div 
+                      data-focus-section="Textos do Cadastro"
+                      className="bg-[#161a27] rounded-xl border border-[#262c42] p-4 space-y-3 shadow-sm spotlight-card"
+                    >
+                      <div className="flex items-center gap-2 border-b border-[#23283c] pb-2.5">
+                        <span className="text-cyan-400 font-mono text-xs">📝</span>
+                        <span className="block font-bold text-xs text-white uppercase tracking-wider">Textos da Tela de Cadastro</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div 
+                          data-focus-label="Título da Tela de Cadastro"
+                          className="spotlight-field rounded-xl"
+                        >
+                          <label className="block text-[10px] font-mono text-slate-400 mb-1">Título da Tela</label>
+                          <input
+                            type="text"
+                            value={registerTitle}
+                            onChange={(e) => setRegisterTitle(e.target.value)}
+                            placeholder="Ex: Wi-Fi Grátis"
+                            className="w-full bg-[#0f1118] text-slate-200 text-xs px-2.5 py-1.5 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
+                          />
+                        </div>
+                        <div 
+                          data-focus-label="Subtítulo da Tela de Cadastro"
+                          className="spotlight-field rounded-xl"
+                        >
+                          <label className="block text-[10px] font-mono text-slate-400 mb-1">Subtítulo da Tela</label>
+                          <input
+                            type="text"
+                            value={registerSubtitle}
+                            onChange={(e) => setRegisterSubtitle(e.target.value)}
+                            placeholder="Ex: Cadastre-se abaixo..."
+                            className="w-full bg-[#0f1118] text-slate-200 text-xs px-2.5 py-1.5 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
+                          />
+                        </div>
+                        <div 
+                          data-focus-label="Texto do Botão de Envio"
+                          className="spotlight-field rounded-xl"
+                        >
+                          <label className="block text-[10px] font-mono text-slate-400 mb-1">Botão de Envio (Cadastro)</label>
+                          <input
+                            type="text"
+                            value={registerSubmitText}
+                            onChange={(e) => setRegisterSubmitText(e.target.value)}
+                            placeholder="Ex: Cadastrar e Conectar"
+                            className="w-full bg-[#0f1118] text-slate-200 text-xs px-2.5 py-1.5 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
+                          />
+                        </div>
+                        <div 
+                          data-focus-label="Termos de Uso (Rodapé)"
+                          className="spotlight-field rounded-xl"
+                        >
+                          <label className="block text-[10px] font-mono text-slate-400 mb-1">Termos de Uso (Rodapé)</label>
+                          <input
+                            type="text"
+                            value={termsText}
+                            onChange={(e) => setTermsText(e.target.value)}
+                            placeholder="Ex: Ao se cadastrar, você concorda..."
+                            className="w-full bg-[#0f1118] text-slate-200 text-xs px-2.5 py-1.5 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CARD 3: Configurações de Acesso Grátis (Trial 15/30 min) (Span 2) */}
+                    <div 
+                      data-focus-section="Acesso Grátis (Trial)"
+                      className="bg-[#161a27] rounded-xl border border-[#262c42] p-4 space-y-3.5 shadow-sm lg:col-span-2 spotlight-card"
+                    >
+                      <div className="flex items-center justify-between border-b border-[#23283c] pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-amber-400 font-mono text-xs">⚡</span>
+                          <div>
+                            <span className="block font-bold text-xs text-white uppercase tracking-wider">Habilitar Acesso Grátis (Free / Trial)</span>
+                            <span className="text-[10px] text-slate-400 font-mono">Exibe botão de teste gratuito no rodapé do login</span>
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={trialEnabled}
+                          onChange={(e) => setTrialEnabled(e.target.checked)}
+                          className="w-5 h-5 rounded accent-emerald-500 cursor-pointer"
+                        />
+                      </div>
+
+                      {trialEnabled && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1 animate-fade-in">
+                          <div className="space-y-2.5">
+                            <div 
+                              data-focus-label="Texto do Link de Teste Grátis"
+                              className="spotlight-field rounded-xl"
+                            >
+                              <label className="block text-[10px] font-mono text-slate-400 mb-1">Texto de Teste Grátis</label>
                               <input
                                 type="text"
-                                value={trialModalTitle}
-                                onChange={(e) => setTrialModalTitle(e.target.value)}
-                                placeholder="Ex: Acesso de Teste"
-                                className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
+                                value={trialText}
+                                onChange={(e) => setTrialText(e.target.value)}
+                                placeholder="Ex: Acesso de teste disponível, "
+                                className="w-full bg-[#0f1118] text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
                               />
                             </div>
-                            <div>
-                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Texto do Botão Confirmar</label>
+                            <div 
+                              data-focus-label="Rótulo do Link de Teste Grátis"
+                              className="spotlight-field rounded-xl"
+                            >
+                              <label className="block text-[10px] font-mono text-slate-400 mb-1">Texto do Link de Teste Grátis</label>
                               <input
                                 type="text"
-                                value={trialModalConfirmText}
-                                onChange={(e) => setTrialModalConfirmText(e.target.value)}
-                                placeholder="Ex: Sim, Conectar"
-                                className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
+                                value={trialLinkText}
+                                onChange={(e) => setTrialLinkText(e.target.value)}
+                                placeholder="Ex: clique aqui"
+                                className="w-full bg-[#0f1118] text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
                               />
                             </div>
-                            <div>
-                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Texto do Botão Cancelar</label>
-                              <input
-                                type="text"
-                                value={trialModalCancelText}
-                                onChange={(e) => setTrialModalCancelText(e.target.value)}
-                                placeholder="Ex: Não, Voltar"
-                                className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Mensagem de Alerta do Modal</label>
+                            <div 
+                              data-focus-label="Mensagem de Alerta do Modal de Teste"
+                              className="spotlight-field rounded-xl"
+                            >
+                              <label className="block text-[10px] font-mono text-slate-400 mb-1">Mensagem de Alerta do Modal</label>
                               <textarea
                                 value={trialModalMessage}
                                 onChange={(e) => setTrialModalMessage(e.target.value)}
                                 placeholder="Ex: Tem certeza de que deseja liberar o acesso grátis por 30 minutos?"
                                 rows={2}
-                                className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs resize-none"
+                                className="w-full bg-[#0f1118] text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400 resize-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2.5">
+                            <div 
+                              data-focus-label="Título do Modal de Teste Grátis"
+                              className="spotlight-field rounded-xl"
+                            >
+                              <label className="block text-[10px] font-mono text-slate-400 mb-1">Título do Modal</label>
+                              <input
+                                type="text"
+                                value={trialModalTitle}
+                                onChange={(e) => setTrialModalTitle(e.target.value)}
+                                placeholder="Ex: Acesso de Teste"
+                                className="w-full bg-[#0f1118] text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                            <div 
+                              data-focus-label="Texto do Botão Confirmar"
+                              className="spotlight-field rounded-xl"
+                            >
+                              <label className="block text-[10px] font-mono text-slate-400 mb-1">Texto do Botão Confirmar</label>
+                              <input
+                                type="text"
+                                value={trialModalConfirmText}
+                                onChange={(e) => setTrialModalConfirmText(e.target.value)}
+                                placeholder="Ex: Sim, Conectar"
+                                className="w-full bg-[#0f1118] text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                            <div 
+                              data-focus-label="Texto do Botão Cancelar"
+                              className="spotlight-field rounded-xl"
+                            >
+                              <label className="block text-[10px] font-mono text-slate-400 mb-1">Texto do Botão Cancelar</label>
+                              <input
+                                type="text"
+                                value={trialModalCancelText}
+                                onChange={(e) => setTrialModalCancelText(e.target.value)}
+                                placeholder="Ex: Não, Voltar"
+                                className="w-full bg-[#0f1118] text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-[#2a3148] outline-none focus:border-cyan-400"
                               />
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Edição de Textos da Tela de Cadastro */}
-                  <div className="p-4 rounded-xl border border-slate-800 bg-slate-900 space-y-4 shadow-inner">
-                    <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">Textos da Tela de Auto-Cadastro</span>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Título da Tela</label>
-                        <input
-                          type="text"
-                          value={registerTitle}
-                          onChange={(e) => setRegisterTitle(e.target.value)}
-                          placeholder="Ex: Wi-Fi Grátis"
-                          className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Subtítulo da Tela</label>
-                        <input
-                          type="text"
-                          value={registerSubtitle}
-                          onChange={(e) => setRegisterSubtitle(e.target.value)}
-                          placeholder="Ex: Cadastre-se abaixo para liberar o acesso..."
-                          className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Botão de Envio (Cadastro)</label>
-                        <input
-                          type="text"
-                          value={registerSubmitText}
-                          onChange={(e) => setRegisterSubmitText(e.target.value)}
-                          placeholder="Ex: Cadastrar e Conectar"
-                          className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Termos de Uso e Privacidade (Rodapé)</label>
-                        <input
-                          type="text"
-                          value={termsText}
-                          onChange={(e) => setTermsText(e.target.value)}
-                          placeholder="Ex: Ao se cadastrar, você concorda..."
-                          className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
-                        />
-                      </div>
+                      )}
                     </div>
-                  </div>
 
-                  {/* Listagem de Campos */}
-                  <div className="space-y-4">
+                    {/* CARD 4: Credenciais & Info Banner (Span 2) */}
+                    <div className="p-3 bg-blue-950/30 border border-blue-800/40 rounded-xl flex items-start gap-2.5 lg:col-span-2">
+                      <span className="text-base">🔐</span>
+                      <p className="text-[11px] text-blue-300 font-sans leading-relaxed">
+                        <strong>Credenciais MikroTik:</strong> O <strong>Nome de Usuário</strong> e a <strong>Senha</strong> são as credenciais obrigatórias de acesso à rede Hotspot e estão sempre ativos. Os campos abaixo são informações adicionais para enriquecer o cadastro e base de leads.
+                      </p>
+                    </div>
+
+                    {/* FIELD CARDS IN 2 COLUMNS */}
                     
-                    {/* Nome Completo Field */}
-                    <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                    {/* Nome Completo */}
+                    <div 
+                      data-focus-section="Campo: Nome Completo"
+                      className="p-3.5 rounded-xl border border-[#262c42] bg-[#161a27] flex flex-col justify-between gap-3 shadow-sm spotlight-card"
+                    >
                       <div>
-                        <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">Nome Completo</span>
-                        <span className="text-[10px] text-slate-400 font-mono">Solicita o nome completo do cliente.</span>
+                        <span className="block font-bold text-xs text-white uppercase tracking-wider">Nome Completo</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Solicita o nome completo do cliente</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#23283c]">
                         <button 
-                          type="button"
+                          type="button" 
                           onClick={() => handleFieldToggle('nameEnabled')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${fields.nameEnabled ? 'retro-btn-success' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${fields.nameEnabled ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
-                          {fields.nameEnabled ? 'Habilitado' : 'Desabilitado'}
+                          {fields.nameEnabled ? '✓ Habilitado' : '✕ Desabilitado'}
                         </button>
                         <button 
-                          type="button"
+                          type="button" 
                           disabled={!fields.nameEnabled}
                           onClick={() => handleFieldToggle('nameRequired')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${!fields.nameEnabled ? 'opacity-50 cursor-not-allowed retro-btn-dark' : fields.nameRequired ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${!fields.nameEnabled ? 'opacity-40 cursor-not-allowed bg-[#0f1118] border-[#2d344d] text-slate-600' : fields.nameRequired ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
                           {fields.nameRequired ? 'Obrigatório' : 'Opcional'}
                         </button>
                       </div>
                     </div>
 
-                    {/* WhatsApp / Celular Field */}
-                    <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                    {/* WhatsApp / Celular */}
+                    <div 
+                      data-focus-section="Campo: WhatsApp / Celular"
+                      className="p-3.5 rounded-xl border border-[#262c42] bg-[#161a27] flex flex-col justify-between gap-3 shadow-sm spotlight-card"
+                    >
                       <div>
-                        <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">WhatsApp / Celular</span>
-                        <span className="text-[10px] text-slate-400 font-mono">Número de telefone. Serve como nome de usuário para login MikroTik.</span>
+                        <span className="block font-bold text-xs text-white uppercase tracking-wider">WhatsApp / Celular</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Número para contato e envio de campanhas</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#23283c]">
                         <button 
-                          type="button"
+                          type="button" 
                           onClick={() => handleFieldToggle('phoneEnabled')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${fields.phoneEnabled ? 'retro-btn-success' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${fields.phoneEnabled ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
-                          {fields.phoneEnabled ? 'Habilitado' : 'Desabilitado'}
+                          {fields.phoneEnabled ? '✓ Habilitado' : '✕ Desabilitado'}
                         </button>
                         <button 
-                          type="button"
+                          type="button" 
                           disabled={!fields.phoneEnabled}
                           onClick={() => handleFieldToggle('phoneRequired')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${!fields.phoneEnabled ? 'opacity-50 cursor-not-allowed retro-btn-dark' : fields.phoneRequired ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${!fields.phoneEnabled ? 'opacity-40 cursor-not-allowed bg-[#0f1118] border-[#2d344d] text-slate-600' : fields.phoneRequired ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
                           {fields.phoneRequired ? 'Obrigatório' : 'Opcional'}
                         </button>
                       </div>
                     </div>
 
-                    {/* E-mail Field */}
-                    <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                    {/* E-mail */}
+                    <div 
+                      data-focus-section="Campo: E-mail"
+                      className="p-3.5 rounded-xl border border-[#262c42] bg-[#161a27] flex flex-col justify-between gap-3 shadow-sm spotlight-card"
+                    >
                       <div>
-                        <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">E-mail</span>
-                        <span className="text-[10px] text-slate-400 font-mono">Solicita o endereço de e-mail do cliente.</span>
+                        <span className="block font-bold text-xs text-white uppercase tracking-wider">E-mail</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Solicita o endereço de e-mail do cliente</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#23283c]">
                         <button 
-                          type="button"
+                          type="button" 
                           onClick={() => handleFieldToggle('emailEnabled')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${fields.emailEnabled ? 'retro-btn-success' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${fields.emailEnabled ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
-                          {fields.emailEnabled ? 'Habilitado' : 'Desabilitado'}
+                          {fields.emailEnabled ? '✓ Habilitado' : '✕ Desabilitado'}
                         </button>
                         <button 
-                          type="button"
+                          type="button" 
                           disabled={!fields.emailEnabled}
                           onClick={() => handleFieldToggle('emailRequired')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${!fields.emailEnabled ? 'opacity-50 cursor-not-allowed retro-btn-dark' : fields.emailRequired ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${!fields.emailEnabled ? 'opacity-40 cursor-not-allowed bg-[#0f1118] border-[#2d344d] text-slate-600' : fields.emailRequired ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
                           {fields.emailRequired ? 'Obrigatório' : 'Opcional'}
                         </button>
                       </div>
                     </div>
 
-                    {/* Data de Nascimento Field */}
-                    <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                    {/* Data de Nascimento */}
+                    <div 
+                      data-focus-section="Campo: Data de Nascimento"
+                      className="p-3.5 rounded-xl border border-[#262c42] bg-[#161a27] flex flex-col justify-between gap-3 shadow-sm spotlight-card"
+                    >
                       <div>
-                        <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">Data de Nascimento</span>
-                        <span className="text-[10px] text-slate-400 font-mono">Data de aniversário. Serve como senha de acesso (DDMMAAAA) caso a senha customizada esteja inativa.</span>
+                        <span className="block font-bold text-xs text-white uppercase tracking-wider">Data de Nascimento</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Aniversário / Senha padrão de acesso</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#23283c]">
                         <button 
-                          type="button"
+                          type="button" 
                           onClick={() => handleFieldToggle('birthDateEnabled')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${fields.birthDateEnabled ? 'retro-btn-success' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${fields.birthDateEnabled ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
-                          {fields.birthDateEnabled ? 'Habilitado' : 'Desabilitado'}
+                          {fields.birthDateEnabled ? '✓ Habilitado' : '✕ Desabilitado'}
                         </button>
                         <button 
-                          type="button"
+                          type="button" 
                           disabled={!fields.birthDateEnabled}
                           onClick={() => handleFieldToggle('birthDateRequired')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${!fields.birthDateEnabled ? 'opacity-50 cursor-not-allowed retro-btn-dark' : fields.birthDateRequired ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${!fields.birthDateEnabled ? 'opacity-40 cursor-not-allowed bg-[#0f1118] border-[#2d344d] text-slate-600' : fields.birthDateRequired ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
                           {fields.birthDateRequired ? 'Obrigatório' : 'Opcional'}
                         </button>
                       </div>
                     </div>
 
-                    {/* CPF Field */}
-                    <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                    {/* CPF */}
+                    <div 
+                      data-focus-section="Campo: CPF"
+                      className="p-3.5 rounded-xl border border-[#262c42] bg-[#161a27] flex flex-col justify-between gap-3 shadow-sm spotlight-card"
+                    >
                       <div>
-                        <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">CPF</span>
-                        <span className="text-[10px] text-slate-400 font-mono">Solicita o CPF do cliente.</span>
+                        <span className="block font-bold text-xs text-white uppercase tracking-wider">CPF</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Solicita o documento CPF do cliente</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#23283c]">
                         <button 
-                          type="button"
+                          type="button" 
                           onClick={() => handleFieldToggle('cpfEnabled')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${fields.cpfEnabled ? 'retro-btn-success' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${fields.cpfEnabled ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
-                          {fields.cpfEnabled ? 'Habilitado' : 'Desabilitado'}
+                          {fields.cpfEnabled ? '✓ Habilitado' : '✕ Desabilitado'}
                         </button>
                         <button 
-                          type="button"
+                          type="button" 
                           disabled={!fields.cpfEnabled}
                           onClick={() => handleFieldToggle('cpfRequired')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${!fields.cpfEnabled ? 'opacity-50 cursor-not-allowed retro-btn-dark' : fields.cpfRequired ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${!fields.cpfEnabled ? 'opacity-40 cursor-not-allowed bg-[#0f1118] border-[#2d344d] text-slate-600' : fields.cpfRequired ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
                           {fields.cpfRequired ? 'Obrigatório' : 'Opcional'}
                         </button>
                       </div>
                     </div>
 
-                    {/* Gênero Field */}
-                    <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                    {/* Gênero */}
+                    <div 
+                      data-focus-section="Campo: Gênero"
+                      className="p-3.5 rounded-xl border border-[#262c42] bg-[#161a27] flex flex-col justify-between gap-3 shadow-sm spotlight-card"
+                    >
                       <div>
-                        <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">Gênero</span>
-                        <span className="text-[10px] text-slate-400 font-mono">Dropdown para escolha do gênero (Masculino / Feminino).</span>
+                        <span className="block font-bold text-xs text-white uppercase tracking-wider">Gênero</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Dropdown Masculino / Feminino</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#23283c]">
                         <button 
-                          type="button"
+                          type="button" 
                           onClick={() => handleFieldToggle('genderEnabled')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${fields.genderEnabled ? 'retro-btn-success' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${fields.genderEnabled ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
-                          {fields.genderEnabled ? 'Habilitado' : 'Desabilitado'}
+                          {fields.genderEnabled ? '✓ Habilitado' : '✕ Desabilitado'}
                         </button>
                         <button 
-                          type="button"
+                          type="button" 
                           disabled={!fields.genderEnabled}
                           onClick={() => handleFieldToggle('genderRequired')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${!fields.genderEnabled ? 'opacity-50 cursor-not-allowed retro-btn-dark' : fields.genderRequired ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${!fields.genderEnabled ? 'opacity-40 cursor-not-allowed bg-[#0f1118] border-[#2d344d] text-slate-600' : fields.genderRequired ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
                           {fields.genderRequired ? 'Obrigatório' : 'Opcional'}
                         </button>
                       </div>
                     </div>
 
-                    {/* Criar Senha Field */}
-                    <div className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+                    {/* Criar Senha */}
+                    <div 
+                      data-focus-section="Campo: Criar Senha"
+                      className="p-3.5 rounded-xl border border-[#262c42] bg-[#161a27] flex flex-col justify-between gap-3 shadow-sm spotlight-card"
+                    >
                       <div>
-                        <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">Criar Senha</span>
-                        <span className="text-[10px] text-slate-400 font-mono">Permite ao usuário criar sua própria senha. Caso contrário, a data de nascimento ou telefone servirá como senha.</span>
+                        <span className="block font-bold text-xs text-white uppercase tracking-wider">Criar Senha Própria</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Permite ao cliente definir sua senha</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#23283c]">
                         <button 
-                          type="button"
+                          type="button" 
                           onClick={() => handleFieldToggle('passwordEnabled')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${fields.passwordEnabled ? 'retro-btn-success' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${fields.passwordEnabled ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
-                          {fields.passwordEnabled ? 'Habilitado' : 'Desabilitado'}
+                          {fields.passwordEnabled ? '✓ Habilitado' : '✕ Desabilitado'}
                         </button>
                         <button 
-                          type="button"
+                          type="button" 
                           disabled={!fields.passwordEnabled}
                           onClick={() => handleFieldToggle('passwordRequired')}
-                          className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${!fields.passwordEnabled ? 'opacity-50 cursor-not-allowed retro-btn-dark' : fields.passwordRequired ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${!fields.passwordEnabled ? 'opacity-40 cursor-not-allowed bg-[#0f1118] border-[#2d344d] text-slate-600' : fields.passwordRequired ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
                         >
                           {fields.passwordRequired ? 'Obrigatório' : 'Opcional'}
                         </button>
                       </div>
                     </div>
 
-                    {/* Dynamic Custom Field */}
-                    <div className="p-4 rounded-xl border border-slate-850 bg-slate-900/40 space-y-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                          <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">Campo Dinâmico (Livre)</span>
-                          <span className="text-[10px] text-slate-400 font-mono">Pergunta aberta personalizada (ex: "Descreva aqui!" ou "Como nos conheceu?").</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <button 
-                            type="button"
-                            onClick={() => handleFieldToggle('customFieldEnabled')}
-                            className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${fields.customFieldEnabled ? 'retro-btn-success' : 'retro-btn-dark'}`}
-                          >
-                            {fields.customFieldEnabled ? 'Habilitado' : 'Desabilitado'}
-                          </button>
-                          <button 
-                            type="button"
-                            disabled={!fields.customFieldEnabled}
-                            onClick={() => handleFieldToggle('customFieldRequired')}
-                            className={`retro-btn text-[10px] py-1.5 w-24 text-center uppercase tracking-wider ${!fields.customFieldEnabled ? 'opacity-50 cursor-not-allowed retro-btn-dark' : fields.customFieldRequired ? 'retro-btn-primary' : 'retro-btn-dark'}`}
-                          >
-                            {fields.customFieldRequired ? 'Obrigatório' : 'Opcional'}
-                          </button>
-                        </div>
+                    {/* Campo Dinâmico (Livre) */}
+                    <div 
+                      data-focus-section="Campo: Personalizado"
+                      className="p-3.5 rounded-xl border border-[#262c42] bg-[#161a27] flex flex-col justify-between gap-3 shadow-sm spotlight-card"
+                    >
+                      <div>
+                        <span className="block font-bold text-xs text-white uppercase tracking-wider">Campo Dinâmico (Livre)</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Pergunta aberta personalizada</span>
                       </div>
-
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#23283c]">
+                        <button 
+                          type="button" 
+                          onClick={() => handleFieldToggle('customFieldEnabled')}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${fields.customFieldEnabled ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
+                        >
+                          {fields.customFieldEnabled ? '✓ Habilitado' : '✕ Desabilitado'}
+                        </button>
+                        <button 
+                          type="button" 
+                          disabled={!fields.customFieldEnabled}
+                          onClick={() => handleFieldToggle('customFieldRequired')}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all flex-1 ${!fields.customFieldEnabled ? 'opacity-40 cursor-not-allowed bg-[#0f1118] border-[#2d344d] text-slate-600' : fields.customFieldRequired ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
+                        >
+                          {fields.customFieldRequired ? 'Obrigatório' : 'Opcional'}
+                        </button>
+                      </div>
                       {fields.customFieldEnabled && (
-                        <div className="border-t border-slate-800 pt-3">
-                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Rótulo / Pergunta do Campo Dinâmico</label>
+                        <div 
+                          data-focus-label="Rótulo da Pergunta Personalizada"
+                          className="pt-2 border-t border-[#23283c] spotlight-field rounded-xl"
+                        >
+                          <label className="block text-[10px] font-mono text-slate-400 mb-1">Rótulo / Pergunta:</label>
                           <input 
                             type="text" 
                             value={fields.customFieldLabel}
                             onChange={(e) => handleFieldLabelChange(e.target.value)}
-                            placeholder="Ex: Descreva aqui! ou Como nos conheceu?"
-                            className="retro-input w-full px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
+                            placeholder="Ex: Qual curso deseja? ou Como nos conheceu?"
+                            className="w-full bg-[#0f1118] text-emerald-400 font-mono text-xs px-2.5 py-1.5 rounded-lg border border-[#2a3148] outline-none"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Aceite de Mensagens (Cursos/Ofertas) (Span 2) */}
+                    <div 
+                      data-focus-section="Aceite de Mensagens"
+                      className="p-3.5 rounded-xl border border-[#262c42] bg-[#161a27] space-y-3 shadow-sm lg:col-span-2 spotlight-card"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="block font-bold text-xs text-white uppercase tracking-wider">Aceite de Mensagens (Cursos/Ofertas)</span>
+                          <span className="text-[10px] text-slate-400 font-mono">Checkbox de consentimento para envio de campanhas</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleFieldToggle('optInCoursesEnabled')}
+                          className={`text-[10px] font-bold py-1 px-3 rounded-lg border transition-all ${fields.optInCoursesEnabled ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-[#0f1118] border-[#2d344d] text-slate-400'}`}
+                        >
+                          {fields.optInCoursesEnabled ? '✓ Ativado' : '✕ Desativado'}
+                        </button>
+                      </div>
+
+                      {fields.optInCoursesEnabled && (
+                        <div 
+                          data-focus-label="Texto de Consentimento (Opt-In)"
+                          className="pt-2 border-t border-[#23283c] spotlight-field rounded-xl"
+                        >
+                          <label className="block text-[10px] font-mono text-slate-400 mb-1">Texto do Checkbox:</label>
+                          <input 
+                            type="text" 
+                            value={fields.optInCoursesLabel}
+                            onChange={(e) => setFields(prev => ({ ...prev, optInCoursesLabel: e.target.value }))}
+                            placeholder="Ex: Eu aceito receber informações dos cursos"
+                            className="w-full bg-[#0f1118] text-slate-200 text-xs px-2.5 py-1.5 rounded-lg border border-[#2a3148] outline-none"
                           />
                         </div>
                       )}
@@ -1898,18 +2592,24 @@ export default function PortalEditor() {
 
               {/* TAB 4: PUBLICIDADE / ANÚNCIOS */}
                {activeTab === 'ad' && (
-                <div className="space-y-6">
-                  <div>
+                <div 
+                  data-focus-section="Publicidade & Anúncios"
+                  className="space-y-6 spotlight-group"
+                >
+                  <div 
+                    data-focus-label="Tipo de Publicidade (Banner / Vídeo / Carrossel)"
+                    className="spotlight-card p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3"
+                  >
                     <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Tipo de Publicidade</label>
                     <select
                       value={ad.type}
                       onChange={(e) => setAd(prev => ({ ...prev, type: e.target.value }))}
                       className="retro-input w-full px-4 py-3 bg-slate-950 text-emerald-450 border border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold"
                     >
-                      <option value="none">Sem Publicidade (Apenas Formulário)</option>
-                      <option value="image">Imagem Patrocinada (Banner Estático)</option>
-                      <option value="video">Vídeo Patrocinado (MP4 ou YouTube)</option>
-                      <option value="carousel">Carrossel de Imagens & Vídeos (Estilo Instagram)</option>
+                      <option className="bg-slate-900 text-slate-100" value="none">Sem Publicidade (Apenas Formulário)</option>
+                      <option className="bg-slate-900 text-slate-100" value="image">Imagem Patrocinada (Banner Estático)</option>
+                      <option className="bg-slate-900 text-slate-100" value="video">Vídeo Patrocinado (MP4 ou YouTube)</option>
+                      <option className="bg-slate-900 text-slate-100" value="carousel">Carrossel de Imagens & Vídeos (Estilo Instagram)</option>
                     </select>
 
                     <div className="flex justify-between items-center bg-slate-900 border border-slate-800 rounded-xl p-4 mt-4 shadow-inner">
@@ -1931,8 +2631,11 @@ export default function PortalEditor() {
                   </div>
 
                   {ad.type === 'image' && (
-                    <div className="space-y-4 border-t border-slate-800 pt-5">
-                      <div>
+                    <div className="space-y-4 border-t border-slate-800 pt-5 spotlight-card p-4 rounded-2xl bg-slate-900/60">
+                      <div 
+                        data-focus-label="Link da Imagem do Banner"
+                        className="spotlight-field rounded-xl"
+                      >
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Link da Imagem de Banner</label>
                         <div className="flex gap-2">
                           <input 
@@ -1960,7 +2663,10 @@ export default function PortalEditor() {
                         </div>
                       </div>
 
-                      <div>
+                      <div 
+                        data-focus-label="Link de Redirecionamento da Imagem"
+                        className="spotlight-field rounded-xl"
+                      >
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Link de Redirecionamento (Opcional)</label>
                         <input 
                           type="text" 
@@ -1977,8 +2683,11 @@ export default function PortalEditor() {
                   )}
 
                   {ad.type === 'video' && (
-                    <div className="space-y-4 border-t border-slate-800 pt-5">
-                      <div>
+                    <div className="space-y-4 border-t border-slate-800 pt-5 spotlight-card p-4 rounded-2xl bg-slate-900/60">
+                      <div 
+                        data-focus-label="URL do Vídeo Patrocinado"
+                        className="spotlight-field rounded-xl"
+                      >
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">URL do Vídeo</label>
                         <div className="flex gap-2">
                           <input 
@@ -2012,7 +2721,7 @@ export default function PortalEditor() {
                   )}
 
                   {ad.type === 'carousel' && (
-                    <div className="space-y-6 border-t border-slate-800 pt-5">
+                    <div className="space-y-6 border-t border-slate-800 pt-5 spotlight-card p-4 rounded-2xl bg-slate-900/60">
                       <span className="block font-black text-xs text-slate-200 uppercase tracking-widest">Mídias do Carrossel (Até 5 Mídias)</span>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2021,7 +2730,7 @@ export default function PortalEditor() {
                           const hasMedia = item && item.url;
                           
                           return (
-                            <div key={slot} className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 space-y-3 shadow-inner">
+                            <div key={slot} className="p-4 rounded-xl border border-slate-800 bg-slate-900/40 space-y-3 shadow-inner spotlight-field">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-black text-slate-350 uppercase tracking-wider">Slot {slot} - {hasMedia ? (item.type === 'video' ? 'Vídeo' : 'Imagem') : 'Vazio'}</span>
                                 {hasMedia && (
@@ -2065,7 +2774,7 @@ export default function PortalEditor() {
                                 </div>
                               )}
 
-                              <div>
+                              <div data-focus-label={`Link do Slot ${slot}`}>
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Link de Redirecionamento (Opcional)</label>
                                 <input
                                   type="text"
@@ -2084,7 +2793,10 @@ export default function PortalEditor() {
 
                   {/* Temporizador Config Card (Exposto para todos os tipos de anúncio ativos) */}
                   {ad.type !== 'none' && (
-                    <div className="p-4 rounded-xl border border-slate-800 bg-slate-900 space-y-4 shadow-inner">
+                    <div 
+                      data-focus-section="Temporizador"
+                      className="p-4 rounded-xl border border-slate-800 bg-slate-900 space-y-4 shadow-inner spotlight-card"
+                    >
                       <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                         <div>
                           <span className="block font-black text-xs text-slate-200 uppercase tracking-wider">Temporizador de Visualização Obrigatória</span>
@@ -2092,20 +2804,20 @@ export default function PortalEditor() {
                         </div>
                         <input
                           type="checkbox"
-                          checked={ad.timerEnabled || false}
+                          checked={ad.timerEnabled}
                           onChange={(e) => setAd(prev => ({ ...prev, timerEnabled: e.target.checked }))}
-                          className="rounded border-slate-800 text-slate-950 accent-emerald-500 w-5 h-5 cursor-pointer"
+                          className="w-5 h-5 rounded accent-emerald-500 cursor-pointer"
                         />
                       </div>
 
                       {ad.timerEnabled && (
-                        <div>
-                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Tempo Mínimo de Visualização (segundos)</label>
+                        <div 
+                          data-focus-label="Duração em Segundos do Anúncio"
+                          className="pt-2 spotlight-field rounded-xl"
+                        >
+                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Duração em Segundos (Ex: 5, 10 ou 15)</label>
                           <input
                             type="number"
-                            min={1}
-                            max={60}
-                            value={ad.timerDuration || 5}
                             onChange={(e) => setAd(prev => ({ ...prev, timerDuration: parseInt(e.target.value) || 5 }))}
                             className="retro-input w-full max-w-[200px] px-3 py-2 bg-slate-950 text-emerald-450 border border-slate-800 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-xs"
                           />
@@ -2194,280 +2906,106 @@ export default function PortalEditor() {
           </div>
 
           {/* Real-time Phone Preview Simulator (Right - 5 Columns) */}
-          <div className="lg:col-span-5 flex flex-col items-center">
+          <div 
+            className="lg:col-span-5 flex flex-col items-center lg:sticky lg:top-6 lg:self-start z-20"
+            style={{ position: 'sticky', top: '1.5rem', alignSelf: 'flex-start' }}
+          >
             
-            {/* Phone Screen Selector */}
-            <div className="flex bg-[#0a0a18]/40 p-1.5 rounded-xl border border-[#252542] mb-6 gap-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">
-              <button 
-                onClick={() => setPreviewScreen('login')}
-                type="button"
-                className={`retro-btn text-xs py-1.5 px-3 ${
-                  previewScreen === 'login' ? 'retro-btn-primary' : 'retro-btn-dark'
-                }`}
-              >
-                📱 Portal Login (Hotspot)
-              </button>
-              <button 
-                onClick={() => setPreviewScreen('register')}
-                type="button"
-                className={`retro-btn text-xs py-1.5 px-3 ${
-                  previewScreen === 'register' ? 'retro-btn-primary' : 'retro-btn-dark'
-                }`}
-              >
-                🌍 Tela Auto-Cadastro
-              </button>
+            {/* Viewport & Screen Selectors */}
+            <div className="flex flex-col items-center gap-2 mb-4 w-full">
+              {/* Screen Selector */}
+              <div className="flex bg-[#0a0a18]/40 p-1.5 rounded-xl border border-[#252542] gap-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)]">
+                <button 
+                  onClick={() => setPreviewScreen('login')}
+                  type="button"
+                  className={`retro-btn text-xs py-1.5 px-3 ${
+                    previewScreen === 'login' ? 'retro-btn-primary' : 'retro-btn-dark'
+                  }`}
+                >
+                  📱 Portal Login (Hotspot)
+                </button>
+                <button 
+                  onClick={() => setPreviewScreen('register')}
+                  type="button"
+                  className={`retro-btn text-xs py-1.5 px-3 ${
+                    previewScreen === 'register' ? 'retro-btn-primary' : 'retro-btn-dark'
+                  }`}
+                >
+                  📋 Formulário de Cadastro
+                </button>
+              </div>
+
+              {/* Viewport Device Mode */}
+              <div className="flex bg-[#0a0a18]/30 p-1 rounded-lg border border-[#1e1e38] gap-1">
+                <button
+                  type="button"
+                  onClick={() => setViewportMode('mobile')}
+                  className={`text-[11px] font-bold py-1 px-2.5 rounded-md transition-all ${
+                    viewportMode === 'mobile'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  📱 Mobile (340px)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewportMode('tablet')}
+                  className={`text-[11px] font-bold py-1 px-2.5 rounded-md transition-all ${
+                    viewportMode === 'tablet'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  📲 Tablet (420px)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewportMode('desktop')}
+                  className={`text-[11px] font-bold py-1 px-2.5 rounded-md transition-all ${
+                    viewportMode === 'desktop'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  💻 Desktop (480px)
+                </button>
+              </div>
             </div>
 
-            {/* Simulated Phone Shell */}
-            <div className="w-[340px] h-[600px] bg-slate-950 rounded-[2.5rem] shadow-2xl border-[10px] border-slate-900 overflow-hidden relative ring-4 ring-[#3d3d6b]">
+            {/* Simulated Phone / Tablet Shell */}
+            <div 
+              className={`transition-all duration-300 ${
+                viewportMode === 'desktop' ? 'w-[480px] max-w-full' : viewportMode === 'tablet' ? 'w-[420px] max-w-full' : 'w-[340px]'
+              } h-[620px] bg-slate-950 rounded-[2.5rem] shadow-2xl border-[10px] border-slate-900 overflow-hidden relative ring-4 ring-[#3d3d6b] flex flex-col`}
+            >
               
               {/* Notch */}
-              <div className="absolute top-0 inset-x-0 h-5 bg-slate-900 rounded-b-2xl w-36 mx-auto z-30"></div>
-              
-              {/* Phone Content viewport */}
-              <div 
-                className="w-full h-full flex flex-col overflow-y-auto custom-scrollbar relative z-20 transition-all duration-300"
-                style={{ backgroundColor: colors.bg }}
-              >
-                {renderAdSimulator()}
-                
-                {/* 1. SCREEN VIEW: HOTSPOT LOGIN */}
-                {previewScreen === 'login' && (
-                  <div className="flex flex-col flex-1 pb-6" style={{ color: colors.ink }}>
-                    
-                    {/* Header Banner */}
-                    <div 
-                      className="h-28 flex items-center justify-center text-white p-4 relative"
-                      style={{ backgroundColor: colors.brand }}
-                    >
-                      <h2 className="text-xl font-bold tracking-tight text-center truncate w-full pt-4">{businessName}</h2>
-                    </div>
+              <div className="absolute top-0 inset-x-0 h-5 bg-slate-900 rounded-b-2xl w-36 mx-auto z-40 pointer-events-none"></div>
 
-                    {/* Logo/Avatar */}
-                    <div className="w-16 h-16 bg-white rounded-full overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center mx-auto mt-[-32px] z-10">
-                      <img src={logoPreviewUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
-                    </div>
-
-                    {/* Main Login Card */}
-                    <div className="mx-4 mt-6 bg-white p-5 rounded-2xl shadow-md border border-slate-100">
-
-                      <div className="text-center mb-5">
-                        <p className="text-xs" style={{ color: colors.muted }}>{message}</p>
-                      </div>
-
-                      {/* Fake Input Fields */}
-                      <div className="space-y-3">
-                        <div>
-                          <input 
-                            type="text" 
-                            disabled 
-                            placeholder="Usuário" 
-                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none" 
-                          />
-                        </div>
-                        <div>
-                          <input 
-                            type="password" 
-                            disabled 
-                            placeholder="Senha" 
-                            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none" 
-                          />
-                        </div>
-                      </div>
-
-                      {/* Buttons Grid */}
-                      <div className="grid grid-cols-2 gap-3 mt-4">
-                        <div 
-                          className="h-10 text-white font-bold text-xs rounded-lg flex items-center justify-center cursor-default shadow-sm opacity-90 text-center"
-                          style={{ backgroundColor: colors.blue }}
-                        >
-                          Entrar
-                        </div>
-                        <div 
-                          className="h-10 text-white font-bold text-xs rounded-lg flex items-center justify-center cursor-default shadow-sm opacity-90 text-center px-1 truncate"
-                          style={{ backgroundColor: colors.green, display: enabled ? 'flex' : 'none' }}
-                        >
-                          {registerButtonText}
-                        </div>
-                      </div>
-
-                      {trialEnabled && (
-                        <div className="text-center text-[10px] mt-4" style={{ color: colors.muted }}>
-                          <span>{trialText}</span>
-                          <span className="text-blue-600 underline font-bold cursor-default">{trialLinkText}</span>
-                        </div>
-                      )}
-
-                      <div className="mt-5 pt-4 border-t border-slate-100 text-center text-[9px]" style={{ color: colors.muted }}>
-                        <span>IP: 10.0.0.85 • MAC: AA:BB:CC:11:22</span>
-                      </div>
-
-                    </div>
-                  </div>
-                )}
-
-                {/* 2. SCREEN VIEW: AUTO-CADASTRO */}
-                {previewScreen === 'register' && (
-                  <div className="flex flex-col flex-1 pb-6 bg-slate-50">
-                    
-                    {/* Header Banner */}
-                    <div 
-                      className="px-4 py-8 text-center text-white relative transition-colors duration-300"
-                      style={{ backgroundColor: colors.brand }}
-                    >
-                      <h2 className="text-lg font-bold tracking-tight pt-2">{registerTitle}</h2>
-                      <p className="text-[10px] text-white/90 mt-1 font-sans">{registerSubtitle}</p>
-                    </div>
-
-                    {/* Simulation Card */}
-                    <div className="mx-4 mt-5 bg-white p-5 rounded-2xl shadow-md border border-slate-100">
-
-                      {/* Advertisement / Sponsorship Area - Inline Preview */}
-                      {ad && ad.type !== 'none' && (
-                        <div className="mb-5 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 relative shadow-sm aspect-video flex items-center justify-center">
-                           <span className="absolute top-1.5 right-1.5 bg-black/60 text-white text-[7px] px-1.5 py-0.5 rounded font-medium backdrop-blur-sm z-10 uppercase tracking-wider">
-                             Patrocinado
-                           </span>
-                           {ad.type === 'image' && ad.mediaUrl ? (
-                             <img src={ad.mediaUrl} alt="Ad" className="w-full h-full object-cover" />
-                           ) : ad.type === 'video' && ad.mediaUrl ? (
-                             <video src={ad.mediaUrl} className="w-full h-full object-cover" />
-                           ) : ad.type === 'carousel' && Array.isArray(ad.items) && ad.items.length > 0 ? (
-                             <img src={ad.items[0]?.url} alt="Slide" className="w-full h-full object-cover" />
-                           ) : (
-                             <div className="text-slate-400 text-[10px]">Espaço do Anúncio</div>
-                           )}
-                        </div>
-                      )}
-
-                      {/* Fake Register Fields (Dynamic simulation) */}
-                      <div className="space-y-3">
-                        
-                        {/* Name Field Preview */}
-                        {fields.nameEnabled && (
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-700 mb-0.5 font-sans">
-                              Nome Completo {fields.nameRequired && <span className="text-red-500">*</span>}
-                            </label>
-                            <input type="text" disabled placeholder="Ex: João da Silva" className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                          </div>
-                        )}
-                        
-                        {/* Phone Field Preview */}
-                        {fields.phoneEnabled ? (
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-700 mb-0.5 font-sans">
-                              DDD e Celular <span className="text-red-500">*</span>
-                            </label>
-                            <div className="grid grid-cols-12 gap-1.5">
-                              <input type="text" disabled placeholder="DDD" className="col-span-3 h-8 text-center bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                              <input type="text" disabled placeholder="Celular" className="col-span-9 h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-700 mb-0.5 font-sans">
-                              Usuário <span className="text-red-500">*</span>
-                            </label>
-                            <input type="text" disabled placeholder="Ex: joaoda_silva" className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                          </div>
-                        )}
-
-                        {/* Email Field Preview */}
-                        {fields.emailEnabled && (
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-700 mb-0.5 font-sans">
-                              E-mail {fields.emailRequired && <span className="text-red-500">*</span>}
-                            </label>
-                            <input type="text" disabled placeholder="Ex: joao@email.com" className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                          </div>
-                        )}
-                        
-                        {/* Birthdate Field Preview */}
-                        {fields.birthDateEnabled && (
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-700 mb-0.5 font-sans">
-                              Data de Nascimento {fields.birthDateRequired && <span className="text-red-500">*</span>}
-                            </label>
-                            <div className="grid grid-cols-12 gap-1.5">
-                              <input type="text" disabled placeholder="Dia" className="col-span-4 h-8 text-center bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                              <input type="text" disabled placeholder="Mês" className="col-span-4 h-8 text-center bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                              <input type="text" disabled placeholder="Ano" className="col-span-4 h-8 text-center bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* CPF Field Preview */}
-                        {fields.cpfEnabled && (
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-700 mb-0.5 font-sans">
-                              CPF {fields.cpfRequired && <span className="text-red-500">*</span>}
-                            </label>
-                            <input type="text" disabled placeholder="000.000.000-00" className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                          </div>
-                        )}
-
-                        {/* Gender Field Preview */}
-                        {fields.genderEnabled && (
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-700 mb-0.5 font-sans">
-                              Gênero {fields.genderRequired && <span className="text-red-500">*</span>}
-                            </label>
-                            <select disabled className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] appearance-none" style={{ backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%231F2937' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.5rem center', backgroundSize: '1.2em 1.2em', backgroundRepeat: 'no-repeat' }}>
-                              <option>Escolha seu Gênero</option>
-                            </select>
-                          </div>
-                        )}
-
-                        {/* Password Field Preview */}
-                        {fields.passwordEnabled && (
-                          <>
-                            <div>
-                              <label className="block text-[9px] font-bold text-slate-700 mb-0.5 font-sans">
-                                Crie uma Senha {fields.passwordRequired && <span className="text-red-500">*</span>}
-                              </label>
-                              <input type="password" disabled placeholder="••••••••" className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                            </div>
-                            <div>
-                              <label className="block text-[9px] font-bold text-slate-700 mb-0.5 font-sans">
-                                Confirme sua Senha {fields.passwordRequired && <span className="text-red-500">*</span>}
-                              </label>
-                              <input type="password" disabled placeholder="••••••••" className="w-full h-8 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px]" />
-                            </div>
-                          </>
-                        )}
-                        
-                        {/* Custom Dynamic Field Preview */}
-                        {fields.customFieldEnabled && (
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-700 mb-0.5 font-sans">
-                              {fields.customFieldLabel || 'Campo Personalizado'} {fields.customFieldRequired && <span className="text-red-500">*</span>}
-                            </label>
-                            <textarea disabled placeholder="Digite sua resposta..." rows={2} className="w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] resize-none" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Branded Submit Button */}
-                      <div 
-                        className="h-10 text-white font-bold text-xs rounded-xl flex items-center justify-center cursor-default shadow-sm mt-4 font-sans text-center px-2 truncate"
-                        style={{ backgroundColor: colors.brand }}
-                      >
-                        {registerSubmitText}
-                      </div>
-
-                      {/* Terms Text Preview */}
-                      <div className="mt-4 pt-3 border-t border-slate-100">
-                        <p className="text-center text-[8px] text-slate-500 font-sans">
-                          {termsText}
-                        </p>
-                      </div>
-
-                    </div>
-                  </div>
-                )}
-
+              {/* Captive Portal Top Bar Header (Matches Screenshot) */}
+              <div className="bg-slate-900 border-b border-slate-800 pt-5 pb-2.5 px-4 text-white flex items-center justify-between z-30 relative select-none shrink-0 shadow-md">
+                <div className="flex-1 min-w-0 pr-2">
+                  <div className="text-[13px] font-semibold text-slate-100 truncate tracking-tight">Fazer login em MikroTik-5B1808</div>
+                  <div className="text-[11px] text-slate-400 truncate font-mono">hotspot.wifi.local</div>
+                </div>
+                <div className="flex items-center gap-2 text-slate-400">
+                  <svg className="w-5 h-5 text-slate-300" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                  </svg>
+                </div>
               </div>
+              
+              {/* Real Live Preview Iframe */}
+              <iframe
+                key={`${previewScreen}-${template}`}
+                id="preview-iframe"
+                src={previewScreen === 'register' ? `/portal/register?template=${template}&preview=1` : `/api/portal/preview?template=${template}&screen=login`}
+                onLoad={broadcastLivePreview}
+                className="w-full flex-1 border-none relative z-20 bg-transparent"
+                sandbox="allow-scripts allow-same-origin allow-forms"
+              />
+
             </div>
           </div>
         </div>
@@ -3242,6 +3780,37 @@ export default function PortalEditor() {
             )}
           </div>
         )
+      )}
+      {/* Deploy Result Toast */}
+      {deployModal && (
+        <div className="fixed top-6 right-6 z-[9999] animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className={`relative w-80 bg-slate-900 border ${deployModal.type === 'success' ? 'border-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.2)]' : 'border-rose-500/50 shadow-[0_0_30px_rgba(244,63,94,0.2)]'} rounded-xl p-4 flex items-start gap-4`}>
+            
+            <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${deployModal.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+              {deployModal.type === 'success' ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+              )}
+            </div>
+
+            <div className="flex-1 pt-0.5">
+              <h3 className={`text-sm font-bold mb-1 ${deployModal.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {deployModal.type === 'success' ? 'Sucesso!' : 'Atenção!'}
+              </h3>
+              <p className="text-slate-300 text-xs font-medium leading-relaxed">
+                {deployModal.message}
+              </p>
+            </div>
+
+            <button
+              onClick={() => setDeployModal(null)}
+              className="shrink-0 text-slate-500 hover:text-white transition-colors p-1 cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+        </div>
       )}
     </main>
   );

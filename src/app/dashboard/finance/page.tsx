@@ -9,6 +9,11 @@ export default function FinanceReport() {
   const [notConnected, setNotConnected] = useState(false);
   const [clearing, setClearing] = useState(false);
 
+  // Mercado Pago State
+  const [mpToken, setMpToken] = useState('');
+  const [manualPixKey, setManualPixKey] = useState('');
+  const [mpSaving, setMpSaving] = useState(false);
+
   // Filter States
   const [search, setSearch] = useState('');
   const [selectedProfile, setSelectedProfile] = useState('all');
@@ -40,7 +45,41 @@ export default function FinanceReport() {
 
   useEffect(() => {
     fetchFinance();
+    fetchMpConfig();
   }, []);
+
+  const fetchMpConfig = async () => {
+    try {
+      const res = await fetch('/api/config/mercadopago');
+      const data = await res.json();
+      if (data.success) {
+        setMpToken(data.token);
+        setManualPixKey(data.manualPixKey || '');
+      }
+    } catch (e) {}
+  };
+
+  const handleSaveMpToken = async () => {
+    setMpSaving(true);
+    try {
+      const res = await fetch('/api/config/mercadopago', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: mpToken, manualPixKey })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Chave API do Mercado Pago salva com sucesso!');
+        fetchMpConfig();
+      } else {
+        alert('Erro ao salvar a chave.');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao salvar chave.');
+    } finally {
+      setMpSaving(false);
+    }
+  };
 
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -208,73 +247,73 @@ export default function FinanceReport() {
   const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
 
   return (
-    <main className="p-4 md:p-6 space-y-6 animate-fade-in">
+    <main className="w-full p-4 md:p-6 space-y-6 animate-fade-in">
       {/* Page Header */}
-      <header className="retro-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="rack-screw" />
-          <span className="led led-green animate-led-pulse" />
-          <div>
-            <div style={{ color: 'var(--led-green)', fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-              ▶ SYSTEM // FINANCIAL AUDITING MODULE
-            </div>
-            <h1 style={{ fontFamily: 'Orbitron, sans-serif', color: 'white', fontSize: '1.25rem', fontWeight: 900 }}>
-              Financeiro e Vendas
-            </h1>
-          </div>
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#22c55e' }}>
+            ▶ SYSTEM // FINANCIAL AUDITING MODULE
+          </p>
+          <h1 className="text-2xl font-black tracking-tight text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+            Financeiro e Vendas
+          </h1>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Faturamento consolidado em tempo real lido das transações persistidas no MikroTik
+          </p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 self-start sm:self-auto">
           <button
             onClick={() => handleExportCSV(filteredTransactions)}
             disabled={filteredTransactions.length === 0}
-            className="retro-btn retro-btn-success text-xs flex items-center gap-1.5 disabled:opacity-50"
+            className="aurora-btn text-xs"
+            style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
           >
             <span>📥</span> Exportar CSV
           </button>
           <button
             onClick={() => handleClearLogs(null)}
             disabled={clearing || allTransactions.length === 0}
-            className="retro-btn retro-btn-danger text-xs flex items-center gap-1.5 disabled:opacity-50"
+            className="aurora-btn text-xs"
+            style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}
           >
             <span>🗑️</span> Limpar Tudo
           </button>
-          <div className="rack-screw" />
         </div>
       </header>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="retro-stat-box flex flex-col justify-between h-28 relative">
-          <span className="block text-[8px] text-slate-500 uppercase tracking-widest mb-1 text-left">TOTAL_FATURAMENTO</span>
-          <p className="text-2xl font-bold tracking-tight text-blue-400 text-left mt-2">
+        <div className="aurora-card p-5 flex flex-col justify-between h-28">
+          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">TOTAL FATURAMENTO</span>
+          <p className="text-2xl font-black text-sky-400 mt-1" style={{ fontFamily: 'Orbitron, sans-serif' }}>
             {formatBRL(financeData?.totalRevenue || 0)}
           </p>
-          <span className="block text-[8px] text-slate-600 text-left mt-auto font-mono">Persistido no script do MikroTik</span>
+          <span className="block text-[10px] text-slate-500 mt-auto">Persistido no script do MikroTik</span>
         </div>
         
-        <div className="retro-stat-box flex flex-col justify-between h-28 relative">
-          <span className="block text-[8px] text-slate-500 uppercase tracking-widest mb-1 text-left">FATURAMENTO_MES</span>
-          <p className="text-2xl font-bold tracking-tight text-emerald-450 text-left mt-2">
+        <div className="aurora-card p-5 flex flex-col justify-between h-28">
+          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">FATURAMENTO DO MÊS</span>
+          <p className="text-2xl font-black text-emerald-400 mt-1" style={{ fontFamily: 'Orbitron, sans-serif' }}>
             {formatBRL(financeData?.monthlyRevenue || 0)}
           </p>
-          <span className="block text-[8px] text-slate-600 text-left mt-auto font-mono">Vendas do mês atual</span>
+          <span className="block text-[10px] text-slate-500 mt-auto">Vendas do mês atual</span>
         </div>
 
-        <div className="retro-stat-box flex flex-col justify-between h-28 relative">
-          <span className="block text-[8px] text-slate-500 uppercase tracking-widest mb-1 text-left">FATURAMENTO_HOJE</span>
-          <p className="text-2xl font-bold tracking-tight text-amber-500 text-left mt-2">
+        <div className="aurora-card p-5 flex flex-col justify-between h-28">
+          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">FATURAMENTO HOJE</span>
+          <p className="text-2xl font-black text-amber-400 mt-1" style={{ fontFamily: 'Orbitron, sans-serif' }}>
             {formatBRL(financeData?.todayRevenue || 0)}
           </p>
-          <span className="block text-[8px] text-slate-600 text-left mt-auto font-mono">Vendas nas últimas 24h</span>
+          <span className="block text-[10px] text-slate-500 mt-auto">Vendas nas últimas 24h</span>
         </div>
 
-        <div className="retro-stat-box flex flex-col justify-between h-28 relative">
-          <span className="block text-[8px] text-slate-500 uppercase tracking-widest mb-1 text-left">TOTAL_VENDAS_VOUCHERS</span>
-          <p className="text-2xl font-bold tracking-tight text-white text-left mt-2">
+        <div className="aurora-card p-5 flex flex-col justify-between h-28">
+          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">TOTAL DE VOUCHERS</span>
+          <p className="text-2xl font-black text-white mt-1" style={{ fontFamily: 'Orbitron, sans-serif' }}>
             {financeData?.salesCount || 0}
           </p>
-          <span className="block text-[8px] text-slate-600 text-left mt-auto font-mono">Vouchers ativos no sistema</span>
+          <span className="block text-[10px] text-slate-500 mt-auto">Vouchers ativos no sistema</span>
         </div>
       </div>
 
@@ -283,42 +322,82 @@ export default function FinanceReport() {
         {/* Aggregated Panels */}
         <div className="space-y-6 lg:col-span-1">
           {/* Revenue by Profile */}
-          <div className="retro-card">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#0a0a18]" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-              <div className="flex items-center gap-2">
-                <div className="rack-screw" />
-                <span className="font-mono text-xs font-bold text-slate-450 uppercase">REVENUE_BY_PLAN</span>
-              </div>
-              <div className="rack-screw" />
+          <div className="aurora-card p-5 md:p-6 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-black text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                Faturamento por Plano
+              </h3>
             </div>
             
-            <div className="divide-y divide-[#0c0c1c] max-h-60 overflow-y-auto custom-scrollbar p-3" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 divide-y divide-white/5 max-h-60 overflow-y-auto custom-scrollbar">
               {financeData?.profilesArray.map((p: any, idx: number) => (
-                <div key={`${p.name}-${idx}`} className="px-3 py-2 flex justify-between items-center hover:bg-[#101026]/40 transition-colors">
+                <div key={`${p.name}-${idx}`} className="px-4 py-3 flex justify-between items-center hover:bg-white/5 transition-colors">
                   <div>
                     <span className="font-bold text-white text-sm">{p.name}</span>
-                    <span className="block text-[10px] text-slate-500">{p.count} transações</span>
+                    <span className="block text-[10px] text-slate-400">{p.count} transações</span>
                   </div>
-                  <span className="font-bold text-emerald-450 text-sm">{formatBRL(p.revenue)}</span>
+                  <span className="font-bold text-emerald-400 text-sm">{formatBRL(p.revenue)}</span>
                 </div>
               ))}
-              {(!financeData?.profilesArray || financeData?.profilesArray.length === 0) && (
-                <div className="p-6 text-center text-sm text-slate-400 italic">Nenhum perfil detectado.</div>
+              {(!financeData?.profilesArray || financeData.profilesArray.length === 0) && (
+                <div className="px-4 py-3 text-center text-slate-500 text-xs">
+                  Nenhum dado consolidado por plano.
+                </div>
               )}
+            </div>
+          </div>
+          
+          {/* Integração de Pagamento */}
+          <div className="aurora-card p-5 md:p-6 flex flex-col border border-sky-500/30">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-black text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                Opções de Pagamento e PIX
+              </h3>
+            </div>
+            
+            {/* Mercado Pago API */}
+            <p className="text-xs text-slate-400 mb-2"><b>API Mercado Pago (Automático)</b></p>
+            <div className="flex flex-col gap-2 mb-4">
+              <input 
+                type="password" 
+                className="w-full bg-[#0b1220] border border-slate-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-sky-500" 
+                placeholder="APP_USR-XXXXXXXXX-XXXXX..." 
+                value={mpToken} 
+                onChange={e => setMpToken(e.target.value)} 
+              />
+            </div>
+
+            {/* Chave Manual */}
+            <p className="text-xs text-slate-400 mb-2 mt-2"><b>Chave PIX Manual (Modo de Confiança)</b></p>
+            <p className="text-[10px] text-slate-500 mb-2">Usado caso a API acima esteja vazia.</p>
+            <div className="flex flex-col gap-3">
+              <input 
+                type="text" 
+                className="w-full bg-[#0b1220] border border-slate-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-sky-500" 
+                placeholder="ex: seu-email@gmail.com, CPF, Telefone..." 
+                value={manualPixKey} 
+                onChange={e => setManualPixKey(e.target.value)} 
+              />
+              <button 
+                className="aurora-btn text-xs w-full justify-center mt-2" 
+                style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)' }}
+                onClick={handleSaveMpToken}
+                disabled={mpSaving}
+              >
+                {mpSaving ? 'Salvando...' : 'Salvar Configurações de Pagamento'}
+              </button>
             </div>
           </div>
 
           {/* Revenue by Month & Deletion Controls */}
-          <div className="retro-card">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#0a0a18]" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-              <div className="flex items-center gap-2">
-                <div className="rack-screw" />
-                <span className="font-mono text-xs font-bold text-slate-450 uppercase">MONTHLY_CLOSURE_LOGS</span>
-              </div>
-              <div className="rack-screw" />
+          <div className="aurora-card p-5 md:p-6 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-black text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                Fechamentos Consolidados
+              </h3>
             </div>
             
-            <div className="divide-y divide-[#0c0c1c] max-h-64 overflow-y-auto custom-scrollbar p-3" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 divide-y divide-white/5 max-h-64 overflow-y-auto custom-scrollbar">
               {financeData?.monthsArray.map((m: any, idx: number) => {
                 const monthsNames: Record<string, string> = {
                   '01': 'jan', '02': 'feb', '03': 'mar', '04': 'apr', '05': 'may', '06': 'jun',
@@ -329,17 +408,17 @@ export default function FinanceReport() {
                 const ownerString = `${monthName}${year}`;
 
                 return (
-                  <div key={`${m.key}-${idx}`} className="px-3 py-2 flex justify-between items-center hover:bg-[#101026]/40 transition-colors">
+                  <div key={`${m.key}-${idx}`} className="px-4 py-3 flex justify-between items-center hover:bg-white/5 transition-colors">
                     <div>
                       <span className="font-bold text-white text-sm">{m.label}</span>
-                      <span className="block text-[10px] text-slate-500">{m.count} vendas</span>
+                      <span className="block text-[10px] text-slate-405">{m.count} vendas</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-bold text-emerald-450 text-sm">{formatBRL(m.revenue)}</span>
+                      <span className="font-bold text-emerald-400 text-sm">{formatBRL(m.revenue)}</span>
                       <button
                         onClick={() => handleClearLogs(ownerString, m.label)}
                         title={`Limpar histórico de ${m.label}`}
-                        className="p-1 text-red-500 hover:text-red-300 transition-colors"
+                        className="p-1 hover:scale-110 text-red-400 hover:text-red-300 transition-all cursor-pointer"
                       >
                         🗑️
                       </button>
@@ -355,32 +434,32 @@ export default function FinanceReport() {
         </div>
 
         {/* Interactive Transaction Log Table */}
-        <div className="retro-card lg:col-span-2 space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between px-5 py-4 border-b border-[#0a0a18]" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-            <div className="flex items-center gap-3">
-              <div className="rack-screw" />
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Histórico de Transações</h3>
-                <p className="text-[10px] text-slate-400 font-mono">Listagem dinâmica // filtragem local</p>
-              </div>
+        <div className="aurora-card p-5 md:p-6 lg:col-span-2 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-black text-white uppercase tracking-wider" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                Histórico de Transações
+              </h3>
+              <p className="text-xs text-slate-400">Listagem dinâmica com filtragem local</p>
             </div>
             
-            {/* Show local revenue for filtered set */}
             <div className="text-right">
-              <span className="text-[8px] font-bold text-slate-450 uppercase tracking-wider block font-mono">TOTAL_FILTERED</span>
-              <span className="text-lg font-bold text-emerald-400 font-mono" style={{ textShadow: '0 0 8px rgba(52, 211, 153, 0.3)' }}>{formatBRL(filteredRevenue)}</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Filtrado</span>
+              <span className="text-xl font-black text-emerald-400" style={{ fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 10px rgba(52, 211, 153, 0.2)' }}>
+                {formatBRL(filteredRevenue)}
+              </span>
             </div>
           </div>
 
           {/* Filters Bar */}
-          <div className="px-5 flex flex-col md:flex-row gap-3">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
               <input
                 type="text"
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                 placeholder="Buscar por usuário, MAC ou lote..."
-                className="retro-input text-xs py-2 px-3"
+                className="aurora-input text-xs py-2 px-3"
               />
             </div>
             
@@ -388,8 +467,8 @@ export default function FinanceReport() {
               <select
                 value={selectedProfile}
                 onChange={(e) => { setSelectedProfile(e.target.value); setCurrentPage(1); }}
-                className="retro-input text-xs py-2 px-3"
-                style={{ background: '#06080e' }}
+                className="aurora-input text-xs py-2 px-3"
+                style={{ background: '#0c0c18' }}
               >
                 <option value="all" className="bg-[#0c0c18]">Todos os Perfis</option>
                 {financeData?.profilesArray.map((p: any) => (
@@ -402,8 +481,8 @@ export default function FinanceReport() {
               <select
                 value={selectedMonth}
                 onChange={(e) => { setSelectedMonth(e.target.value); setCurrentPage(1); }}
-                className="retro-input text-xs py-2 px-3"
-                style={{ background: '#06080e' }}
+                className="aurora-input text-xs py-2 px-3"
+                style={{ background: '#0c0c18' }}
               >
                 <option value="all" className="bg-[#0c0c18]">Todos os Meses</option>
                 {financeData?.monthsArray.map((m: any) => (
@@ -414,40 +493,40 @@ export default function FinanceReport() {
           </div>
 
           {/* Table Container */}
-          <div className="p-4">
-            <div className="retro-table-wrap overflow-x-auto w-full">
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+            <div className="overflow-x-auto w-full">
               <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
-                <thead style={{ background: '#070f1e', borderBottom: '2px solid #0a0a18' }}>
-                  <tr style={{ fontFamily: 'Share Tech Mono, monospace', color: 'var(--display-dim)' }}>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider">Data / Hora</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider">Usuário</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider">Plano</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider">Preço</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider">Vencimento</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider">MAC Address</th>
-                    <th className="px-4 py-3 font-bold uppercase tracking-wider">Lote/Comentário</th>
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/5 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="px-4 py-3">Data / Hora</th>
+                    <th className="px-4 py-3">Usuário</th>
+                    <th className="px-4 py-3">Plano</th>
+                    <th className="px-4 py-3">Preço</th>
+                    <th className="px-4 py-3">Vencimento</th>
+                    <th className="px-4 py-3">MAC Address</th>
+                    <th className="px-4 py-3">Lote/Comentário</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#0c0c1c]" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+                <tbody className="divide-y divide-white/5">
                   {paginatedTransactions.map((t: any, idx: number) => (
-                    <tr key={`${t.id}-${idx}`} className="hover:bg-[#101026]/40 transition-colors">
+                    <tr key={`${t.id}-${idx}`} className="hover:bg-white/5 transition-colors">
                       <td className="px-4 py-3">
                         <span className="font-bold text-white block text-[11px]">{t.formattedDate}</span>
                         <span className="text-slate-500 block text-[9px] font-mono leading-none mt-0.5">{t.time}</span>
                       </td>
                       <td className="px-4 py-3 font-bold text-[#7dd3fc]">{t.username}</td>
-                      <td className="px-4 py-3 text-slate-450">{t.profile}</td>
+                      <td className="px-4 py-3 text-slate-350">{t.profile}</td>
                       <td className="px-4 py-3 font-bold text-emerald-400">{formatBRL(t.price)}</td>
-                      <td className="px-4 py-3 text-slate-500 font-mono">{t.validity || 'indefinida'}</td>
-                      <td className="px-4 py-3 text-slate-500 font-mono">{t.mac || 'bypassed/trial'}</td>
-                      <td className="px-4 py-3 text-slate-500 italic max-w-xs overflow-hidden text-ellipsis" title={t.comment}>
+                      <td className="px-4 py-3 text-slate-400 font-mono">{t.validity || 'indefinida'}</td>
+                      <td className="px-4 py-3 text-slate-400 font-mono">{t.mac || 'bypassed/trial'}</td>
+                      <td className="px-4 py-3 text-slate-400 italic max-w-xs overflow-hidden text-ellipsis" title={t.comment}>
                         {t.comment || '-'}
                       </td>
                     </tr>
                   ))}
                   {paginatedTransactions.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-4 py-10 text-center text-slate-400 italic">
+                      <td colSpan={7} className="px-4 py-10 text-center text-slate-450 italic">
                         Nenhuma transação financeira corresponde aos filtros selecionados.
                       </td>
                     </tr>
@@ -459,16 +538,17 @@ export default function FinanceReport() {
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="px-5 py-4 border-t border-[#0a0a18] flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
+            <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
               <span className="text-slate-400">
                 Exibindo {startIndex + 1} - {endIndex} de {totalItems} transações
               </span>
               
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="retro-btn retro-btn-dark py-1 px-2.5 text-[10px]"
+                  className="aurora-btn text-[10px] py-1 px-3"
+                  style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
                 >
                   Anterior
                 </button>
@@ -480,8 +560,10 @@ export default function FinanceReport() {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`retro-btn py-1 px-2 text-[10px] ${
-                          currentPage === pageNum ? 'retro-btn-primary' : 'retro-btn-dark'
+                        className={`text-[10px] py-1.5 px-3 rounded-lg transition-all ${
+                          currentPage === pageNum
+                            ? 'bg-white/10 text-white border border-white/20'
+                            : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
                         }`}
                       >
                         {pageNum}
@@ -497,7 +579,8 @@ export default function FinanceReport() {
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="retro-btn retro-btn-dark py-1 px-2.5 text-[10px]"
+                  className="aurora-btn text-[10px] py-1 px-3"
+                  style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
                 >
                   Próxima
                 </button>

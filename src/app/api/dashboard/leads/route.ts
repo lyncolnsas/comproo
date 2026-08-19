@@ -105,6 +105,14 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const all = searchParams.get('all');
+
+    if (all === 'true') {
+      await prisma.payment.deleteMany({});
+      await prisma.hotspotLead.deleteMany({});
+      return NextResponse.json({ success: true, message: 'Todos os leads foram excluídos com sucesso.' });
+    }
+
     if (!id) {
       return NextResponse.json({ success: false, message: 'ID do lead é obrigatório.' }, { status: 400 });
     }
@@ -137,7 +145,10 @@ export async function DELETE(request: Request) {
       console.error('Failed to remove user from Mikrotik during lead delete:', mkErr);
     }
 
-    // 3. Delete from local database
+    // 3. Delete associated payments first to prevent foreign key errors
+    await prisma.payment.deleteMany({ where: { leadId: id } });
+
+    // 4. Delete from local database
     await prisma.hotspotLead.delete({ where: { id } });
 
     return NextResponse.json({ success: true, message: 'Lead deletado com sucesso.' });

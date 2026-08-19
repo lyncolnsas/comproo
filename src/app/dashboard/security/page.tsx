@@ -263,39 +263,51 @@ export default function SecurityControl() {
   }
 
   return (
-    <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-6 animate-fade-in">
+    <main className="w-full p-4 md:p-6 max-w-6xl mx-auto space-y-6 animate-fade-in">
       {/* Page Header */}
-      <header className="retro-card p-4 flex items-center gap-3">
-        <div className="rack-screw" />
-        <span className="led led-red animate-led-pulse" />
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div style={{ color: 'var(--led-red)', fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+          <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#ef4444' }}>
             ▶ SECURITY // ROUTER FIREWALL GATEKEEPER
-          </div>
-          <h1 style={{ fontFamily: 'Orbitron, sans-serif', color: 'white', fontSize: '1.25rem', fontWeight: 900 }}>
+          </p>
+          <h1 className="text-2xl font-black tracking-tight text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
             Segurança e Acessos
           </h1>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Gerencie firewalls, sites liberados pré-login e bloqueio por palavras-chave
+          </p>
         </div>
-        <div className="ml-auto rack-screw" />
       </header>
 
-      {/* Tabs Menu styled as physical key switches */}
-      <div className="flex flex-wrap gap-3 bg-[#0a0a18]/40 p-2.5 rounded-xl border border-[#252542] w-fit shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)]">
+      {/* Tabs Menu styled as modern glass pills */}
+      <div className="flex flex-wrap gap-2 bg-white/5 border border-white/10 p-1 rounded-xl w-fit">
         <button
           onClick={() => setActiveTab('walled-garden')}
-          className={`retro-btn ${activeTab === 'walled-garden' ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+          className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            activeTab === 'walled-garden'
+              ? 'bg-white/10 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
+          }`}
         >
           🌐 Sites Walled Garden
         </button>
         <button
           onClick={() => setActiveTab('time-block')}
-          className={`retro-btn ${activeTab === 'time-block' ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+          className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            activeTab === 'time-block'
+              ? 'bg-white/10 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
+          }`}
         >
           🕒 Bloqueio de Horário
         </button>
         <button
           onClick={() => setActiveTab('keywords')}
-          className={`retro-btn ${activeTab === 'keywords' ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+          className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            activeTab === 'keywords'
+              ? 'bg-white/10 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
+          }`}
         >
           🚫 Palavras-Chave
         </button>
@@ -308,37 +320,35 @@ export default function SecurityControl() {
         {activeTab === 'walled-garden' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Form Section */}
-            <div className="lg:col-span-1 retro-card">
-              <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '2px solid #0a0a18', background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-                <div className="rack-screw" />
-                <span className="font-mono text-xs font-bold text-slate-450">CREATE_RULE_MODULE</span>
-              </div>
-              
-              <div className="p-5 space-y-4">
-                <p className="text-[10px] text-slate-400 font-mono leading-relaxed">
+            <div className="lg:col-span-1 aurora-card p-5 md:p-6 flex flex-col justify-between">
+              <div>
+                <h3 className="text-sm font-black text-white mb-2" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                  Criar Regra
+                </h3>
+                <p className="text-xs text-slate-400 mb-4 leading-relaxed">
                   Permita ou bloqueie domínios de passarem pelo Portal de Hotspot antes de realizar o login na rede.
                 </p>
                 
                 <form onSubmit={handleAddSite} className="space-y-4">
                   <div>
-                    <label className="block text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Domínio / Host</label>
+                    <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Domínio / Host</label>
                     <input
                       type="text"
                       value={host}
                       onChange={(e) => setHost(e.target.value)}
                       required
                       placeholder="Ex: google.com"
-                      className="retro-input"
+                      className="aurora-input"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Ação</label>
+                    <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Ação</label>
                     <select
                       value={action}
                       onChange={(e) => setAction(e.target.value)}
-                      className="retro-input"
-                      style={{ background: '#06080e' }}
+                      className="aurora-input"
+                      style={{ background: '#0c0c18' }}
                     >
                       <option value="allow" className="bg-[#0c0c18]">Liberar (Permitir)</option>
                       <option value="deny" className="bg-[#0c0c18]">Bloquear (Negar)</option>
@@ -346,66 +356,65 @@ export default function SecurityControl() {
                   </div>
 
                   <div>
-                    <label className="block text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Comentário</label>
+                    <label className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1">Comentário</label>
                     <input
                       type="text"
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
                       placeholder="Ex: Liberar updates"
-                      className="retro-input"
+                      className="aurora-input"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={walledLoading}
-                    className="w-full retro-btn retro-btn-primary"
+                    className="w-full aurora-btn text-xs"
                   >
                     {walledLoading ? 'Processando...' : 'Adicionar Regra'}
                   </button>
                 </form>
+              </div>
 
-                <div className="pt-4 border-t border-[#0a0a18]" style={{ boxShadow: '0 -1px 0 rgba(255,255,255,0.03)' }}>
-                  <span className="block text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-2" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Acesso Rápido</span>
-                  <button
-                    type="button"
-                    onClick={handleWhitelistMikroGestor}
-                    disabled={walledLoading}
-                    className="w-full retro-btn retro-btn-success text-xs"
-                  >
-                    ⚡ Liberar Auto Cadastro / API
-                  </button>
-                  <p className="text-[9px] text-slate-500 font-mono text-center mt-2 leading-normal">
-                    Libera o IP/Domínio deste painel de administração no Walled Garden e IP Bindings do MikroTik.
-                  </p>
-                </div>
+              <div className="pt-4 mt-4 border-t border-white/10">
+                <span className="block text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-2">Acesso Rápido</span>
+                <button
+                  type="button"
+                  onClick={handleWhitelistMikroGestor}
+                  disabled={walledLoading}
+                  className="w-full aurora-btn text-xs"
+                  style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                >
+                  ⚡ Liberar Auto Cadastro / API
+                </button>
+                <p className="text-[10px] text-slate-500 text-center mt-2 leading-normal">
+                  Libera o IP/Domínio deste painel de administração no Walled Garden e IP Bindings do MikroTik.
+                </p>
               </div>
             </div>
 
             {/* List Section */}
-            <div className="lg:col-span-2 retro-card">
-              <div className="px-5 py-3 border-b border-[#0a0a18] flex justify-between items-center bg-[#1e1e3a] md:bg-transparent" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-                <div className="flex items-center gap-2">
-                  <div className="rack-screw" />
-                  <span className="font-mono text-xs font-bold text-slate-450">WALLED_GARDEN_RULES_REGISTRY</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="retro-badge retro-badge-blue font-mono">{rules.length} REGRAS</span>
-                  <div className="rack-screw" />
-                </div>
+            <div className="lg:col-span-2 aurora-card p-5 md:p-6 flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-black text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                  Regras Ativas
+                </h3>
+                <span className="bg-white/5 border border-white/10 text-slate-350 text-[10px] font-bold rounded-lg px-2.5 py-1">
+                  {rules.length} REGRAS
+                </span>
               </div>
               
-              <div className="p-4">
-                <div className="retro-table-wrap max-h-[460px] overflow-y-auto custom-scrollbar">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="sticky top-0" style={{ background: '#070f1e', borderBottom: '2px solid #0a0a18', zIndex: 10 }}>
-                      <tr style={{ fontFamily: 'Share Tech Mono, monospace', color: 'var(--display-dim)' }}>
-                        <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Site / Domínio</th>
-                        <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Ação</th>
-                        <th className="px-6 py-3.5 font-bold uppercase tracking-wider text-right">Ações</th>
+              <div className="flex-1 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                <div className="max-h-[460px] overflow-auto custom-scrollbar">
+                  <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-white/5 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="px-6 py-3.5">Site / Domínio</th>
+                        <th className="px-6 py-3.5">Ação</th>
+                        <th className="px-6 py-3.5 text-right">Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#0c0c1c]" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+                    <tbody className="divide-y divide-white/5">
                       {walledLoading && rules.length === 0 ? (
                         <tr>
                           <td colSpan={3} className="px-6 py-8 text-center text-slate-400 italic">
@@ -420,17 +429,22 @@ export default function SecurityControl() {
                         </tr>
                       ) : (
                         rules.map((rule, index) => (
-                          <tr key={`${rule.id || rule.host}-${index}`} className="hover:bg-[#101026]/40 transition-colors">
+                          <tr key={`${rule.id || rule.host}-${index}`} className="hover:bg-white/5 transition-colors">
                             <td className="px-6 py-4 font-bold text-white text-sm tracking-wide">{rule.host}</td>
                             <td className="px-6 py-4">
-                              <span className={`retro-badge ${rule.action === 'allow' ? 'retro-badge-green' : 'retro-badge-red'}`}>
+                              <span className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                rule.action === 'allow' 
+                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                              }`}>
                                 {rule.action === 'allow' ? 'LIBERADO' : 'BLOQUEADO'}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-right">
                               <button
                                 onClick={() => handleDeleteSite(rule.id)}
-                                className="retro-btn retro-btn-danger py-1.5 px-3 text-[9px]"
+                                className="aurora-btn text-[10px] py-1 px-3"
+                                style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}
                               >
                                 Remover
                               </button>
@@ -450,52 +464,48 @@ export default function SecurityControl() {
         {activeTab === 'time-block' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Form Section */}
-            <div className="lg:col-span-1 retro-card">
-              <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '2px solid #0a0a18', background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-                <div className="rack-screw" />
-                <span className="font-mono text-xs font-bold text-slate-450">TIME_INTERVAL_SCHEDULER</span>
-              </div>
-              
-              <div className="p-5 space-y-4">
-                <p className="text-[10px] text-slate-400 font-mono leading-relaxed">
+            <div className="lg:col-span-1 aurora-card p-5 md:p-6 flex flex-col justify-between">
+              <div>
+                <h3 className="text-sm font-black text-white mb-2" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                  Agendar Bloqueio
+                </h3>
+                <p className="text-xs text-slate-400 mb-4 leading-relaxed">
                   Crie janelas de bloqueio geral temporário para derrubar toda a navegação de hotspot na rede local.
                 </p>
 
                 <form onSubmit={handleAddTimeBlock} className="space-y-4">
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Início (Bloqueio)</label>
+                      <label className="block text-[10px] font-bold uppercase text-slate-450 tracking-wider mb-1">Início (Bloqueio)</label>
                       <input
                         type="time"
                         value={startHour}
                         onChange={(e) => setStartHour(e.target.value)}
                         required
                         step="1"
-                        className="retro-input focus:border-red-500"
-                        style={{ color: 'var(--led-red)' }}
+                        className="aurora-input focus:border-red-500 text-rose-450 font-bold"
                       />
                     </div>
                     <div>
-                      <label className="block text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Fim (Liberação)</label>
+                      <label className="block text-[10px] font-bold uppercase text-slate-450 tracking-wider mb-1">Fim (Liberação)</label>
                       <input
                         type="time"
                         value={endHour}
                         onChange={(e) => setEndHour(e.target.value)}
                         required
                         step="1"
-                        className="retro-input focus:border-emerald-500"
-                        style={{ color: 'var(--led-green)' }}
+                        className="aurora-input focus:border-emerald-500 text-emerald-450 font-bold"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-2" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Dias Ativos</label>
+                    <label className="block text-[10px] font-bold uppercase text-slate-450 tracking-wider mb-2">Dias Ativos</label>
                     <div className="flex flex-wrap gap-2">
                       {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(dia => (
-                        <label key={dia} className="flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer border border-[#252542] hover:border-slate-500 transition-colors text-[9px] font-mono font-bold" style={{ background: 'linear-gradient(180deg, #121226 0%, #0a0a1a 100%)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)' }}>
-                          <input type="checkbox" defaultChecked className="rounded border-slate-700 text-blue-600 focus:ring-blue-500 w-3 h-3 bg-slate-900 cursor-pointer" />
-                          <span className="text-slate-400">{dia}</span>
+                        <label key={dia} className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl cursor-pointer border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-[10px] font-mono font-bold text-slate-350">
+                          <input type="checkbox" defaultChecked className="rounded border-white/20 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 bg-black/40 cursor-pointer" />
+                          <span>{dia}</span>
                         </label>
                       ))}
                     </div>
@@ -504,39 +514,38 @@ export default function SecurityControl() {
                   <button
                     type="submit"
                     disabled={timeLoading}
-                    className="w-full retro-btn retro-btn-danger"
+                    className="w-full aurora-btn text-xs"
+                    style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}
                   >
                     {timeLoading ? 'Aplicando...' : 'Ativar Regra'}
                   </button>
-                  <p className="text-[9px] text-slate-500 font-mono text-center mt-1">A regra de filtragem drop será aplicada no Forward Chain do Firewall.</p>
+                  <p className="text-[10px] text-slate-500 text-center mt-1">A regra de filtragem drop será aplicada no Forward Chain do Firewall.</p>
                 </form>
               </div>
             </div>
 
             {/* List Section */}
-            <div className="lg:col-span-2 retro-card">
-              <div className="px-5 py-3 border-b border-[#0a0a18] flex justify-between items-center bg-[#1e1e3a] md:bg-transparent" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-                <div className="flex items-center gap-2">
-                  <div className="rack-screw" />
-                  <span className="font-mono text-xs font-bold text-slate-450">SCHEDULED_DROP_RULES</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="retro-badge retro-badge-red font-mono">{timeRules.length} REGRAS</span>
-                  <div className="rack-screw" />
-                </div>
+            <div className="lg:col-span-2 aurora-card p-5 md:p-6 flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-black text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                  Bloqueios Agendados
+                </h3>
+                <span className="bg-white/5 border border-white/10 text-slate-350 text-[10px] font-bold rounded-lg px-2.5 py-1">
+                  {timeRules.length} REGRAS
+                </span>
               </div>
               
-              <div className="p-4">
-                <div className="retro-table-wrap max-h-[460px] overflow-y-auto custom-scrollbar">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="sticky top-0" style={{ background: '#070f1e', borderBottom: '2px solid #0a0a18', zIndex: 10 }}>
-                      <tr style={{ fontFamily: 'Share Tech Mono, monospace', color: 'var(--display-dim)' }}>
-                        <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Horário de Bloqueio</th>
-                        <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Dias da Semana</th>
-                        <th className="px-6 py-3.5 font-bold uppercase tracking-wider text-right">Ações</th>
+              <div className="flex-1 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                <div className="max-h-[460px] overflow-auto custom-scrollbar">
+                  <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-white/5 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="px-6 py-3.5">Horário de Bloqueio</th>
+                        <th className="px-6 py-3.5">Dias da Semana</th>
+                        <th className="px-6 py-3.5 text-right">Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#0c0c1c]" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+                    <tbody className="divide-y divide-white/5">
                       {timeLoading && timeRules.length === 0 ? (
                         <tr>
                           <td colSpan={3} className="px-6 py-8 text-center text-slate-400 italic">
@@ -555,16 +564,17 @@ export default function SecurityControl() {
                           const hours = timeParts[0] || '';
                           const days = timeParts[1] || 'todos';
                           return (
-                            <tr key={`${rule.id || index}`} className="hover:bg-[#101026]/40 transition-colors">
-                              <td className="px-6 py-4 font-bold text-red-400 text-sm tracking-wide">{hours.replace('-', ' às ')}</td>
+                            <tr key={`${rule.id || index}`} className="hover:bg-white/5 transition-colors">
+                              <td className="px-6 py-4 font-bold text-rose-450 text-sm tracking-wide">{hours.replace('-', ' às ')}</td>
                               <td className="px-6 py-4 text-xs font-mono">
-                                <span className="retro-badge retro-badge-amber">{days}</span>
+                                <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-400 border-amber-500/20">{days}</span>
                               </td>
                               <td className="px-6 py-4 text-right">
                                 <button
                                   onClick={() => handleDeleteTimeRule(rule.id)}
                                   disabled={timeLoading}
-                                  className="retro-btn retro-btn-danger py-1.5 px-3 text-[9px]"
+                                  className="aurora-btn text-[10px] py-1 px-3"
+                                  style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}
                                 >
                                   Remover
                                 </button>
@@ -585,29 +595,27 @@ export default function SecurityControl() {
         {activeTab === 'keywords' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Form Section */}
-            <div className="lg:col-span-1 retro-card">
-              <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '2px solid #0a0a18', background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-                <div className="rack-screw" />
-                <span className="font-mono text-xs font-bold text-slate-450">CONTENT_KEYWORD_FILTER</span>
-              </div>
-              
-              <div className="p-5 space-y-4">
-                <p className="text-[10px] text-slate-400 font-mono leading-relaxed">
+            <div className="lg:col-span-1 aurora-card p-5 md:p-6 flex flex-col justify-between">
+              <div>
+                <h3 className="text-sm font-black text-white mb-2" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                  Bloquear Conteúdo
+                </h3>
+                <p className="text-xs text-slate-400 mb-4 leading-relaxed">
                   Derruba conexões cujo domínio (HTTP Header ou SNI HTTPS) contenha as strings indicadas.
                 </p>
                 
                 <form onSubmit={handleAddKeyword} className="space-y-4">
                   <div>
-                    <label className="block text-[8px] font-bold uppercase text-slate-500 tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Palavra-Chave</label>
+                    <label className="block text-[10px] font-bold uppercase text-slate-450 tracking-wider mb-1">Palavra-Chave</label>
                     <input
                       type="text"
                       value={keywordInput}
                       onChange={(e) => setKeywordInput(e.target.value)}
                       required
                       placeholder="Ex: torrent, poker, bet"
-                      className="retro-input"
+                      className="aurora-input"
                     />
-                    <span className="text-[9px] text-slate-500 font-mono mt-1.5 block leading-normal">
+                    <span className="text-[10px] text-slate-500 mt-1.5 block leading-normal">
                       Pesquisas no Google continuarão disponíveis, porém domínios diretos com o termo serão bloqueados.
                     </span>
                   </div>
@@ -615,7 +623,8 @@ export default function SecurityControl() {
                   <button
                     type="submit"
                     disabled={actionLoading}
-                    className="w-full retro-btn retro-btn-danger"
+                    className="w-full aurora-btn text-xs"
+                    style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}
                   >
                     {actionLoading ? 'Aplicando Regra...' : 'Bloquear Termo'}
                   </button>
@@ -624,29 +633,27 @@ export default function SecurityControl() {
             </div>
 
             {/* List Section */}
-            <div className="lg:col-span-2 retro-card">
-              <div className="px-5 py-3 border-b border-[#0a0a18] flex justify-between items-center bg-[#1e1e3a] md:bg-transparent" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-                <div className="flex items-center gap-2">
-                  <div className="rack-screw" />
-                  <span className="font-mono text-xs font-bold text-slate-450">ACTIVE_BLOCKLIST_KEYWORDS</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="retro-badge retro-badge-red font-mono">{keywords.length} TERMOS</span>
-                  <div className="rack-screw" />
-                </div>
+            <div className="lg:col-span-2 aurora-card p-5 md:p-6 flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-black text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                  Termos Bloqueados
+                </h3>
+                <span className="bg-white/5 border border-white/10 text-slate-350 text-[10px] font-bold rounded-lg px-2.5 py-1">
+                  {keywords.length} TERMOS
+                </span>
               </div>
               
-              <div className="p-4">
-                <div className="retro-table-wrap max-h-[460px] overflow-y-auto custom-scrollbar">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="sticky top-0" style={{ background: '#070f1e', borderBottom: '2px solid #0a0a18', zIndex: 10 }}>
-                      <tr style={{ fontFamily: 'Share Tech Mono, monospace', color: 'var(--display-dim)' }}>
-                        <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Termo Bloqueado</th>
-                        <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Método de Filtro</th>
-                        <th className="px-6 py-3.5 font-bold uppercase tracking-wider text-right">Ações</th>
+              <div className="flex-1 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                <div className="max-h-[460px] overflow-auto custom-scrollbar">
+                  <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-white/5 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        <th className="px-6 py-3.5">Termo Bloqueado</th>
+                        <th className="px-6 py-3.5">Método de Filtro</th>
+                        <th className="px-6 py-3.5 text-right">Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#0c0c1c]" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+                    <tbody className="divide-y divide-white/5">
                       {keywordsLoading && keywords.length === 0 ? (
                         <tr>
                           <td colSpan={3} className="px-6 py-8 text-center text-slate-400 italic">
@@ -661,19 +668,20 @@ export default function SecurityControl() {
                         </tr>
                       ) : (
                         keywords.map((kw, index) => (
-                          <tr key={`${kw.id || kw.keyword}-${index}`} className="hover:bg-[#101026]/40 transition-colors">
-                            <td className="px-6 py-4 font-bold text-red-400 text-sm tracking-wide font-mono">{kw.keyword}</td>
+                          <tr key={`${kw.id || kw.keyword}-${index}`} className="hover:bg-white/5 transition-colors">
+                            <td className="px-6 py-4 font-bold text-rose-450 text-sm tracking-wide font-mono">{kw.keyword}</td>
                             <td className="px-6 py-4">
-                              <div className="flex gap-2 font-mono">
-                                <span className="retro-badge retro-badge-blue">HTTP CONTENT</span>
-                                <span className="retro-badge retro-badge-blue">HTTPS TLS-SNI</span>
+                              <div className="flex gap-2">
+                                <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-400 border-indigo-500/20">HTTP CONTENT</span>
+                                <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full border bg-cyan-500/10 text-cyan-400 border-cyan-500/20">HTTPS TLS-SNI</span>
                               </div>
                             </td>
                             <td className="px-6 py-4 text-right">
                               <button
                                 onClick={() => handleDeleteKeyword(kw.keyword)}
                                 disabled={actionLoading}
-                                className="retro-btn retro-btn-dark py-1.5 px-3 text-[9px]"
+                                className="aurora-btn text-[10px] py-1 px-3"
+                                style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
                               >
                                 🔓 Desbloquear
                               </button>

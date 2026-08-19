@@ -24,6 +24,14 @@ export class MikrotikAPI {
     }
   }
 
+  async close() {
+    if (this.connection) {
+      try {
+        this.connection.close();
+      } catch (e) {}
+    }
+  }
+
   async getIdentity() {
     if (!this.client) throw new Error('Not connected');
     const menu = this.client.menu('/system/identity');
@@ -114,6 +122,61 @@ export class MikrotikAPI {
       }
     }
     return count;
+  }
+
+
+  /** Remove active hotspot sessions for a given MAC address */
+  async removeHotspotActiveByMac(mac: string): Promise<void> {
+    if (!this.client) throw new Error('Not connected');
+    const active = await this.client.menu('/ip/hotspot/active').where('mac-address', mac).get() as any[];
+    for (const u of active) {
+      const id: string | undefined = u['.id'] ?? u.id;
+      if (id) await this.client.menu('/ip/hotspot/active').remove(id);
+    }
+  }
+
+  /** Enable a hotspot user by ID (sets disabled=false) */
+  async enableHotspotUser(id: string): Promise<void> {
+    if (!this.client) throw new Error('Not connected');
+    await this.client.menu('/ip/hotspot/user').update({ '.id': id, disabled: 'false' });
+  }
+
+  /** Disable a hotspot user by ID (sets disabled=true) */
+  async disableHotspotUser(id: string): Promise<void> {
+    if (!this.client) throw new Error('Not connected');
+    await this.client.menu('/ip/hotspot/user').update({ '.id': id, disabled: 'true' });
+  }
+
+  /** Returns all active hotspot sessions */
+  async getActiveHotspotUsers(): Promise<any[]> {
+    if (!this.client) throw new Error('Not connected');
+    return await this.client.menu('/ip/hotspot/active').get() as any[];
+  }
+
+  /** Remove a specific active hotspot session by its ID */
+  async removeActiveHotspotUser(id: string): Promise<void> {
+    if (!this.client) throw new Error('Not connected');
+    await this.client.menu('/ip/hotspot/active').remove(id);
+  }
+
+  /** Remove active sessions matching a username */
+  async removeHotspotActiveByUser(username: string): Promise<void> {
+    if (!this.client) throw new Error('Not connected');
+    const active = await this.client.menu('/ip/hotspot/active').where('user', username).get() as any[];
+    for (const u of active) {
+      const id: string | undefined = u['.id'] ?? u.id;
+      if (id) await this.client.menu('/ip/hotspot/active').remove(id);
+    }
+  }
+
+  /** Remove hotspot users matching a username */
+  async removeHotspotUserByName(username: string): Promise<void> {
+    if (!this.client) throw new Error('Not connected');
+    const users = await this.client.menu('/ip/hotspot/user').where('name', username).get() as any[];
+    for (const u of users) {
+      const id: string | undefined = u['.id'] ?? u.id;
+      if (id) await this.client.menu('/ip/hotspot/user').remove(id);
+    }
   }
 
   async updateCaptivePortal(htmlContent: string) {
@@ -298,6 +361,7 @@ export class MikrotikAPI {
       interface: interfaceName,
       'address-pool': poolName,
       'lease-time': leaseTime,
+      'add-arp': 'yes',
       disabled: 'no'
     });
   }
@@ -691,6 +755,21 @@ export class MikrotikAPI {
       console.warn('Failed to add walled garden bypass during provisioning:', e);
     }
 
+    try {
+      const wgMenu = this.client.menu('/ip/hotspot/walled-garden');
+      const list = await wgMenu.get() as any[];
+      const existsPortal = list.some((item: any) => item['dst-host'] && item['dst-host'].includes('portal.wifi.local'));
+      if (!existsPortal) {
+        await wgMenu.add({
+          action: 'allow',
+          'dst-host': '*portal.wifi.local*',
+          comment: 'MikroGestor: Auto-Cadastro / API DNS'
+        });
+      }
+    } catch (e: any) {
+      console.warn('Failed to add walled garden bypass for portal.wifi.local:', e);
+    }
+
     // ── Walled Garden IP (allow direct IP access for unauthenticated clients) ──
     try {
       const wgIpMenu = this.client.menu('/ip/hotspot/walled-garden/ip');
@@ -705,6 +784,53 @@ export class MikrotikAPI {
       }
     } catch (e: any) {
       console.warn('Failed to add walled garden IP bypass during provisioning:', e);
+    }
+
+    // ── Force DNS (Redirect & Block Private DNS) ───────────────────
+    try {
+      await this.client.menu('/ip/dns').set({ 'allow-remote-requests': 'yes' }).catch(() => null);
+
+      const filterMenu = this.client.menu('/ip/firewall/filter');
+      const filters = await filterMenu.get() as any[];
+      if (!filters.find((f: any) => f['dst-port'] === '853' && f.chain === 'forward')) {
+        await filterMenu.add({ chain: 'forward', protocol: 'tcp', 'dst-port': '853', action: 'drop', comment: 'Block Private DNS (DoT)', 'place-before': '0' }).catch(() => null);
+      }
+      if (!filters.find((f: any) => f['dst-port'] === '853' && f.chain === 'input')) {
+        await filterMenu.add({ chain: 'input', protocol: 'tcp', 'dst-port': '853', action: 'drop', comment: 'Block Private DNS (DoT)', 'place-before': '0' }).catch(() => null);
+      }
+
+      const natMenu = this.client.menu('/ip/firewall/nat');
+      const nats = await natMenu.get() as any[];
+      if (!nats.find((n: any) => n['dst-port'] === '53' && n.protocol === 'udp' && n.action === 'redirect')) {
+        await natMenu.add({ chain: 'dstnat', protocol: 'udp', 'dst-port': '53', action: 'redirect', 'to-ports': '53', comment: 'Force local DNS UDP', 'place-before': '0' }).catch(() => null);
+      }
+      if (!nats.find((n: any) => n['dst-port'] === '53' && n.protocol === 'tcp' && n.action === 'redirect')) {
+        await natMenu.add({ chain: 'dstnat', protocol: 'tcp', 'dst-port': '53', action: 'redirect', 'to-ports': '53', comment: 'Force local DNS TCP', 'place-before': '0' }).catch(() => null);
+      }
+    } catch (e) {
+      console.warn('Failed to force DNS during provisioning:', e);
+    }
+
+    // ── Static DNS (portal.wifi.local -> IP do Servidor) ───────────────────
+    try {
+      const dnsMenu = this.client.menu('/ip/dns/static');
+      const list = await dnsMenu.get() as any[];
+      const exists = list.find((d: any) => d.name === 'portal.wifi.local' && d.address === adminIp);
+      
+      if (!exists) {
+        // Remove IPs antigos se existirem
+        const olds = list.filter((d: any) => d.name === 'portal.wifi.local');
+        for (const old of olds) {
+            await dnsMenu.remove(old.id || old['.id']);
+        }
+        await dnsMenu.add({
+          name: 'portal.wifi.local',
+          address: adminIp,
+          comment: 'MikroGestor: Magic Link DNS'
+        });
+      }
+    } catch (e: any) {
+      console.warn('Failed to add static DNS during provisioning:', e);
     }
 
     return result;
@@ -758,14 +884,29 @@ export class MikrotikAPI {
   async addHotspotIpBinding(address: string, type: 'bypassed' | 'blocked' | 'regular', comment: string = '', macAddress?: string) {
     if (!this.client) throw new Error('Not connected');
     const params: any = {
-      address,
-      type,
-      comment: comment || `MikroGestor: ${type}`
+      address: address,
+      type: type,
+      comment: `MikroGestor: ${comment}`
     };
     if (macAddress) {
       params['mac-address'] = macAddress;
     }
     return await this.client.menu('/ip/hotspot/ip-binding').add(params);
+  }
+
+  async removeHotspotIpBinding(id: string) {
+    if (!this.client) throw new Error('Not connected');
+    return await this.client.menu('/ip/hotspot/ip-binding').remove(id);
+  }
+
+  async updateHotspotUser(id: string, params: Record<string, any>) {
+    if (!this.client) throw new Error('Not connected');
+    return await this.client.menu('/ip/hotspot/user').update({ '.id': id, ...params });
+  }
+
+  async updateHotspotIpBinding(id: string, params: Record<string, any>) {
+    if (!this.client) throw new Error('Not connected');
+    return await this.client.menu('/ip/hotspot/ip-binding').update({ '.id': id, ...params });
   }
 
   // --- DEFAULT HOTSPOT USER PROFILE --- //

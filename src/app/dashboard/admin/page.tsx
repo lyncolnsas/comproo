@@ -13,6 +13,11 @@ export default function AdminSettings() {
   const [showRouterForm, setShowRouterForm] = useState(false);
   const [connectingId, setConnectingId] = useState<string | null>(null);
 
+  // Scanner State
+  const [scanning, setScanning] = useState(false);
+  const [scannedRouters, setScannedRouters] = useState<any[]>([]);
+  const [showScanner, setShowScanner] = useState(false);
+
   // Router Form
   const [rName, setRName] = useState('');
   const [rHost, setRHost] = useState('');
@@ -21,7 +26,7 @@ export default function AdminSettings() {
 
   const fetchRouters = async () => {
     try {
-      const res = await fetch('/api/admin/routers');
+      const res = await fetch('/api/system/routers');
       const data = await res.json();
       if (data.success) {
         setRouters(data.routers);
@@ -37,11 +42,31 @@ export default function AdminSettings() {
     fetchRouters();
   }, []);
 
+  const handleScanNetwork = async () => {
+    setScanning(true);
+    setScannedRouters([]);
+    setShowScanner(true);
+    setShowRouterForm(false);
+    try {
+      const res = await fetch('/api/hotspot/scan');
+      const data = await res.json();
+      if (data.success) {
+        setScannedRouters(data.routers || []);
+      } else {
+        alert('Erro ao escanear a rede: ' + data.error);
+      }
+    } catch (err) {
+      alert('Erro de conexão ao escanear a rede.');
+    } finally {
+      setScanning(false);
+    }
+  };
+
   const handleUserUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch('/api/system/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -62,7 +87,7 @@ export default function AdminSettings() {
   const handleAddRouter = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/admin/routers', {
+      const res = await fetch('/api/system/routers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: rName, host: rHost, user: rUser, password: rPass })
@@ -82,7 +107,7 @@ export default function AdminSettings() {
   const handleDeleteRouter = async (id: string) => {
     if (!confirm('Deseja excluir este Mikrotik do sistema?')) return;
     try {
-      const res = await fetch('/api/admin/routers', {
+      const res = await fetch('/api/system/routers', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
@@ -118,118 +143,159 @@ export default function AdminSettings() {
   };
 
   return (
-    <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-6 animate-fade-in">
+    <main className="w-full p-4 md:p-6 max-w-6xl mx-auto space-y-6 animate-fade-in">
       {/* Page Header */}
-      <header className="retro-card p-4 flex items-center gap-3">
-        <div className="rack-screw" />
-        <span className="led led-blue animate-led-pulse" />
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div style={{ color: 'var(--led-blue)', fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+          <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#3b82f6' }}>
             ▶ SYSTEM // HARDWARE ROUTERS & USERS CONFIG
-          </div>
-          <h1 style={{ fontFamily: 'Orbitron, sans-serif', color: 'white', fontSize: '1.25rem', fontWeight: 900 }}>
+          </p>
+          <h1 className="text-2xl font-black tracking-tight text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
             Roteadores e Sistema
           </h1>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Gerencie roteadores MikroTik integrados e credenciais de acesso locais do painel
+          </p>
         </div>
-        <div className="ml-auto rack-screw" />
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         
         {/* Routers List — Main area */}
-        <div className="lg:col-span-3 retro-card">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[#0a0a18]" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-            <div className="flex items-center gap-2">
-              <div className="rack-screw" />
-              <span className="font-mono text-xs font-bold text-slate-450 uppercase">CONNECTED_MIKROTIK_UNITS</span>
+        <div className="lg:col-span-3 aurora-card p-5 md:p-6 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-black text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                Unidades MikroTik Cadastradas
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleScanNetwork}
+                  className="aurora-btn text-[10px] py-1.5 px-3"
+                  style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
+                >
+                  🔍 Scan / Winbox
+                </button>
+                <button
+                  onClick={() => setShowRouterForm(!showRouterForm)}
+                  className="aurora-btn text-[10px] py-1.5 px-3"
+                >
+                  {showRouterForm ? 'Fechar Form' : '+ Adicionar Roteador'}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowRouterForm(!showRouterForm)}
-                className="retro-btn retro-btn-primary py-1 px-3 text-[10px]"
-              >
-                + Adicionar
-              </button>
-              <div className="rack-screw" />
-            </div>
-          </div>
-
-          <div className="p-5 space-y-4">
-            {showRouterForm && (
-              <form onSubmit={handleAddRouter} className="bg-[#0c0c1c]/60 p-4 border border-[#252542] rounded-xl space-y-3 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]">
-                <h3 className="font-bold text-xs text-white uppercase font-mono tracking-wider">Cadastrar Novo Roteador</h3>
-                <div>
-                  <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Nome de Identificação</label>
-                  <input type="text" value={rName} onChange={e => setRName(e.target.value)} required placeholder="Ex: Mikrotik Matriz" className="retro-input py-1.5 px-3 text-xs" />
-                </div>
-                <div>
-                  <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>IP ou Host</label>
-                  <input type="text" value={rHost} onChange={e => setRHost(e.target.value)} required placeholder="Ex: 192.168.88.1" className="retro-input py-1.5 px-3 text-xs" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Usuário API</label>
-                    <input type="text" value={rUser} onChange={e => setRUser(e.target.value)} required placeholder="admin" className="retro-input py-1.5 px-3 text-xs" />
-                  </div>
-                  <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Senha</label>
-                    <input type="password" value={rPass} onChange={e => setRPass(e.target.value)} placeholder="••••" className="retro-input py-1.5 px-3 text-xs" />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <button type="button" onClick={() => setShowRouterForm(false)} className="retro-btn retro-btn-dark py-1.5 px-3 text-[10px]">Cancelar</button>
-                  <button type="submit" className="retro-btn retro-btn-primary py-1.5 px-3 text-[10px]">Salvar MikroTik</button>
-                </div>
-              </form>
-            )}
 
             <div className="space-y-4">
-              {loadingRouters ? (
-                <p className="text-center text-slate-400 text-xs py-6 font-mono animate-pulse">Carregando unidades de hardware...</p>
-              ) : routers.length === 0 ? (
-                <div className="bg-[#0c0c18] p-6 border border-[#252542] rounded-xl text-center space-y-4">
-                  <div className="w-10 h-10 rounded-full bg-[#1b1b36] flex items-center justify-center mx-auto" style={{ border: '2px solid #3d3d6b', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' }}>
-                    <span className="text-slate-400 text-sm">🖧</span>
+              {showScanner && (
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-xs text-white uppercase tracking-wider">Scanner de Rede (MNDP)</h4>
+                    <button onClick={() => setShowScanner(false)} className="text-slate-400 hover:text-white text-xs">✕</button>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-white text-xs font-bold font-mono">Nenhum Roteador Cadastrado</p>
-                    <p className="text-slate-500 text-[10px] font-mono leading-normal">Cadastre um MikroTik no botão "+ Adicionar" acima para inicializar a integração do painel.</p>
-                  </div>
-                  <span className="retro-badge retro-badge-amber font-mono">
-                    BANCO: {dbStatus}
-                  </span>
+                  {scanning ? (
+                    <p className="text-center text-slate-400 text-xs py-4 animate-pulse">Buscando MikroTiks na rede local...</p>
+                  ) : scannedRouters.length === 0 ? (
+                    <p className="text-center text-slate-400 text-xs py-4">Nenhum equipamento encontrado na rede.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {scannedRouters.map((r, i) => (
+                        <div key={i} className="border border-white/10 bg-white/5 p-3 rounded-xl flex items-center justify-between hover:bg-white/10 cursor-pointer transition-colors" onClick={() => {
+                          setRName(r.identity || 'MikroTik Local');
+                          setRHost(r.ipAddress || r.macAddress); // Fallback para MAC, mas note que API precisa de IP
+                          setRUser('admin');
+                          setShowRouterForm(true);
+                          setShowScanner(false);
+                        }}>
+                          <div>
+                            <p className="text-xs font-bold text-white">{r.identity || 'MikroTik'} <span className="text-[10px] font-normal text-slate-400">({r.board || r.platform})</span></p>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">IP: {r.ipAddress || '0.0.0.0'} | MAC: {r.macAddress}</p>
+                          </div>
+                          <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-1 rounded-md">Usar</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                routers.map(router => (
-                  <div key={router.id} className="border border-[#252542] rounded-xl p-4 flex items-center justify-between hover:border-[#3d3d6b] transition-all" style={{ background: 'linear-gradient(180deg, #181830 0%, #121224 100%)', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.03)' }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#0a0a18', border: '1px solid #252542' }}>
-                        <span className="text-slate-400 text-xs">📟</span>
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-white text-xs font-mono uppercase tracking-wider">{router.name}</h4>
-                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">{router.host} · {router.user}</p>
-                      </div>
+              )}
+
+              {showRouterForm && (
+                <form onSubmit={handleAddRouter} className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+                  <h4 className="font-bold text-xs text-white uppercase tracking-wider">Cadastrar Novo Roteador</h4>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nome de Identificação</label>
+                    <input type="text" value={rName} onChange={e => setRName(e.target.value)} required placeholder="Ex: Mikrotik Matriz" className="aurora-input py-1.5 px-3 text-xs" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">IP ou Host</label>
+                    <input type="text" value={rHost} onChange={e => setRHost(e.target.value)} required placeholder="Ex: 192.168.88.1" className="aurora-input py-1.5 px-3 text-xs" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Usuário API</label>
+                      <input type="text" value={rUser} onChange={e => setRUser(e.target.value)} required placeholder="admin" className="aurora-input py-1.5 px-3 text-xs" />
                     </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => connectToRouter(router)}
-                        disabled={connectingId === router.id}
-                        className="retro-btn retro-btn-success py-1.5 px-3 text-[10px]"
-                      >
-                        {connectingId === router.id ? 'Conectando...' : '⚡ Conectar'}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRouter(router.id)}
-                        className="retro-btn retro-btn-danger py-1.5 px-3 text-[10px]"
-                      >
-                        Excluir
-                      </button>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Senha</label>
+                      <input type="password" value={rPass} onChange={e => setRPass(e.target.value)} placeholder="••••" className="aurora-input py-1.5 px-3 text-xs" />
                     </div>
                   </div>
-                ))
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button type="button" onClick={() => setShowRouterForm(false)} className="aurora-btn text-[10px] py-1.5 px-3" style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>Cancelar</button>
+                    <button type="submit" className="aurora-btn text-[10px] py-1.5 px-3">Salvar Roteador</button>
+                  </div>
+                </form>
               )}
+
+              <div className="space-y-4">
+                {loadingRouters ? (
+                  <p className="text-center text-slate-400 text-xs py-6 animate-pulse">Carregando unidades de hardware...</p>
+                ) : routers.length === 0 ? (
+                  <div className="bg-white/5 border border-white/10 p-6 rounded-2xl text-center space-y-4">
+                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto">
+                      <span className="text-slate-400 text-sm">🖧</span>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-white text-xs font-bold font-mono">Nenhum Roteador Cadastrado</p>
+                      <p className="text-slate-500 text-[10px] leading-normal">Cadastre um MikroTik no botão "+ Adicionar Roteador" acima para inicializar a integração do painel.</p>
+                    </div>
+                    <span className="inline-flex items-center text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-amber-500/10 text-amber-400 border-amber-500/20">
+                      BANCO: {dbStatus}
+                    </span>
+                  </div>
+                ) : (
+                  routers.map(router => (
+                    <div key={router.id} className="border border-white/10 rounded-2xl p-4 flex items-center justify-between hover:border-white/20 transition-all bg-white/5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10">
+                          <span className="text-slate-400 text-xs">📟</span>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-xs uppercase tracking-wider">{router.name}</h4>
+                          <p className="text-[10px] text-slate-450 mt-0.5">{router.host} · {router.user}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => connectToRouter(router)}
+                          disabled={connectingId === router.id}
+                          className="aurora-btn text-[10px] py-1.5 px-3"
+                          style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                        >
+                          {connectingId === router.id ? 'Conectando...' : '⚡ Conectar'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRouter(router.id)}
+                          className="aurora-btn text-[10px] py-1.5 px-3"
+                          style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -237,48 +303,43 @@ export default function AdminSettings() {
         {/* Right Column settings panel */}
         <div className="lg:col-span-2 space-y-6">
           {/* Panel User Card */}
-          <div className="retro-card">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-[#0a0a18]" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-              <div className="rack-screw" />
-              <span className="font-mono text-xs font-bold text-slate-450 uppercase">SYSTEM_ACCESS_CREDENTIALS</span>
-              <div className="ml-auto rack-screw" />
-            </div>
-
-            <div className="p-5 space-y-4">
-              <p className="text-[10px] text-slate-400 font-mono leading-relaxed">
+          <div className="aurora-card p-5 md:p-6 flex flex-col justify-between">
+            <div>
+              <h3 className="text-sm font-black text-white mb-2" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+                Credenciais do Sistema
+              </h3>
+              <p className="text-xs text-slate-400 mb-4 leading-relaxed">
                 Modifique as credenciais de segurança locais para acessar este painel do MikroGestor.
               </p>
 
               <form onSubmit={handleUserUpdate} className="space-y-4">
                 <div>
-                  <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Novo Usuário Admin</label>
-                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required placeholder="Ex: admin" className="retro-input py-1.5 px-3 text-xs" />
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Novo Usuário Admin</label>
+                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required placeholder="Ex: admin" className="aurora-input py-1.5 px-3 text-xs" />
                 </div>
                 <div>
-                  <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Nova Senha</label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="retro-input py-1.5 px-3 text-xs" />
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nova Senha</label>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="aurora-input py-1.5 px-3 text-xs" />
                 </div>
-                <button type="submit" disabled={saving} className="w-full retro-btn retro-btn-dark py-2">
-                  {saving ? 'Salvando...' : 'Salvar Credenciais no Banco'}
+                <button type="submit" disabled={saving} className="w-full aurora-btn text-xs">
+                  {saving ? 'Salvando...' : 'Salvar Credenciais'}
                 </button>
               </form>
             </div>
           </div>
 
           {/* DB Status Card */}
-          <div className="retro-card p-4 flex items-center gap-3">
-            <div className="rack-screw" />
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#0a0a18', border: '1px solid #252542' }}>
-              <span className="text-[#4ade80]">🖴</span>
+          <div className="aurora-card p-5 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 shrink-0">
+              <span className="text-emerald-400">🖴</span>
             </div>
             <div>
-              <p className="text-xs font-bold text-white uppercase font-mono tracking-wider">Banco de Dados Local</p>
+              <p className="text-xs font-bold text-white uppercase tracking-wider">Banco de Dados Local</p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="led led-green animate-led-pulse" />
-                <p className="text-[9px] text-slate-450 font-mono">SQLite: {dbStatus} — dados persistidos offline</p>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 animate-led-pulse" />
+                <p className="text-[10px] text-slate-400">SQLite: {dbStatus} — dados persistidos offline</p>
               </div>
             </div>
-            <div className="ml-auto rack-screw" />
           </div>
         </div>
       </div>

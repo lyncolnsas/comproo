@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { MikrotikAPI } from '@/lib/routeros';
 import { encryptData } from '@/lib/jwt';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -10,8 +11,28 @@ export async function POST(request: Request) {
     const connected = await mk.connect(ip, user, pass);
 
     if (connected) {
-      const identity = await mk.getIdentity();
+      const identityRes = await mk.getIdentity();
+      const identity = identityRes ? identityRes[0]?.name || 'MikroTik' : 'MikroTik';
       mk.disconnect();
+
+      // Ensure this router is permanently saved in the database as the active one
+      await prisma.$transaction(async (tx) => {
+        // Mark all other routers as inactive
+        await tx.router.updateMany({ data: { active: false } });
+        
+        // Upsert the current router
+        const existingRouter = await tx.router.findFirst({ where: { host: ip } });
+        if (existingRouter) {
+          await tx.router.update({
+            where: { id: existingRouter.id },
+            data: { user, password: pass, active: true, name: identity }
+          });
+        } else {
+          await tx.router.create({
+            data: { host: ip, user, password: pass, active: true, name: identity }
+          });
+        }
+      });
 
       const jweToken = await encryptData({ ip, user, pass });
       

@@ -12,5 +12,13 @@
 	reverse_proxy localhost:3000 {
 		# X-Real-IP não é injetado por padrão — configuramos explicitamente
 		header_up X-Real-IP {remote_host}
+
+		# Preserva o Host e IP original da requisição (seja IP LAN ou domínio)
+		header_up Host {host}
+		header_up X-Forwarded-Host {host}
+		transport http {
+			keepalive 30s
+			keepalive_idle_conns 10
+		}
 	}
 }

@@ -8,12 +8,9 @@ export default function SystemLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
-  const [powering, setPowering] = useState(true);
 
   useEffect(() => {
     setMounted(true);
-    const t = setTimeout(() => setPowering(false), 600);
-    return () => clearTimeout(t);
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -40,203 +37,146 @@ export default function SystemLogin() {
   };
 
   if (!mounted) {
-    return <main style={{ minHeight: '100vh', background: 'var(--chassis)' }} />;
+    return <main style={{ minHeight: '100vh', background: '#0c0c18' }} />;
   }
 
   return (
     <main
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{
-        background: 'var(--chassis)',
-        backgroundImage: `
-          repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px),
-          radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.08) 0%, transparent 60%),
-          radial-gradient(ellipse at 50% 100%, rgba(30,30,60,0.6) 0%, transparent 60%)
-        `
-      }}>
+      className="aurora-scene min-h-screen flex items-center justify-center p-4 overflow-hidden"
+      style={{ background: '#0c0c18' }}
+    >
+      {/* ── Aurora Blobs ───────────────────────────────────────────────── */}
+      <div className="aurora-blob blob-indigo"
+        style={{ width: '520px', height: '520px', top: '-160px', left: '-160px', animationDelay: '0s' }} />
+      <div className="aurora-blob blob-cyan aurora-blob-reverse"
+        style={{ width: '420px', height: '420px', bottom: '-130px', right: '-130px', animationDelay: '-5s' }} />
+      <div className="aurora-blob blob-violet"
+        style={{ width: '340px', height: '340px', top: '-80px', left: '50%', transform: 'translateX(-50%)', animationDelay: '-3s', opacity: 0.55 }} />
+      <div className="aurora-blob blob-indigo aurora-blob-reverse"
+        style={{ width: '280px', height: '280px', bottom: '-90px', left: '-50px', animationDelay: '-9s', opacity: 0.45 }} />
+      <div className="aurora-blob blob-cyan"
+        style={{ width: '260px', height: '260px', top: '-70px', right: '-70px', animationDelay: '-1s', opacity: 0.35 }} />
 
-      {/* Scan line sweep effect on power-on */}
-      {powering && (
-        <div
-          className="fixed inset-x-0 h-1 z-50 pointer-events-none animate-power-on"
-          style={{
-            background: 'rgba(59,130,246,0.4)',
-            boxShadow: '0 0 20px rgba(59,130,246,0.6)',
-            animation: 'scan-sweep 0.6s ease-out forwards'
-          }}
-        />
-      )}
-
+      {/* ── Login Card ─────────────────────────────────────────────────── */}
       <div
-        className={`relative w-full max-w-sm ${powering ? 'animate-power-on' : 'animate-scale-up'}`}>
-
-        {/* Rack unit container */}
-        <div
-          className="relative"
-          style={{
-            background: 'linear-gradient(180deg, #222242 0%, #1c1c38 100%)',
-            border: '3px solid #0a0a18',
-            borderRadius: '16px',
-            boxShadow: `
-              0 0 0 1px #3d3d6b,
-              0 12px 0 #0a0a18,
-              0 16px 30px rgba(0,0,0,0.8),
-              inset 0 1px 0 rgba(255,255,255,0.07),
-              inset 0 -2px 0 rgba(0,0,0,0.4)
-            `
-          }}>
-
-          {/* Top rack rail */}
-          <div className="flex items-center justify-between px-4 py-2.5"
+        className="aurora-card w-full max-w-sm animate-fade-in"
+        style={{ padding: '2.5rem 2rem' }}
+      >
+        {/* Logo & Brand */}
+        <div className="flex flex-col items-center mb-8">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
             style={{
-              borderBottom: '2px solid #0a0a18',
-              background: 'linear-gradient(180deg, #2a2a4c 0%, #1e1e3a 100%)',
-              borderRadius: '12px 12px 0 0',
-              boxShadow: 'inset 0 -2px 4px rgba(0,0,0,0.4)'
-            }}>
-            <div className="flex items-center gap-1.5">
-              <div className="rack-screw" />
-              <div className="rack-screw" />
-            </div>
-            {/* Power LED cluster */}
-            <div className="flex items-center gap-2">
-              <div className="led led-red" style={{ width: '7px', height: '7px' }} />
-              <div className="led led-amber animate-led-pulse" style={{ width: '7px', height: '7px' }} />
-              <div className="led led-green animate-led-pulse" style={{ width: '7px', height: '7px' }} />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="rack-screw" />
-              <div className="rack-screw" />
-            </div>
+              background: 'linear-gradient(135deg, #6366f1 0%, #2dd4bf 100%)',
+              boxShadow: '0 8px 32px rgba(99,102,241,0.45), 0 2px 8px rgba(45,212,191,0.25)',
+            }}
+          >
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071a9 9 0 0112.14 0M1.394 9h.01m21.196 0h.01" />
+            </svg>
           </div>
 
-          {/* Main panel body */}
-          <div className="p-6">
+          <h1
+            className="text-2xl font-black tracking-tight text-white"
+            style={{ fontFamily: 'Orbitron, sans-serif' }}
+          >
+            Mikro<span style={{ color: '#818cf8' }}>Gestor</span>
+          </h1>
+          <p className="text-xs mt-1.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Hotspot Gateway v2.0
+          </p>
 
-            {/* Brand display */}
-            <div className="retro-display px-5 py-4 mb-6 text-center">
-              <div className="text-[8px] font-bold tracking-widest uppercase mb-2" style={{ color: '#2563ab', fontFamily: 'Share Tech Mono, monospace' }}>
-                ▶ SYSTEM AUTHENTICATION REQUIRED
-              </div>
-              <h1 className="text-2xl font-black text-white tracking-tight" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                Mikro<span style={{ color: 'var(--led-blue)' }}>Gestor</span>
-              </h1>
-              <p className="text-[10px] mt-2" style={{ color: 'var(--display-dim)', fontFamily: 'Share Tech Mono, monospace' }}>
-                HOTSPOT GATEWAY v2.0
-              </p>
-              <div className="mt-2 flex items-center justify-center gap-1.5">
-                <span className="led led-green animate-led-pulse" style={{ width: '6px', height: '6px' }} />
-                <span className="text-[9px]" style={{ color: 'var(--led-green)', fontFamily: 'Share Tech Mono, monospace' }}>
-                  SISTEMA ONLINE
-                </span>
-                <span className="animate-cursor text-[9px]" style={{ color: 'var(--led-green)' }}>_</span>
-              </div>
-            </div>
-
-            {/* Error display */}
-            {error && (
-              <div className="retro-display px-4 py-3 mb-5 flex items-center gap-3"
-                style={{ borderColor: '#7f1d1d', boxShadow: 'inset 0 3px 10px rgba(0,0,0,0.8), 0 0 12px rgba(239,68,68,0.1), 0 0 0 1px #7f1d1d' }}>
-                <span className="led led-red animate-led-blink shrink-0" />
-                <span className="text-[11px] font-bold" style={{ color: '#f87171', fontFamily: 'Share Tech Mono, monospace' }}>
-                  ERR: {error}
-                </span>
-              </div>
-            )}
-
-            {/* Login form */}
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#4a4a7a' }}>
-                  ▶ Identificação do Usuário
-                </label>
-                <input
-                  id="login-username"
-                  type="text"
-                  required
-                  value={user}
-                  onChange={(e) => setUser(e.target.value)}
-                  placeholder="ex: mikrogestor"
-                  className="retro-input"
-                  autoComplete="username"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#4a4a7a' }}>
-                  ▶ Senha de Acesso
-                </label>
-                <input
-                  id="login-password"
-                  type="password"
-                  required
-                  value={pass}
-                  onChange={(e) => setPass(e.target.value)}
-                  placeholder="••••••••"
-                  className="retro-input"
-                  autoComplete="current-password"
-                />
-              </div>
-
-              {/* Submit button — full physical mechanics */}
-              <button
-                id="login-submit"
-                type="submit"
-                disabled={loading}
-                className="retro-btn retro-btn-primary w-full py-3 mt-2 text-xs"
-                style={{
-                  opacity: loading ? 0.7 : 1,
-                  cursor: loading ? 'not-allowed' : 'pointer'
-                }}>
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="led led-amber animate-led-blink" style={{ width: '7px', height: '7px' }} />
-                    AUTENTICANDO...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                    </svg>
-                    ENTRAR NO PAINEL
-                  </span>
-                )}
-              </button>
-            </form>
-          </div>
-
-          {/* Bottom rack rail */}
-          <div className="flex items-center justify-between px-4 py-2"
-            style={{
-              borderTop: '2px solid #0a0a18',
-              background: 'linear-gradient(180deg, #1a1a34 0%, #141428 100%)',
-              borderRadius: '0 0 12px 12px',
-              boxShadow: 'inset 0 3px 4px rgba(0,0,0,0.4)'
-            }}>
-            <div className="flex items-center gap-1.5">
-              <div className="rack-screw" />
-              <div className="rack-screw" />
-            </div>
-            <span className="text-[8px] font-bold tracking-widest" style={{ color: '#2a2a48', fontFamily: 'Share Tech Mono, monospace' }}>
-              MIKROGESTOR-RU1 © 2025
+          {/* Online indicator */}
+          <div className="flex items-center gap-2 mt-4 px-3 py-1.5 rounded-full"
+            style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+              style={{ boxShadow: '0 0 6px #22c55e', animation: 'led-pulse 2s ease-in-out infinite' }} />
+            <span className="text-[10px] font-semibold tracking-wider uppercase" style={{ color: '#4ade80' }}>
+              Sistema Online
             </span>
-            <div className="flex items-center gap-1.5">
-              <div className="rack-screw" />
-              <div className="rack-screw" />
-            </div>
           </div>
         </div>
 
-        {/* Bottom shadow extrusion (3D effect) */}
-        <div
-          className="absolute inset-x-4 -bottom-3 -z-10 rounded-2xl"
-          style={{
-            height: '12px',
-            background: '#0a0a18',
-            filter: 'blur(4px)',
-            opacity: 0.8
-          }}
-        />
+        {/* Error Message */}
+        {error && (
+          <div
+            className="mb-5 px-4 py-3 rounded-xl flex items-center gap-3"
+            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+            <span className="text-xs" style={{ color: '#f87171' }}>{error}</span>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label
+              className="block text-[11px] font-semibold uppercase tracking-wider mb-2"
+              style={{ color: 'rgba(255,255,255,0.4)' }}
+            >
+              Usuário
+            </label>
+            <input
+              id="login-username"
+              type="text"
+              required
+              value={user}
+              onChange={(e) => setUser(e.target.value)}
+              placeholder="ex: mikrogestor"
+              className="aurora-input"
+              autoComplete="username"
+            />
+          </div>
+
+          <div>
+            <label
+              className="block text-[11px] font-semibold uppercase tracking-wider mb-2"
+              style={{ color: 'rgba(255,255,255,0.4)' }}
+            >
+              Senha
+            </label>
+            <input
+              id="login-password"
+              type="password"
+              required
+              value={pass}
+              onChange={(e) => setPass(e.target.value)}
+              placeholder="••••••••"
+              className="aurora-input"
+              autoComplete="current-password"
+            />
+          </div>
+
+          <button
+            id="login-submit"
+            type="submit"
+            disabled={loading}
+            className="aurora-btn w-full mt-2"
+          >
+            {loading ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Autenticando...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                Entrar no Painel
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <p className="text-center text-[10px] mt-6" style={{ color: 'rgba(255,255,255,0.18)' }}>
+          MikroGestor © 2025 — Sistema de Gestão Hotspot
+        </p>
       </div>
     </main>
   );

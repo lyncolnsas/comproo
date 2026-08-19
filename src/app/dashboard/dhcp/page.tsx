@@ -40,71 +40,75 @@ export default function DHCPLeases() {
   }
 
   return (
-    <main className="p-4 md:p-6 space-y-6 animate-fade-in">
-      {/* Page Header as a Rack Module */}
-      <header className="retro-card p-4 flex items-center gap-3">
-        <div className="rack-screw" />
-        <span className="led led-amber animate-led-pulse" />
+    <main className="w-full p-4 md:p-6 space-y-6 animate-fade-in">
+      {/* Page Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div style={{ color: 'var(--led-amber)', fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+          <p
+            className="text-[10px] font-bold uppercase tracking-widest mb-1"
+            style={{ color: '#f59e0b' }}
+          >
             ▶ NETWORK // DHCP ACTIVE LEASES
-          </div>
-          <h1 style={{ fontFamily: 'Orbitron, sans-serif', color: 'white', fontSize: '1.25rem', fontWeight: 900 }}>
+          </p>
+          <h1
+            className="text-2xl font-black tracking-tight text-white"
+            style={{ fontFamily: 'Orbitron, sans-serif' }}
+          >
             DHCP Leases
           </h1>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Concessões DHCP ativas e mapeamento de endereços IP na rede
+          </p>
         </div>
-        <div className="ml-auto rack-screw" />
       </header>
 
       {/* Main Table Card */}
-      <div className="retro-card overflow-hidden">
-        {/* Module Header Bar */}
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '2px solid #0a0a18', background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-          <div className="flex items-center gap-3">
-            <div className="rack-screw" />
-            <span className="font-mono text-xs font-bold text-slate-450 uppercase tracking-wider">NETWORK_CLIENTS_IDENTIFIED</span>
+      <div className="aurora-card overflow-hidden">
+        <div className="px-6 py-5 border-b border-white/5 bg-white/[0.01] flex justify-between items-center">
+          <div>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Network Clients Identified</h2>
+            <p className="text-xs text-white/30 mt-0.5">Dispositivos conectados que receberam IPs via DHCP</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="retro-badge retro-badge-amber font-mono">{leases.length} LEASES</span>
-            <div className="rack-screw" />
-          </div>
+          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-amber-500/35 bg-amber-500/10 text-amber-400 tracking-wider uppercase">
+            {leases.length} LEASES
+          </span>
         </div>
 
-        {/* Retro Table */}
+        {/* Table */}
         <div className="p-4">
-          <div className="retro-table-wrap">
+          <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead style={{ background: '#070f1e', borderBottom: '2px solid #0a0a18' }}>
-                <tr style={{ fontFamily: 'Share Tech Mono, monospace', color: 'var(--display-dim)' }}>
-                  <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Endereço IP</th>
-                  <th className="px-6 py-3.5 font-bold uppercase tracking-wider">MAC Address</th>
-                  <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Host Name</th>
-                  <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Servidor</th>
-                  <th className="px-6 py-3.5 font-bold uppercase tracking-wider text-right">Status</th>
+              <thead>
+                <tr className="border-b border-white/5 bg-white/[0.02] text-white/40">
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Endereço IP</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">MAC Address</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Host Name</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Servidor</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#0c0c1c]" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+              <tbody className="divide-y divide-white/5 text-slate-300 font-mono">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">
+                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 italic">
                       <div className="inline-block animate-pulse">Lendo leases ativas no pool DHCP do roteador...</div>
                     </td>
                   </tr>
                 ) : leases.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-slate-400 italic">
+                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 italic">
                       Nenhum dispositivo com lease DHCP registrada na rede.
                     </td>
                   </tr>
                 ) : (
                   leases.map((lease, index) => (
-                    <tr key={`${lease.id || lease.address}-${index}`} className="hover:bg-[#101026]/40 transition-colors">
-                      <td className="px-6 py-4 font-bold text-[#7dd3fc] text-sm tracking-wide">{lease.address}</td>
-                      <td className="px-6 py-4 text-slate-400 uppercase font-mono text-[10px]">{lease.mac}</td>
-                      <td className="px-6 py-4 font-bold text-white">{lease.hostName || <span className="text-slate-650 italic">sem hostname</span>}</td>
-                      <td className="px-6 py-4 text-slate-400">{lease.server}</td>
+                    <tr key={`${lease.id || lease.address}-${index}`} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4 font-bold text-indigo-300 text-sm tracking-wide font-sans">{lease.address}</td>
+                      <td className="px-6 py-4 text-slate-400 uppercase text-[10px]">{lease.mac}</td>
+                      <td className="px-6 py-4 font-bold text-white font-sans">{lease.hostName || <span className="text-slate-600 italic">sem hostname</span>}</td>
+                      <td className="px-6 py-4 text-slate-400 font-sans">{lease.server}</td>
                       <td className="px-6 py-4 text-right">
-                        <span className={`retro-badge ${lease.status === 'bound' ? 'retro-badge-green' : 'retro-badge-amber'}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${lease.status === 'bound' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400' : 'border-amber-500/20 bg-amber-500/10 text-amber-400'}`}>
                           {lease.status.toUpperCase()}
                         </span>
                       </td>

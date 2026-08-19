@@ -1,0 +1,17 @@
+src\app\api\hotspot\provision\route.ts: 16 unique emojis -> 🌐 🌉 🔓 📍 🏊 ⚙ 🛡 📡 👤 🔀 ✍ 🔌 ✅ ⚡ ✓ 🔄
+src\app\api\portal\config\route.ts: 3 unique emojis -> ✕ 🔇 🔊
+src\app\dashboard\admin\page.tsx: 5 unique emojis -> ▶ 🖧 📟 ⚡ 🖴
+src\app\dashboard\dhcp\page.tsx: 1 unique emojis -> ▶
+src\app\dashboard\finance\page.tsx: 3 unique emojis -> ▶ 📥 🗑
+src\app\dashboard\layout.tsx: 2 unique emojis -> ✕ ☰
+src\app\dashboard\page.tsx: 4 unique emojis -> 🔌 ✓ ⚡ ▶
+src\app\dashboard\portal\page.tsx: 26 unique emojis -> ⚡ 🧹 🔑 ✅ ✕ 🔇 🔊 🎨 👥 ™ 👤 📋 📢 ⬆ 💾 📱 ♂ ♀ ✓ ✗ 🎉 🔧 🔒 📦 🌉 🔌
+src\app\dashboard\ppp\page.tsx: 1 unique emojis -> ▶
+src\app\dashboard\print\page.tsx: 1 unique emojis -> 🖨
+src\app\dashboard\profiles\page.tsx: 3 unique emojis -> ▶ ⚠ ⚙
+src\app\dashboard\security\page.tsx: 6 unique emojis -> ▶ 🌐 🕒 🚫 ⚡ 🔓
+src\app\dashboard\traffic\page.tsx: 1 unique emojis -> ▶
+src\app\dashboard\users\page.tsx: 5 unique emojis -> ▶ 📋 ⚡ 👤 🖨
+src\app\page.tsx: 1 unique emojis -> ©
+src\app\portal\register\ClientPage.tsx: 2 unique emojis -> 🔇 🔊
+src\components\RouterOffline.tsx: 4 unique emojis -> ▶ ⚠ 🔌 🔄

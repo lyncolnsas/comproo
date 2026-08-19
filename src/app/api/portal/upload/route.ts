@@ -5,18 +5,19 @@ import path from 'path';
 export async function POST(request: Request) {
   try {
     const contentType = request.headers.get('content-type') || '';
-    
     let buffer: Buffer;
+    let fileName: string;
     let type: string;
     let slot: string | null = null;
-    let fileName: string = '';
-    let ext: string = '.png';
+    let ext: string;
+    let templateName: string = 'default';
 
     if (!contentType.includes('multipart/form-data')) {
       // 1. Raw Binary Upload Mode (Highly robust for large media files)
       const url = new URL(request.url);
       type = url.searchParams.get('type') || 'ad';
       slot = url.searchParams.get('slot');
+      templateName = url.searchParams.get('template') || 'default';
       const paramFilename = url.searchParams.get('filename') || 'media.mp4';
       ext = path.extname(paramFilename) || '.png';
       
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
       const file = formData.get('file') as File;
       type = formData.get('type') as string; // 'logo' | 'ad'
       slot = formData.get('slot') as string;
+      templateName = formData.get('template') as string || 'default';
 
       if (!file) {
         return NextResponse.json({ success: false, message: 'Nenhum arquivo enviado.' }, { status: 400 });
@@ -40,14 +42,83 @@ export async function POST(request: Request) {
       fileName = file.name;
     }
 
+    const isVideo = ext.toLowerCase() === '.mp4' || ext.toLowerCase() === '.webm' || ext.toLowerCase() === '.mov';
+    const maxSize = isVideo ? 35 * 1024 * 1024 : 10 * 1024 * 1024;
+
+    if (type === 'bg' && buffer.length > maxSize) {
+      return NextResponse.json({ 
+        success: false, 
+        message: `O arquivo de fundo excede o limite máximo de ${isVideo ? '35 MB para vídeos' : '10 MB para imagens'}.` 
+      }, { status: 400 });
+    }
+
     if (type === 'logo') {
-      const hotspotDir = path.join(process.cwd(), 'hotspot');
-      if (!fs.existsSync(hotspotDir)) {
-        fs.mkdirSync(hotspotDir, { recursive: true });
+      const safeName = templateName.replace(/[^a-zA-Z0-9_-]/g, '');
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
       }
-      const filePath = path.join(hotspotDir, 'human.png');
+
+      // Save logo with fixed name and timestamped name in public/uploads
+      const logoPathFixed = path.join(uploadDir, `logo_${safeName}.png`);
+      fs.writeFileSync(logoPathFixed, buffer);
+      
+      const fileName = `logo_${safeName}_${Date.now()}.png`;
+      const logoPathTime = path.join(uploadDir, fileName);
+      fs.writeFileSync(logoPathTime, buffer);
+
+      return NextResponse.json({ 
+        success: true, 
+        fileUrl: `/uploads/${fileName}`,
+        message: 'Logo salva no servidor com sucesso!' 
+      });
+    } else if (type === 'bg') {
+      const safeName = templateName.replace(/[^a-zA-Z0-9_-]/g, '');
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      // Clean old backgrounds for this template in public/uploads to prevent disk clogging
+      try {
+        const files = fs.readdirSync(uploadDir);
+        files.forEach(f => {
+          if (f.startsWith(`bg_${safeName}_`)) {
+            try { fs.unlinkSync(path.join(uploadDir, f)); } catch (e) {}
+          }
+        });
+      } catch (e) {}
+
+      const isVideoFile = ext.toLowerCase() === '.mp4' || ext.toLowerCase() === '.webm' || ext.toLowerCase() === '.mov';
+      let cleanExt = ext.toLowerCase();
+      if (!isVideoFile && !['.png', '.jpg', '.jpeg', '.webp'].includes(cleanExt)) {
+         cleanExt = '.jpg';
+      }
+      
+      const fileName = `bg_${safeName}_${Date.now()}${cleanExt}`;
+      const filePath = path.join(uploadDir, fileName);
       fs.writeFileSync(filePath, buffer);
-      return NextResponse.json({ success: true, message: 'Logo salva como hotspot/human.png com sucesso!' });
+
+      // Clean any lingering bg files inside local hotspot directory if any existed
+      try {
+        const hDir = path.join(process.cwd(), 'hotspot', safeName);
+        if (fs.existsSync(hDir)) {
+           const hFiles = fs.readdirSync(hDir);
+           hFiles.forEach(f => {
+              if (f.startsWith('bg.') || f === 'human.png' || f === 'logo.png') {
+                 try { fs.unlinkSync(path.join(hDir, f)); } catch (e) {}
+              }
+           });
+        }
+      } catch (e) {}
+
+      const fileUrl = `/uploads/${fileName}`;
+
+      return NextResponse.json({ 
+        success: true, 
+        fileUrl: fileUrl,  
+        message: 'Fundo salvo com sucesso no servidor!' 
+      });
     } else if (type === 'ad') {
       const uploadDir = path.join(process.cwd(), 'public', 'uploads');
       if (!fs.existsSync(uploadDir)) {
@@ -82,7 +153,7 @@ export async function POST(request: Request) {
         }
       }
 
-      // Fallback fallback legacy upload
+      // Fallback legacy upload
       const fileName = `ad_${Date.now()}${ext}`;
       const filePath = path.join(uploadDir, fileName);
       
@@ -104,39 +175,95 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
-    const configPath = path.join(process.cwd(), 'hotspot', 'config.json');
-    let config: any = {};
-    if (fs.existsSync(configPath)) {
-      config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    }
+    const { searchParams } = new URL(request.url);
+    const template = searchParams.get('template') || 'default';
+    const type = searchParams.get('type');
+    const safeName = template.replace(/[^a-zA-Z0-9_-]/g, '');
+    const configPath = path.join(process.cwd(), 'hotspot', safeName, 'config.json');
 
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+
+    // Specific deletion for Background media
+    if (type === 'bg') {
+      let deletedCount = 0;
+      if (fs.existsSync(uploadDir)) {
+        try {
+          const files = fs.readdirSync(uploadDir);
+          files.forEach(f => {
+            if (f.startsWith(`bg_${safeName}_`)) {
+              try {
+                fs.unlinkSync(path.join(uploadDir, f));
+                deletedCount++;
+              } catch (e) {}
+            }
+          });
+        } catch (e) {}
+      }
+
+      const hDir = path.join(process.cwd(), 'hotspot', safeName);
+      if (fs.existsSync(hDir)) {
+        try {
+          const hFiles = fs.readdirSync(hDir);
+          hFiles.forEach(f => {
+            if (f.startsWith('bg.') && (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.mov') || f.endsWith('.png') || f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.webp'))) {
+              try {
+                fs.unlinkSync(path.join(hDir, f));
+                deletedCount++;
+              } catch (e) {}
+            }
+          });
+        } catch (e) {}
+      }
+
+      // Update config.json to reset bg
+      if (fs.existsSync(configPath)) {
+        try {
+          const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+          cfg.bg = { type: 'default', url: '' };
+          fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2), 'utf8');
+        } catch (e) {}
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Mídia de fundo removida e ${deletedCount} arquivo(s) apagado(s) do servidor com sucesso!`,
+        deletedCount
+      });
+    }
+
+    // General cleanup for unused ad/bg files
+    let config: any = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      } catch (e) {}
+    }
+
     if (!fs.existsSync(uploadDir)) {
       return NextResponse.json({ success: true, message: 'Diretório de uploads vazio.', deletedCount: 0 });
     }
 
-    // 1. Coleta todas as URLs de mídia ativas na configuração atual
     const activeUrls = new Set<string>();
     if (config.ad) {
-      if (config.ad.mediaUrl) {
-        activeUrls.add(config.ad.mediaUrl);
-      }
+      if (config.ad.mediaUrl) activeUrls.add(config.ad.mediaUrl.split('?')[0]);
       if (Array.isArray(config.ad.items)) {
         config.ad.items.forEach((item: any) => {
-          if (item && item.url) {
-            activeUrls.add(item.url);
-          }
+          if (item && item.url) activeUrls.add(item.url.split('?')[0]);
         });
       }
     }
+    if (config.bg && config.bg.url) {
+      // Strip query parameters to match actual file names in uploads directory
+      const cleanUrl = config.bg.url.split('?')[0];
+      activeUrls.add(cleanUrl);
+    }
 
-    // 2. Varrer arquivos e remover os que começam com "ad_" e não estão em uso
     const files = fs.readdirSync(uploadDir);
     let deletedCount = 0;
     files.forEach(file => {
-      if (file.startsWith('ad_')) {
+      if (file.startsWith('ad_') || file.startsWith('bg_')) {
         const fileUrl = `/uploads/${file}`;
         if (!activeUrls.has(fileUrl)) {
           try {

@@ -42,7 +42,12 @@ export async function GET(
     else if (ext === '.mp3') contentType = 'audio/mpeg';
     else if (ext === '.wav') contentType = 'audio/wav';
 
-    // Parse the Range header
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'Access-Control-Allow-Headers': '*',
+    };
+
     const range = request.headers.get('range');
 
     if (!range) {
@@ -51,6 +56,7 @@ export async function GET(
       return new NextResponse(fileBuffer, {
         status: 200,
         headers: {
+          ...corsHeaders,
           'Content-Length': fileSize.toString(),
           'Content-Type': contentType,
           'Accept-Ranges': 'bytes',
@@ -69,6 +75,7 @@ export async function GET(
       return new NextResponse('Requested range not satisfiable', {
         status: 416,
         headers: {
+          ...corsHeaders,
           'Content-Range': `bytes */${fileSize}`,
         },
       });
@@ -101,6 +108,7 @@ export async function GET(
     return new NextResponse(webStream, {
       status: 206,
       headers: {
+        ...corsHeaders,
         'Content-Range': `bytes ${start}-${end}/${fileSize}`,
         'Accept-Ranges': 'bytes',
         'Content-Length': chunkSize.toString(),
@@ -111,4 +119,15 @@ export async function GET(
     console.error('Error streaming file:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+      'Access-Control-Allow-Headers': '*',
+    },
+  });
 }

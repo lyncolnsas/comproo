@@ -177,121 +177,127 @@ export default function ProfilesManage() {
   }
 
   return (
-    <main className="p-4 md:p-6 space-y-6 animate-fade-in">
+    <main className="w-full p-4 md:p-6 space-y-6 animate-fade-in">
       {/* Page Header */}
-      <header className="retro-card p-4 flex items-center gap-3">
-        <div className="rack-screw" />
-        <span className="led led-blue animate-led-pulse" />
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div style={{ color: 'var(--led-blue)', fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+          <p
+            className="text-[10px] font-bold uppercase tracking-widest mb-1"
+            style={{ color: '#3b82f6' }}
+          >
             ▶ HOTSPOT // BANDWIDTH PLANS & PROFILES MANAGER
-          </div>
-          <h1 style={{ fontFamily: 'Orbitron, sans-serif', color: 'white', fontSize: '1.25rem', fontWeight: 900 }}>
-            Perfis de Acesso (Profiles)
+          </p>
+          <h1
+            className="text-2xl font-black tracking-tight text-white"
+            style={{ fontFamily: 'Orbitron, sans-serif' }}
+          >
+            Planos / Perfis
           </h1>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Gerencie perfis de acesso e planos de velocidade no MikroTik
+          </p>
         </div>
-        <div className="ml-auto rack-screw" />
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Form Container */}
-        <div className="retro-card lg:col-span-2">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-[#0a0a18]" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-            <div className="rack-screw" />
-            <span className="font-mono text-xs font-bold text-slate-450 uppercase">PROGRAM_PLAN_PROFILE</span>
+        <div className="aurora-card lg:col-span-2">
+          <div className="px-6 py-5 border-b border-white/5 bg-white/[0.01]">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Novo Perfil de Acesso</h2>
+            <p className="text-xs text-white/30 mt-0.5">Defina limites, validade e valores para os vouchers</p>
           </div>
 
-          <form onSubmit={handleCreate} className="p-5 space-y-4">
+          <form onSubmit={handleCreate} className="p-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Nome do Plano</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Nome do Plano</label>
                 <input 
                   type="text" 
                   value={name} 
                   onChange={(e) => setName(e.target.value.replace(/\s/g, '-'))} 
                   required 
                   placeholder="Ex: 1-Hora-R$2" 
-                  className="retro-input text-xs" 
+                  className="aurora-input" 
                 />
               </div>
               
               <div>
-                <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>IP Pool (Address Pool)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">IP Pool (Address Pool)</label>
                 <select 
                   value={ppool} 
                   onChange={(e) => setPpool(e.target.value)} 
-                  className="retro-input text-xs"
-                  style={{ background: '#06080e' }}
+                  className="aurora-input"
+                  style={{ background: '#0a0a18' }}
                 >
-                  <option value="none" className="bg-[#0c0c18]">none (Padrão do Hotspot)</option>
-                  {pools.map((p, idx) => <option key={`${p}-${idx}`} value={p} className="bg-[#0c0c18]">{p}</option>)}
+                  <option value="none">none (Padrão do Hotspot)</option>
+                  {pools.map((p, idx) => <option key={`${p}-${idx}`} value={p}>{p}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Limite de Velocidade (Rate Limit)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Limite de Velocidade (Rate Limit)</label>
                 <input 
                   type="text" 
                   value={rateLimit} 
                   onChange={(e) => setRateLimit(e.target.value)} 
                   placeholder="Ex: 512k/2M ou 1M/5M" 
-                  className="retro-input text-xs uppercase" 
+                  className="aurora-input uppercase" 
                 />
-                <p className="text-[9px] text-slate-550 font-mono mt-0.5 leading-none">Upload/Download. Vazio para ilimitado.</p>
+                <p className="text-[10px] text-slate-500 mt-1 leading-none">Upload/Download. Vazio para ilimitado.</p>
               </div>
 
               <div>
-                <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Usuários Simultâneos (Shared)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Usuários Simultâneos (Shared)</label>
                 <input 
                   type="number" 
                   min="1" 
                   value={sharedUsers} 
                   onChange={(e) => setSharedUsers(e.target.value)} 
                   required
-                  className="retro-input text-xs" 
+                  className="aurora-input" 
                 />
               </div>
 
               <div>
-                <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Modo de Expiração</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Modo de Expiração</label>
                 <select 
                   value={expmode} 
                   onChange={(e) => setExpmode(e.target.value)} 
-                  className="retro-input text-xs"
-                  style={{ background: '#06080e' }}
+                  className="aurora-input"
+                  style={{ background: '#0a0a18' }}
                 >
-                  <option value="0" className="bg-[#0c0c18]">Nenhum (Voucher não expira)</option>
-                  <option value="rem" className="bg-[#0c0c18]">Remover (Apaga voucher expirado)</option>
-                  <option value="ntf" className="bg-[#0c0c18]">Aviso (Bloqueia e mostra tela de expirado)</option>
-                  <option value="remc" className="bg-[#0c0c18]">Remover e Registrar (Apaga e grava faturamento)</option>
-                  <option value="ntfc" className="bg-[#0c0c18]">Aviso e Registrar (Bloqueia e grava faturamento)</option>
+                  <option value="0">Nenhum (Voucher não expira)</option>
+                  <option value="rem">Remover (Apaga voucher expirado)</option>
+                  <option value="ntf">Aviso (Bloqueia e mostra tela de expirado)</option>
+                  <option value="remc">Remover e Registrar (Apaga e grava faturamento)</option>
+                  <option value="ntfc">Aviso e Registrar (Bloqueia e grava faturamento)</option>
                 </select>
               </div>
 
               {expmode !== '0' ? (
                 <>
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Validade (Validity)</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Validade (Validity)</label>
                     <input 
                       type="text" 
                       value={validity} 
                       onChange={(e) => setValidity(e.target.value)} 
                       required 
                       placeholder="Ex: 1d, 12h, 30m" 
-                      className="retro-input text-xs" 
+                      className="aurora-input" 
                     />
-                    <p className="text-[9px] text-slate-550 font-mono mt-0.5 leading-none">Duração após o primeiro login.</p>
+                    <p className="text-[10px] text-slate-500 mt-1 leading-none">Duração após o primeiro login.</p>
                   </div>
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Período de Graça</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Período de Graça</label>
                     <input 
                       type="text" 
                       value={graceperiod} 
                       onChange={(e) => setGraceperiod(e.target.value)} 
                       required 
                       placeholder="Ex: 5m" 
-                      className="retro-input text-xs" 
+                      className="aurora-input" 
                     />
                   </div>
                 </>
@@ -300,7 +306,7 @@ export default function ProfilesManage() {
               )}
 
               <div>
-                <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Preço de Custo (R$)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Preço de Custo (R$)</label>
                 <input 
                   type="number" 
                   step="0.01" 
@@ -308,12 +314,12 @@ export default function ProfilesManage() {
                   value={price} 
                   onChange={(e) => setPrice(e.target.value)} 
                   required
-                  className="retro-input text-xs" 
+                  className="aurora-input" 
                 />
               </div>
 
               <div>
-                <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Preço de Venda (R$)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Preço de Venda (R$)</label>
                 <input 
                   type="number" 
                   step="0.01" 
@@ -321,42 +327,42 @@ export default function ProfilesManage() {
                   value={sprice} 
                   onChange={(e) => setSprice(e.target.value)} 
                   required
-                  className="retro-input text-xs" 
+                  className="aurora-input" 
                 />
               </div>
 
               <div>
-                <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Vincular ao MAC (Lock User)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Vincular ao MAC (Lock User)</label>
                 <select 
                   value={lockunlock} 
                   onChange={(e) => setLockunlock(e.target.value)} 
-                  className="retro-input text-xs"
-                  style={{ background: '#06080e' }}
+                  className="aurora-input"
+                  style={{ background: '#0a0a18' }}
                 >
-                  <option value="Disable" className="bg-[#0c0c18]">Desativado (Multi-aparelho)</option>
-                  <option value="Enable" className="bg-[#0c0c18]">Ativado (Trava no primeiro login)</option>
+                  <option value="Disable">Desativado (Multi-aparelho)</option>
+                  <option value="Enable">Ativado (Trava no primeiro login)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Fila Pai (Parent Queue)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Fila Pai (Parent Queue)</label>
                 <select 
                   value={parent} 
                   onChange={(e) => setParent(e.target.value)} 
-                  className="retro-input text-xs"
-                  style={{ background: '#06080e' }}
+                  className="aurora-input"
+                  style={{ background: '#0a0a18' }}
                 >
-                  <option value="none" className="bg-[#0c0c18]">none (Nenhuma Fila Pai)</option>
-                  {queues.map((q, idx) => <option key={`${q}-${idx}`} value={q} className="bg-[#0c0c18]">{q}</option>)}
+                  <option value="none">none (Nenhuma Fila Pai)</option>
+                  {queues.map((q, idx) => <option key={`${q}-${idx}`} value={q}>{q}</option>)}
                 </select>
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-4 border-t border-white/5">
               <button 
                 type="submit" 
                 disabled={creating} 
-                className="w-full retro-btn retro-btn-primary py-2.5"
+                className="w-full aurora-btn py-3"
               >
                 {creating ? 'Salvando Configurações...' : 'Salvar Perfil de Acesso'}
               </button>
@@ -365,26 +371,26 @@ export default function ProfilesManage() {
         </div>
 
         {/* Readme Panel */}
-        <div className="retro-card h-fit lg:col-span-1">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-[#0a0a18]" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-            <div className="rack-screw" />
-            <span className="font-mono text-xs font-bold text-slate-450 uppercase">TECHNICAL_DOCUMENTATION</span>
+        <div className="aurora-card h-fit lg:col-span-1">
+          <div className="px-6 py-5 border-b border-white/5 bg-white/[0.01]">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Documentação</h2>
+            <p className="text-xs text-white/30 mt-0.5">Parâmetros de configuração</p>
           </div>
           
-          <div className="p-5 space-y-4 text-xs font-mono">
-            <h3 className="font-bold text-sm text-white uppercase tracking-wider border-b border-[#0a0a18] pb-1.5" style={{ textShadow: '0 0 5px rgba(255,255,255,0.1)' }}>
-              Guia de Configuração
+          <div className="p-6 space-y-4 text-xs">
+            <h3 className="font-bold text-sm text-white uppercase tracking-wider pb-1.5 border-b border-white/5">
+              Guia Rápido
             </h3>
             
-            <div className="space-y-3 leading-relaxed text-slate-400">
+            <div className="space-y-4 leading-relaxed text-slate-400">
               <div>
-                <strong className="text-white block text-[10px] uppercase">1. Nome do Plano:</strong>
-                <p className="text-[10px] mt-0.5">Evite espaços em branco. O sistema substitui automaticamente espaços vazios por hífens (`-`).</p>
+                <strong className="text-indigo-400 block mb-1">1. NOME DO PLANO:</strong>
+                <p>Evite espaços em branco. O sistema substitui automaticamente espaços vazios por hífens (`-`).</p>
               </div>
               <div>
-                <strong className="text-white block text-[10px] uppercase">2. Formato de Validade:</strong>
-                <p className="text-[10px] mt-0.5">Duração total da navegação a partir do primeiro login.</p>
-                <ul className="list-disc pl-4 mt-1 space-y-0.5 text-[10px]">
+                <strong className="text-indigo-400 block mb-1">2. FORMATO DE VALIDADE:</strong>
+                <p>Duração total da navegação a partir do primeiro login.</p>
+                <ul className="list-disc pl-4 mt-2 space-y-1">
                   <li><strong>30m</strong> = 30 minutos</li>
                   <li><strong>12h</strong> = 12 horas</li>
                   <li><strong>1d</strong> = 1 dia</li>
@@ -392,8 +398,8 @@ export default function ProfilesManage() {
                 </ul>
               </div>
               <div>
-                <strong className="text-white block text-[10px] uppercase">3. Modos de Registro:</strong>
-                <p className="text-[10px] mt-0.5">Opte por registros contendo <strong>"Registrar"</strong> (*c* no sufixo) para habilitar gravação persistente de transações financeiras em scripts de log no MikroTik, garantindo relatórios completos.</p>
+                <strong className="text-indigo-400 block mb-1">3. MODOS DE REGISTRO:</strong>
+                <p>Opte por registros contendo <strong>"Registrar"</strong> para habilitar gravação persistente de transações financeiras em scripts de log no MikroTik, garantindo relatórios completos.</p>
               </div>
             </div>
           </div>
@@ -401,45 +407,49 @@ export default function ProfilesManage() {
       </div>
 
       {/* Profiles List */}
-      <div className="retro-card">
-        <div className="px-5 py-4 border-b border-[#0a0a18] flex justify-between items-center" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-          <div className="flex items-center gap-3">
-            <div className="rack-screw" />
-            <div>
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Perfis Cadastrados no MikroTik</h2>
-              <p className="text-[10px] text-slate-400 font-mono">Planos ativos e configurados no roteador</p>
-            </div>
+      <div className="aurora-card overflow-hidden">
+        <div className="px-6 py-5 border-b border-white/5 bg-white/[0.01] flex justify-between items-center">
+          <div>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Perfis Cadastrados no MikroTik</h2>
+            <p className="text-xs text-white/30 mt-0.5">Planos ativos e configurados no roteador</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="retro-badge retro-badge-blue font-mono">{profiles.length} PERFIS</span>
-            <div className="rack-screw" />
-          </div>
+          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-[#818cf8]/35 bg-[#818cf8]/10 text-[#a5b4fc] tracking-wider uppercase">
+            {profiles.length} PERFIS
+          </span>
         </div>
 
         <div className="p-4">
-          <div className="retro-table-wrap">
+          <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead style={{ background: '#070f1e', borderBottom: '2px solid #0a0a18' }}>
-                <tr style={{ fontFamily: 'Share Tech Mono, monospace', color: 'var(--display-dim)' }}>
-                  <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Nome (Profile)</th>
-                  <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Usuários Simultâneos</th>
-                  <th className="px-6 py-3.5 font-bold uppercase tracking-wider">Banda (Rate Limit)</th>
-                  <th className="px-6 py-3.5 font-bold uppercase tracking-wider text-right">Pool de IPs</th>
+              <thead>
+                <tr className="border-b border-white/5 bg-white/[0.02] text-white/40">
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Nome (Profile)</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Usuários Simultâneos</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Banda (Rate Limit)</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider text-right">Pool de IPs</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#0c0c1c]" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+              <tbody className="divide-y divide-white/5 text-slate-300">
                 {loading ? (
-                  <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-400 italic">Carregando profiles cadastrados...</td></tr>
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500 italic">
+                      Carregando profiles cadastrados...
+                    </td>
+                  </tr>
                 ) : profiles.map((p, index) => (
-                  <tr key={`${p.id || p.name}-${index}`} className="hover:bg-[#101026]/40 transition-colors">
-                    <td className="px-6 py-4 font-bold text-[#7dd3fc] text-sm tracking-wide">{p.name}</td>
+                  <tr key={`${p.id || p.name}-${index}`} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="px-6 py-4 font-bold text-indigo-300 text-sm tracking-wide">{p.name}</td>
                     <td className="px-6 py-4 text-white">{p['shared-users'] || '1'}</td>
                     <td className="px-6 py-4 text-slate-400 font-mono">{p['rate-limit'] || 'Ilimitada'}</td>
                     <td className="px-6 py-4 text-slate-400 font-mono text-right">{p['address-pool'] || 'none'}</td>
                   </tr>
                 ))}
                 {(!loading && profiles.length === 0) && (
-                  <tr><td colSpan={4} className="px-6 py-8 text-center text-slate-400 italic">Nenhum perfil de Hotspot encontrado.</td></tr>
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500 italic">
+                      Nenhum perfil de Hotspot encontrado.
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>

@@ -347,66 +347,60 @@ export default function Users() {
   const isAllSelected = filteredUsers.length > 0 && filteredUsers.every(u => selectedIds.includes(u.id || u.name));
 
   return (
-    <main className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 animate-fade-in relative pb-24">
+    <main className="w-full p-4 md:p-6 max-w-7xl mx-auto space-y-6 animate-fade-in relative pb-24">
       {/* Header */}
-      <header className="retro-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="rack-screw" />
-          <span className="led led-blue animate-led-pulse" />
-          <div>
-            <div style={{ color: 'var(--led-blue)', fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-              ▶ HOTSPOT // VOUCHERS DATABASE CONSOLE
-            </div>
-            <h1 style={{ fontFamily: 'Orbitron, sans-serif', color: 'white', fontSize: '1.25rem', fontWeight: 900 }}>
-              Central de Vouchers
-            </h1>
-          </div>
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p
+            className="text-[10px] font-bold uppercase tracking-widest mb-1"
+            style={{ color: '#3b82f6' }}
+          >
+            ▶ HOTSPOT // VOUCHERS DATABASE CONSOLE
+          </p>
+          <h1
+            className="text-2xl font-black tracking-tight text-white"
+            style={{ fontFamily: 'Orbitron, sans-serif' }}
+          >
+            Central de Vouchers
+          </h1>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Geração, gerenciamento e monitoramento de vouchers de acesso
+          </p>
         </div>
         
         <div className="flex flex-wrap gap-3 shrink-0">
           <button 
-            onClick={() => { setActiveTab('single'); setSingleMessage(null); }}
-            className={`retro-btn ${activeTab === 'single' ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+            onClick={() => { setActiveTab('list'); setError(''); }}
+            className="aurora-btn text-xs"
+            style={activeTab !== 'list' ? { background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' } : undefined}
           >
-            👤 Criar Avulso
+            📋 Lista de Vouchers
           </button>
           <button 
             onClick={() => { setActiveTab('batch'); setBatchMessage(null); }}
-            className={`retro-btn ${activeTab === 'batch' ? 'retro-btn-primary' : 'retro-btn-dark'}`}
+            className="aurora-btn text-xs"
+            style={activeTab !== 'batch' ? { background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' } : undefined}
           >
             ⚡ Gerar em Lote
           </button>
-          <div className="rack-screw" />
+          <button 
+            onClick={() => { setActiveTab('single'); setSingleMessage(null); }}
+            className="aurora-btn text-xs"
+            style={activeTab !== 'single' ? { background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' } : undefined}
+          >
+            👤 Criar Avulso
+          </button>
         </div>
       </header>
 
       {error && (
-        <div className="retro-display p-4 text-xs text-red-500 font-bold">
-          SYSTEM_DATABASE_ERROR // {error}
+        <div className="aurora-card p-4 flex items-center gap-3 animate-pulse" style={{ borderColor: 'rgba(239,68,68,0.2)' }}>
+          <span className="w-2 h-2 rounded-full bg-red-450 shrink-0" style={{ boxShadow: '0 0 6px #ef4444' }} />
+          <span className="text-xs font-semibold text-rose-300 font-mono">
+            SYSTEM_DATABASE_ERROR // {error}
+          </span>
         </div>
       )}
-
-      {/* Primary Tab Switcher */}
-      <div className="flex flex-wrap gap-3 bg-[#0a0a18]/40 p-2 rounded-xl border border-[#252542] w-fit shadow-[inset_0_2px_5px_rgba(0,0,0,0.6)]">
-        <button 
-          onClick={() => { setActiveTab('list'); setError(''); }}
-          className={`retro-btn text-xs py-1.5 px-4 ${activeTab === 'list' ? 'retro-btn-primary' : 'retro-btn-dark'}`}
-        >
-          📋 Lista de Vouchers
-        </button>
-        <button 
-          onClick={() => { setActiveTab('batch'); setBatchMessage(null); }}
-          className={`retro-btn text-xs py-1.5 px-4 ${activeTab === 'batch' ? 'retro-btn-primary' : 'retro-btn-dark'}`}
-        >
-          ⚡ Gerar em Lote
-        </button>
-        <button 
-          onClick={() => { setActiveTab('single'); setSingleMessage(null); }}
-          className={`retro-btn text-xs py-1.5 px-4 ${activeTab === 'single' ? 'retro-btn-primary' : 'retro-btn-dark'}`}
-        >
-          👤 Criar Avulso
-        </button>
-      </div>
 
       {/* Tab Panels */}
       {activeTab === 'list' ? (
@@ -415,32 +409,33 @@ export default function Users() {
           {/* Control Cards (Search, Print Batch, Delete Batch) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Search */}
-            <div className="retro-card p-5 lg:col-span-2 space-y-3">
-              <span className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Buscar Usuário</span>
+            <div className="aurora-card p-5 md:col-span-2 lg:col-span-2 space-y-2">
+              <span className="block text-xs font-semibold text-slate-400">Buscar Usuário</span>
               <input 
                 type="text" 
                 placeholder="Buscar por nome ou lote..." 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="retro-input py-2 px-3 text-xs"
+                className="aurora-input py-2 px-3 text-xs"
               />
             </div>
 
             {/* Print Batch */}
-            <div className="retro-card p-5 space-y-3">
-              <span className="block text-[8px] font-bold text-emerald-500 uppercase tracking-wider" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Imprimir Lote (Comentário)</span>
-              <form onSubmit={handlePrintBatch} className="flex gap-2">
+            <div className="aurora-card p-5 space-y-2">
+              <span className="block text-xs font-semibold text-emerald-400">Imprimir Lote (Comentário)</span>
+              <form onSubmit={handlePrintBatch} className="flex gap-2 w-full">
                 <input 
                   type="text" 
                   placeholder="Ex: dez-2023" 
                   value={batchPrintComment}
                   onChange={(e) => setBatchPrintComment(e.target.value)}
-                  className="retro-input py-1.5 px-3 text-xs"
+                  className="aurora-input py-1.5 px-3 text-xs flex-1"
                 />
                 <button 
                   disabled={!batchPrintComment} 
                   type="submit" 
-                  className="retro-btn retro-btn-success py-1.5 px-3 text-[10px] shrink-0"
+                  className="aurora-btn py-1.5 px-3 text-xs shrink-0 font-medium"
+                  style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
                 >
                   Imprimir
                 </button>
@@ -448,20 +443,21 @@ export default function Users() {
             </div>
 
             {/* Delete Batch */}
-            <div className="retro-card p-5 space-y-3">
-              <span className="block text-[8px] font-bold text-red-500 uppercase tracking-wider" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Excluir Lote (Comentário)</span>
-              <form onSubmit={handleBatchDelete} className="flex gap-2">
+            <div className="aurora-card p-5 space-y-2">
+              <span className="block text-xs font-semibold text-rose-400">Excluir Lote (Comentário)</span>
+              <form onSubmit={handleBatchDelete} className="flex gap-2 w-full">
                 <input 
                   type="text" 
                   placeholder="Ex: dez-2023" 
                   value={batchDeleteComment}
                   onChange={(e) => setBatchDeleteComment(e.target.value)}
-                  className="retro-input py-1.5 px-3 text-xs focus:border-red-500"
+                  className="aurora-input py-1.5 px-3 text-xs flex-1"
                 />
                 <button 
                   disabled={isDeleting || !batchDeleteComment} 
                   type="submit" 
-                  className="retro-btn retro-btn-danger py-1.5 px-3 text-[10px] shrink-0"
+                  className="aurora-btn py-1.5 px-3 text-xs shrink-0 font-medium hover:shadow-red-500/20"
+                  style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}
                 >
                   {isDeleting ? '...' : 'Apagar'}
                 </button>
@@ -470,52 +466,48 @@ export default function Users() {
           </div>
 
           {/* Users Table */}
-          <div className="retro-card">
-            <div className="px-5 py-4 border-b border-[#0a0a18] flex justify-between items-center" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-              <div className="flex items-center gap-3">
-                <div className="rack-screw" />
-                <div>
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">Vouchers Registrados no Roteador</h2>
-                  <p className="text-[10px] text-slate-400 font-mono">Exibindo registros correspondentes aos filtros ativos</p>
-                </div>
+          <div className="aurora-card overflow-hidden">
+            <div className="px-4 sm:px-6 py-5 border-b border-white/5 bg-white/[0.01] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Vouchers Registrados no Roteador</h2>
+                <p className="text-xs text-white/30 mt-0.5">Exibindo registros correspondentes aos filtros ativos</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="retro-badge retro-badge-blue font-mono">{filteredUsers.length} VOUCHERS</span>
-                <div className="rack-screw" />
-              </div>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-[#818cf8]/35 bg-[#818cf8]/10 text-[#a5b4fc] tracking-wider uppercase self-start sm:self-auto shrink-0">
+                {filteredUsers.length} VOUCHERS
+              </span>
             </div>
             
             <div className="p-4">
-              <div className="retro-table-wrap overflow-x-auto w-full max-h-[500px] custom-scrollbar">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="sticky top-0" style={{ background: '#070f1e', borderBottom: '2px solid #0a0a18', zIndex: 10 }}>
-                    <tr style={{ fontFamily: 'Share Tech Mono, monospace', color: 'var(--display-dim)' }}>
-                      <th className="px-6 py-3 w-12 text-center">
+              <div className="overflow-x-auto w-full max-h-[500px] custom-scrollbar">
+                <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
+                  <thead className="sticky top-0 bg-[#0d0d1e] border-b border-white/5 text-white/40 font-semibold" style={{ zIndex: 10 }}>
+                    <tr>
+                      <th className="px-6 py-4 w-12 text-center">
                         <input 
                           type="checkbox"
                           checked={isAllSelected}
                           onChange={handleSelectAll}
-                          className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500 bg-slate-900 cursor-pointer"
+                          className="w-4 h-4 rounded border-white/10 text-indigo-600 focus:ring-indigo-500 bg-white/5 cursor-pointer"
                         />
                       </th>
-                      <th className="px-6 py-3 font-bold uppercase tracking-wider">Servidor</th>
-                      <th className="px-6 py-3 font-bold uppercase tracking-wider">Nome (Voucher)</th>
-                      <th className="px-6 py-3 font-bold uppercase tracking-wider">Perfil</th>
-                      <th className="px-6 py-3 font-bold uppercase tracking-wider">Uptime</th>
-                      <th className="px-6 py-3 font-bold uppercase tracking-wider">Comentário / Lote</th>
-                      <th className="px-6 py-3 font-bold uppercase tracking-wider text-right">Ações</th>
+                      <th className="px-6 py-4 font-semibold uppercase tracking-wider">Servidor</th>
+                      <th className="px-6 py-4 font-semibold uppercase tracking-wider">Nome (Voucher)</th>
+                      <th className="px-6 py-4 font-semibold uppercase tracking-wider">Perfil</th>
+                      <th className="px-6 py-4 font-semibold uppercase tracking-wider">Uptime</th>
+                      <th className="px-6 py-4 font-semibold uppercase tracking-wider">Comentário / Lote</th>
+                      <th className="px-6 py-4 font-semibold uppercase tracking-wider text-right">Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#0c0c1c]" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+                  <tbody className="divide-y divide-white/5 text-slate-300">
                     {loading ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-slate-400 italic">
+                        <td colSpan={7} className="px-6 py-8 text-center text-slate-500 italic">
                           <div className="inline-block animate-pulse">Carregando base de vouchers do Mikrotik...</div>
                         </td>
                       </tr>
                     ) : filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-slate-400 italic">
+                        <td colSpan={7} className="px-6 py-8 text-center text-slate-500 italic">
                           Nenhum voucher localizado.
                         </td>
                       </tr>
@@ -524,28 +516,29 @@ export default function Users() {
                         const isChecked = selectedIds.includes(user.id || user.name);
                         
                         return (
-                          <tr key={`${user.id || user.name}-${index}`} className="hover:bg-[#101026]/40 transition-colors">
+                          <tr key={`${user.id || user.name}-${index}`} className="hover:bg-white/[0.02] transition-colors">
                             <td className="px-6 py-4 text-center">
                               <input 
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => handleSelectRow(user.id || user.name)}
-                                className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500 bg-slate-900 cursor-pointer"
+                                className="w-4 h-4 rounded border-white/10 text-indigo-600 focus:ring-indigo-500 bg-white/5 cursor-pointer"
                               />
                             </td>
                             <td className="px-6 py-4 text-slate-400 uppercase font-mono text-[10px]">{user.server}</td>
                             <td className="px-6 py-4 font-bold text-white text-sm tracking-wide">{user.name}</td>
                             <td className="px-6 py-4">
-                              <span className="retro-badge retro-badge-blue">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-[#818cf8]/35 bg-[#818cf8]/10 text-[#a5b4fc]">
                                 {user.profile}
                               </span>
                             </td>
                             <td className="px-6 py-4 text-slate-450 font-mono text-xs">{user.uptime}</td>
-                            <td className="px-6 py-4 text-slate-500 italic font-mono text-[10px]">{user.comment || '-'}</td>
+                            <td className="px-6 py-4 text-slate-400 font-mono text-[10px]">{user.comment || '-'}</td>
                             <td className="px-6 py-4 text-right">
                               <button 
                                 onClick={() => handleDeleteUser(user.id, user.name)} 
-                                className="retro-btn retro-btn-danger py-1.5 px-3 text-[9px]"
+                                className="aurora-btn py-1 px-3 text-[10px] hover:shadow-red-500/20"
+                                style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}
                               >
                                 Excluir
                               </button>
@@ -562,24 +555,24 @@ export default function Users() {
         </div>
       ) : activeTab === 'batch' ? (
         /* ==================== TAB 2: BATCH GENERATION ==================== */
-        <div className="retro-card max-w-3xl animate-fade-in">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-[#0a0a18]" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-            <div className="rack-screw" />
-            <span className="font-mono text-xs font-bold text-slate-450 uppercase">BATCH_VOUCHER_GENERATOR</span>
-            <div className="ml-auto rack-screw" />
+        <div className="aurora-card max-w-3xl animate-fade-in">
+          <div className="px-6 py-5 border-b border-white/5 bg-white/[0.01]">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Gerador de Vouchers em Lote</h2>
+            <p className="text-xs text-white/30 mt-0.5">Crie múltiplos vouchers de forma automatizada</p>
           </div>
 
-          <div className="p-5">
+          <div className="p-6">
             {batchMessage && (
-              <div className={`retro-display p-4 mb-6 text-xs flex flex-col sm:flex-row justify-between items-center gap-4 ${batchMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+              <div className={`p-4 mb-6 rounded-xl border flex flex-col sm:flex-row justify-between items-center gap-4 ${batchMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
                 <div>
-                  <span className="block text-[8px] uppercase tracking-widest mb-1" style={{ color: 'var(--display-dim)' }}>BATCH_OUTPUT //</span>
-                  <span className="font-bold">{batchMessage.text}</span>
+                  <span className="block text-[10px] uppercase font-bold tracking-widest mb-1 text-slate-450">SYSTEM_OUTPUT //</span>
+                  <span className="font-bold text-xs">{batchMessage.text}</span>
                 </div>
                 {generatedBatchList.length > 0 && (
                   <button 
                     onClick={handlePrintBatchGenerated}
-                    className="retro-btn retro-btn-success text-[10px] py-1.5 px-3 shrink-0"
+                    className="aurora-btn text-xs py-1.5 px-3 shrink-0"
+                    style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
                   >
                     🖨️ Imprimir Lote ({generatedBatchList.length})
                   </button>
@@ -589,113 +582,113 @@ export default function Users() {
 
             {loadingOptions ? (
               <div className="animate-pulse space-y-4 py-6">
-                <div className="h-10 bg-[#121224] rounded-xl border border-slate-700"></div>
-                <div className="h-10 bg-[#121224] rounded-xl border border-slate-700"></div>
-                <div className="h-10 bg-[#121224] rounded-xl border border-slate-700"></div>
+                <div className="h-10 bg-white/5 rounded-xl border border-white/5"></div>
+                <div className="h-10 bg-white/5 rounded-xl border border-white/5"></div>
+                <div className="h-10 bg-white/5 rounded-xl border border-white/5"></div>
               </div>
             ) : (
               <form onSubmit={handleGenerateBatch} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Quantidade de Vouchers</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Quantidade de Vouchers</label>
                     <input 
                       type="number" 
                       min="1" 
                       max="1000" 
                       value={qty} 
                       onChange={(e) => setQty(Number(e.target.value))} 
-                      className="retro-input text-xs" 
+                      className="aurora-input text-xs" 
                       required 
                     />
                   </div>
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Servidor Hotspot</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Servidor Hotspot</label>
                     <select 
                       value={genServer} 
                       onChange={(e) => setGenServer(e.target.value)} 
-                      className="retro-input text-xs"
-                      style={{ background: '#06080e' }}
+                      className="aurora-input text-xs"
+                      style={{ background: '#0a0a18' }}
                     >
-                      <option value="all" className="bg-[#0c0c18]">All</option>
-                      {servers.map((s, idx) => <option key={`${s.id || s.name}-${idx}`} value={s.name} className="bg-[#0c0c18]">{s.name}</option>)}
+                      <option value="all">All</option>
+                      {servers.map((s, idx) => <option key={`${s.id || s.name}-${idx}`} value={s.name}>{s.name}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Modo de Login</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Modo de Login</label>
                     <select 
                       value={mode} 
                       onChange={(e) => setMode(e.target.value)} 
-                      className="retro-input text-xs"
-                      style={{ background: '#06080e' }}
+                      className="aurora-input text-xs"
+                      style={{ background: '#0a0a18' }}
                     >
-                      <option value="up" className="bg-[#0c0c18]">Usuário = Senha</option>
-                      <option value="vc" className="bg-[#0c0c18]">Usuário e Senha Diferentes</option>
+                      <option value="up">Usuário = Senha</option>
+                      <option value="vc">Usuário e Senha Diferentes</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Tamanho do Código</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Tamanho do Código</label>
                     <input 
                       type="number" 
                       min="3" 
                       max="12" 
                       value={userLen} 
                       onChange={(e) => setUserLen(Number(e.target.value))} 
-                      className="retro-input text-xs" 
+                      className="aurora-input text-xs" 
                       required 
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Prefixo do Código (Opcional)</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Prefixo do Código (Opcional)</label>
                     <input 
                       type="text" 
                       value={prefix} 
                       onChange={(e) => setPrefix(e.target.value)} 
                       placeholder="Ex: VIP-" 
-                      className="retro-input text-xs" 
+                      className="aurora-input text-xs" 
                     />
                   </div>
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Tipo de Caracteres</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Tipo de Caracteres</label>
                     <select 
                       value={charset} 
                       onChange={(e) => setCharset(e.target.value)} 
-                      className="retro-input text-xs"
-                      style={{ background: '#06080e' }}
+                      className="aurora-input text-xs"
+                      style={{ background: '#0a0a18' }}
                     >
-                      <option value="low" className="bg-[#0c0c18]">Letras Minúsculas (a-z)</option>
-                      <option value="upp" className="bg-[#0c0c18]">Letras Maiúsculas (A-Z)</option>
-                      <option value="num" className="bg-[#0c0c18]">Apenas Números (0-9)</option>
-                      <option value="mix" className="bg-[#0c0c18]">Misto (a-Z, 0-9)</option>
+                      <option value="low">Letras Minúsculas (a-z)</option>
+                      <option value="upp">Letras Maiúsculas (A-Z)</option>
+                      <option value="num">Apenas Números (0-9)</option>
+                      <option value="mix">Misto (a-Z, 0-9)</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Perfil de Velocidade (Profile)</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Perfil de Velocidade (Profile)</label>
                     <select 
                       value={genProfile} 
                       onChange={(e) => setGenProfile(e.target.value)} 
-                      className="retro-input text-xs"
-                      style={{ background: '#06080e' }}
+                      className="aurora-input text-xs"
+                      style={{ background: '#0a0a18' }}
                     >
-                      {profiles.map((p, idx) => <option key={`${p.id || p.name}-${idx}`} value={p.name} className="bg-[#0c0c18]">{p.name}</option>)}
+                      {profiles.map((p, idx) => <option key={`${p.id || p.name}-${idx}`} value={p.name}>{p.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Lote / Comentário Identificador</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Lote / Comentário Identificador</label>
                     <input 
                       type="text" 
                       value={genComment} 
                       onChange={(e) => setGenComment(e.target.value)} 
                       placeholder="Ex: dez-2023" 
-                      className="retro-input text-xs" 
+                      className="aurora-input text-xs" 
                       required 
                     />
                   </div>
                   
                   <div className="sm:col-span-2">
-                    <label className="block text-[8px] font-bold text-emerald-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Preço de Venda Unitário (R$) - Opcional</label>
+                    <label className="block text-xs font-semibold text-emerald-450 mb-1">Preço de Venda Unitário (R$) - Opcional</label>
                     <input 
                       type="number" 
                       step="0.01" 
@@ -703,17 +696,17 @@ export default function Users() {
                       value={genPrice} 
                       onChange={(e) => setGenPrice(Number(e.target.value))} 
                       placeholder="Ex: 5.00" 
-                      className="retro-input text-xs focus:border-emerald-500" 
+                      className="aurora-input text-xs" 
                     />
-                    <p className="text-[9px] text-slate-550 font-mono mt-1 leading-none uppercase">Este valor será utilizado no financeiro para o cálculo de faturamento.</p>
+                    <p className="text-[10px] text-slate-500 mt-1.5 leading-none uppercase">Este valor será utilizado no financeiro para o cálculo de faturamento.</p>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-[#0a0a18]">
+                <div className="pt-4 border-t border-white/5">
                   <button 
                     type="submit" 
                     disabled={generatingBatch}
-                    className="w-full retro-btn retro-btn-primary py-3"
+                    className="w-full aurora-btn py-3 font-semibold text-sm"
                   >
                     {generatingBatch ? 'Gerando Lote...' : 'Gerar Vouchers em Lote Agora'}
                   </button>
@@ -724,24 +717,24 @@ export default function Users() {
         </div>
       ) : (
         /* ==================== TAB 3: SINGLE CREATION ==================== */
-        <div className="retro-card max-w-3xl animate-fade-in">
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-[#0a0a18]" style={{ background: 'linear-gradient(180deg, #1e1e3a 0%, #16162c 100%)' }}>
-            <div className="rack-screw" />
-            <span className="font-mono text-xs font-bold text-slate-450 uppercase">SINGLE_VOUCHER_CREATOR</span>
-            <div className="ml-auto rack-screw" />
+        <div className="aurora-card max-w-3xl animate-fade-in">
+          <div className="px-6 py-5 border-b border-white/5 bg-white/[0.01]">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Criar Voucher Avulso</h2>
+            <p className="text-xs text-white/30 mt-0.5">Provisione uma credencial individual no Hotspot</p>
           </div>
 
-          <div className="p-5">
+          <div className="p-6">
             {singleMessage && (
-              <div className={`retro-display p-4 mb-6 text-xs flex flex-col sm:flex-row justify-between items-center gap-4 ${singleMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'}`}>
+              <div className={`p-4 mb-6 rounded-xl border flex flex-col sm:flex-row justify-between items-center gap-4 ${singleMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
                 <div>
-                  <span className="block text-[8px] uppercase tracking-widest mb-1" style={{ color: 'var(--display-dim)' }}>CREATION_OUTPUT //</span>
-                  <span className="font-bold">{singleMessage.text}</span>
+                  <span className="block text-[10px] uppercase font-bold tracking-widest mb-1 text-slate-450">CREATION_OUTPUT //</span>
+                  <span className="font-bold text-xs">{singleMessage.text}</span>
                 </div>
                 {newlyCreatedUser && (
                   <button 
                     onClick={handlePrintNewlyCreated}
-                    className="retro-btn retro-btn-success text-[10px] py-1.5 px-3 shrink-0"
+                    className="aurora-btn text-xs py-1.5 px-3 shrink-0 font-semibold"
+                    style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
                   >
                     🖨️ Imprimir Voucher
                   </button>
@@ -751,71 +744,71 @@ export default function Users() {
 
             {loadingOptions ? (
               <div className="animate-pulse space-y-4 py-6">
-                <div className="h-10 bg-[#121224] rounded-xl border border-slate-700"></div>
-                <div className="h-10 bg-[#121224] rounded-xl border border-slate-700"></div>
-                <div className="h-10 bg-[#121224] rounded-xl border border-slate-700"></div>
+                <div className="h-10 bg-white/5 rounded-xl border border-white/5"></div>
+                <div className="h-10 bg-white/5 rounded-xl border border-white/5"></div>
+                <div className="h-10 bg-white/5 rounded-xl border border-white/5"></div>
               </div>
             ) : (
               <form onSubmit={handleCreateSingle} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Nome de Usuário (Login)</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Nome de Usuário (Login)</label>
                     <input 
                       type="text" 
                       value={singleName} 
                       onChange={(e) => setSingleName(e.target.value)} 
                       placeholder="Ex: pedro ou vip-cliente"
-                      className="retro-input text-xs" 
+                      className="aurora-input text-xs" 
                       required 
                     />
                   </div>
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Senha (Opcional)</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Senha (Opcional)</label>
                     <input 
                       type="text" 
                       value={singlePass} 
                       onChange={(e) => setSinglePass(e.target.value)} 
                       placeholder="Igual ao login se em branco"
-                      className="retro-input text-xs" 
+                      className="aurora-input text-xs" 
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Servidor Hotspot</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Servidor Hotspot</label>
                     <select 
                       value={singleServer} 
                       onChange={(e) => setSingleServer(e.target.value)} 
-                      className="retro-input text-xs"
-                      style={{ background: '#06080e' }}
+                      className="aurora-input text-xs"
+                      style={{ background: '#0a0a18' }}
                     >
-                      <option value="all" className="bg-[#0c0c18]">All</option>
-                      {servers.map((s, idx) => <option key={`${s.id || s.name}-${idx}`} value={s.name} className="bg-[#0c0c18]">{s.name}</option>)}
+                      <option value="all">All</option>
+                      {servers.map((s, idx) => <option key={`${s.id || s.name}-${idx}`} value={s.name}>{s.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Perfil de Velocidade (Profile)</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Perfil de Velocidade (Profile)</label>
                     <select 
                       value={singleProfile} 
                       onChange={(e) => setSingleProfile(e.target.value)} 
-                      className="retro-input text-xs"
-                      style={{ background: '#06080e' }}
+                      className="aurora-input text-xs"
+                      style={{ background: '#0a0a18' }}
                     >
-                      {profiles.map((p, idx) => <option key={`${p.id || p.name}-${idx}`} value={p.name} className="bg-[#0c0c18]">{p.name}</option>)}
+                      {profiles.map((p, idx) => <option key={`${p.id || p.name}-${idx}`} value={p.name}>{p.name}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-[8px] font-bold text-slate-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Comentário / Lote Identificador</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Comentário / Lote Identificador</label>
                     <input 
                       type="text" 
                       value={singleComment} 
                       onChange={(e) => setSingleComment(e.target.value)} 
                       placeholder="Ex: VIP-Ana ou avulso" 
-                      className="retro-input text-xs" 
+                      className="aurora-input text-xs" 
                     />
                   </div>
                   <div>
-                    <label className="block text-[8px] font-bold text-emerald-500 uppercase tracking-wider mb-1" style={{ fontFamily: 'Share Tech Mono, monospace' }}>Preço de Venda (R$) - Opcional</label>
+                    <label className="block text-xs font-semibold text-emerald-400 mb-1">Preço de Venda (R$) - Opcional</label>
                     <input 
                       type="number" 
                       step="0.01" 
@@ -823,16 +816,16 @@ export default function Users() {
                       value={singlePrice} 
                       onChange={(e) => setSinglePrice(Number(e.target.value))} 
                       placeholder="Ex: 10.00" 
-                      className="retro-input text-xs focus:border-emerald-500" 
+                      className="aurora-input text-xs animate-none" 
                     />
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-[#0a0a18]">
+                <div className="pt-4 border-t border-white/5">
                   <button 
                     type="submit" 
                     disabled={creatingSingle}
-                    className="w-full retro-btn retro-btn-primary py-3"
+                    className="w-full aurora-btn py-3 font-semibold text-sm"
                   >
                     {creatingSingle ? 'Criando Usuário...' : 'Criar Usuário Avulso Agora'}
                   </button>
@@ -846,25 +839,26 @@ export default function Users() {
       {/* Floating Sticky Print Bar */}
       {selectedIds.length > 0 && activeTab === 'list' && (
         <div 
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 p-4 rounded-xl flex items-center justify-between gap-6 shadow-2xl z-50 animate-scale-up max-w-[90vw] md:max-w-xl w-full"
-          style={{ background: 'linear-gradient(180deg, #18183a 0%, #0c0c18 100%)', border: '2px solid #3d3d6b', boxShadow: '0 8px 30px rgba(0,0,0,0.8)' }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 p-4 rounded-2xl flex items-center justify-between gap-6 shadow-2xl z-50 animate-scale-up max-w-[90vw] md:max-w-xl w-full aurora-card border border-white/10"
+          style={{ background: 'rgba(10,10,22,0.85)', backdropFilter: 'blur(20px)' }}
         >
           <div className="flex items-center gap-2 font-mono text-xs">
-            <span className="led led-blue animate-led-pulse" />
-            <span className="text-white font-bold tracking-wider">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse shrink-0" style={{ boxShadow: '0 0 8px #3b82f6' }} />
+            <span className="text-white font-bold tracking-wider uppercase">
               {selectedIds.length} {selectedIds.length === 1 ? 'SELECIONADO' : 'SELECIONADOS'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setSelectedIds([])}
-              className="retro-btn retro-btn-dark py-1.5 px-3 text-[10px]"
+              className="aurora-btn py-1.5 px-3 text-xs font-semibold"
+              style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
             >
               Limpar
             </button>
             <button 
               onClick={handlePrintSelected}
-              className="retro-btn retro-btn-primary py-1.5 px-4 text-[10px]"
+              className="aurora-btn py-1.5 px-4 text-xs font-semibold"
             >
               🖨️ Imprimir Selecionados
             </button>
