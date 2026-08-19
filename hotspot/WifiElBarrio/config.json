@@ -24,7 +24,7 @@
     "glassBlur": 0
   },
   "effects": {
-    "bgEffect": "none",
+    "bgEffect": "nougat-fluid",
     "bgEffectSpeed": "normal",
     "cardShape": "rounded",
     "cardNoiseTexture": false,
@@ -124,8 +124,8 @@
     "customCss": ""
   },
   "bg": {
-    "type": "video",
-    "url": "/uploads/bg_WifiElBarrio_1787134616347.mp4?t=1787134616365"
+    "type": "default",
+    "url": "/uploads/bg_WifiElBarrio_1787137784320.mp4?t=1787137784331"
   },
   "ad": {
     "type": "none",

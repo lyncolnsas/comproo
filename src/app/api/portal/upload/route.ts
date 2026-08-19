@@ -79,15 +79,7 @@ export async function POST(request: Request) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
 
-      // Clean old backgrounds for this template in public/uploads to prevent disk clogging
-      try {
-        const files = fs.readdirSync(uploadDir);
-        files.forEach(f => {
-          if (f.startsWith(`bg_${safeName}_`)) {
-            try { fs.unlinkSync(path.join(uploadDir, f)); } catch (e) {}
-          }
-        });
-      } catch (e) {}
+      // Clean old backgrounds logic moved to AFTER successful file write
 
       const isVideoFile = ext.toLowerCase() === '.mp4' || ext.toLowerCase() === '.webm' || ext.toLowerCase() === '.mov';
       let cleanExt = ext.toLowerCase();
@@ -98,6 +90,16 @@ export async function POST(request: Request) {
       const fileName = `bg_${safeName}_${Date.now()}${cleanExt}`;
       const filePath = path.join(uploadDir, fileName);
       fs.writeFileSync(filePath, buffer);
+
+      // Clean old backgrounds for this template in public/uploads AFTER successful save
+      try {
+        const files = fs.readdirSync(uploadDir);
+        files.forEach(f => {
+          if (f.startsWith(`bg_${safeName}_`) && f !== fileName) {
+            try { fs.unlinkSync(path.join(uploadDir, f)); } catch (e) {}
+          }
+        });
+      } catch (e) {}
 
       // Clean any lingering bg files inside local hotspot directory if any existed
       try {
@@ -233,31 +235,48 @@ export async function DELETE(request: Request) {
       });
     }
 
-    // General cleanup for unused ad/bg files
-    let config: any = {};
-    if (fs.existsSync(configPath)) {
-      try {
-        config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      } catch (e) {}
-    }
-
-    if (!fs.existsSync(uploadDir)) {
-      return NextResponse.json({ success: true, message: 'Diretório de uploads vazio.', deletedCount: 0 });
-    }
-
     const activeUrls = new Set<string>();
-    if (config.ad) {
-      if (config.ad.mediaUrl) activeUrls.add(config.ad.mediaUrl.split('?')[0]);
-      if (Array.isArray(config.ad.items)) {
-        config.ad.items.forEach((item: any) => {
-          if (item && item.url) activeUrls.add(item.url.split('?')[0]);
-        });
+    
+    // Helper to safely extract absolute path from any url variant
+    const getSafePath = (urlStr: string) => {
+      if (!urlStr) return '';
+      let u = urlStr.split('?')[0];
+      if (u.startsWith('http')) {
+        try { u = new URL(u).pathname; } catch (e) {}
       }
-    }
-    if (config.bg && config.bg.url) {
-      // Strip query parameters to match actual file names in uploads directory
-      const cleanUrl = config.bg.url.split('?')[0];
-      activeUrls.add(cleanUrl);
+      return u;
+    };
+
+    // Gather ALL active urls from ALL templates to prevent cross-template deletion
+    const hotspotDir = path.join(process.cwd(), 'hotspot');
+    if (fs.existsSync(hotspotDir)) {
+      const templates = fs.readdirSync(hotspotDir);
+      templates.forEach(tpl => {
+        const cfgPath = path.join(hotspotDir, tpl, 'config.json');
+        if (fs.existsSync(cfgPath)) {
+          try {
+            const tplConfig = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+            if (tplConfig.ad) {
+              if (tplConfig.ad.mediaUrl) {
+                const sp = getSafePath(tplConfig.ad.mediaUrl);
+                if (sp) activeUrls.add(sp);
+              }
+              if (Array.isArray(tplConfig.ad.items)) {
+                tplConfig.ad.items.forEach((item: any) => {
+                  if (item && item.url) {
+                    const sp = getSafePath(item.url);
+                    if (sp) activeUrls.add(sp);
+                  }
+                });
+              }
+            }
+            if (tplConfig.bg && tplConfig.bg.url) {
+               const sp = getSafePath(tplConfig.bg.url);
+               if (sp) activeUrls.add(sp);
+            }
+          } catch (e) {}
+        }
+      });
     }
 
     const files = fs.readdirSync(uploadDir);

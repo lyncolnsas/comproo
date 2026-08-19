@@ -42,6 +42,7 @@ export async function GET(request: Request) {
       .replace(/\$\(mac-esc\)/g, '9A%3A1E%3A3E%3A0D%3A8C%3A34')
       .replace(/\$\(ip\)/g, '192.168.88.252')
       .replace(/\$\(trial\)/g, 'yes')
+      .replace(/\$\(logged-in\)/g, '42')
       .replace(/\$\$\(if trial == 'yes'\)/g, '')
       .replace(/\$\$\(endif\)/g, '')
       .replace(/\$\$\(link-login-only\)/g, '#')
@@ -53,23 +54,23 @@ export async function GET(request: Request) {
     const svgWifiIcon = `<svg style="height: 28px; width: 28px; fill: #ffffff;" viewBox="0 0 24 24"><path d="M12 3C6.95 3 2.5 5.56 0 9.42l2.36 2.36C4.12 8.44 7.78 6.5 12 6.5s7.88 1.94 9.64 5.28L24 9.42C21.5 5.56 17.05 3 12 3zm0 5c-3.31 0-6.29 1.52-8.25 3.91l2.36 2.36C7.39 12.87 9.53 12 12 12s4.61.87 5.89 2.27l2.36-2.36C18.29 9.52 15.31 8 12 8zm0 5c-1.38 0-2.5 1.12-2.5 2.5v.5H9c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1h-.5v-.5c0-1.38-1.12-2.5-2.5-2.5zm1 3h-2v-.5c0-.55.45-1 1-1s1 .45 1 1v.5z"/></svg>`;
     html = html.replace(/<img[^>]*wifi-lock\.png[^>]*>/gi, svgWifiIcon);
 
-    const brandColor = (initialConfig.colors && initialConfig.colors.brand) || '#2563eb';
-    const brandEffectsCss = getBrandEffectsStyles(brandColor);
-    const fontsTags = `<link href="/fonts/fonts.css" rel="stylesheet"><style id="mg-live-injected-css"></style><style id="mg-live-studio-css"></style><style id="mg-brand-effects-styles">${brandEffectsCss}</style>`;
-    const originalHtml = html;
-    html = html.replace(/<!-- MIKROGESTOR EFFECTS -->[\s\S]*?<!-- (END|\/)MIKROGESTOR EFFECTS -->/gi, fontsTags);
-    if (html === originalHtml && !html.includes('mg-brand-effects-styles')) {
-      html = html.replace('</head>', `${fontsTags}</head>`);
-    }
-
-    // Strip static compiled BG blocks and sanitize onerror handlers to prevent infinite image loops
-    html = html.replace(/<!-- MIKROGESTOR BG -->[\s\S]*?<!-- END MIKROGESTOR BG -->/gi, '');
-    html = html.replace(/<video[^>]*id="mikrogestor-bg-video"[^>]*>[\s\S]*?<\/video>/gi, '');
+    // Sanitize onerror handlers to prevent infinite image loops
     html = html.replace(/onerror\s*=\s*["'][^"']*["']/gi, 'onerror="this.onerror=null;"');
 
-    // Rewrite relative asset URLs
+    // 1. CRITICAL: Normalize any absolute URL pointing to uploads so the admin preview iframe loads it directly from localhost
+    html = html.replace(/https?:\/\/[^\/"'\s\\]+\/uploads\//gi, '/uploads/');
+
+    // 2. Inject live styling hooks into <head> WITHOUT stripping the compiled effects/styles from login.html
+    const fontsTags = `<link href="/fonts/fonts.css" rel="stylesheet"><style id="mg-live-injected-css"></style><style id="mg-live-studio-css"></style><style id="mg-live-colors-css"></style><style id="mg-live-bg-style"></style>`;
+    if (html.includes('</head>')) {
+      html = html.replace('</head>', `${fontsTags}</head>`);
+    } else {
+      html = fontsTags + html;
+    }
+
+    // 3. Rewrite relative asset URLs (like logo.png, fonts/fonts.css, etc.)
     html = html.replace(
-      /(src|href)="(?!http|\/\/|data:|javascript:)([^"]+)"/gi,
+      /(src|href)="(?!https?:|\/\/|data:|javascript:|\/uploads\/|\/api\/|\/fonts\/)([^"]+)"/gi,
       (match, attr, filePath) => {
         if (filePath.startsWith('/')) return match;
         return `${attr}="/api/portal/asset?template=${encodeURIComponent(safeName)}&file=${encodeURIComponent(filePath)}"`;
@@ -77,7 +78,7 @@ export async function GET(request: Request) {
     );
 
     html = html.replace(
-      /this\.src\s*=\s*['"](?!http|\/\/|data:|javascript:)([^'"]+)['"]/gi,
+      /this\.src\s*=\s*['"](?!https?:|\/\/|data:|javascript:|\/uploads\/|\/api\/|\/fonts\/)([^'"]+)['"]/gi,
       (match, filePath) => {
         if (filePath.startsWith('/')) return match;
         return `this.src='/api/portal/asset?template=${encodeURIComponent(safeName)}&file=${encodeURIComponent(filePath)}'`;
@@ -325,9 +326,12 @@ export async function GET(request: Request) {
         var isVideo = bgType === 'video' || bgUrl.match(/\.(mp4|webm|ogg)$/i);
         
         var cleanUrl = bgUrl;
+        if (cleanUrl.startsWith('http')) {
+          try { cleanUrl = new URL(cleanUrl).pathname; } catch(e) {}
+        }
         if (cleanUrl.indexOf('/uploads/') !== -1) {
-          // Use the streaming BG endpoint for consistency with what the MikroTik HTML uses
-          cleanUrl = '/api/portal/bg?template=' + encodeURIComponent(config.template || 'default');
+          // Extract direct path starting from /uploads/
+          cleanUrl = cleanUrl.substring(cleanUrl.indexOf('/uploads/'));
         } else if (cleanUrl && !cleanUrl.startsWith('http') && !cleanUrl.startsWith('/')) {
           cleanUrl = '/api/portal/asset?template=' + encodeURIComponent(config.template || 'default') + '&file=' + encodeURIComponent(cleanUrl);
         }
@@ -343,53 +347,43 @@ export async function GET(request: Request) {
 
         if (bgUrl && bgType !== 'default') {
           if (isVideo) {
-            customBg.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-999; pointer-events:none; overflow:hidden; display:block;';
-            
-            var existingVid = customBg.querySelector('#mg-preview-bg-video');
-            var shouldMount = true;
-            
+            var existingVid = document.getElementById('mg-bg-video');
             if (existingVid) {
-              var sourceEl = existingVid.querySelector('source');
-              if (sourceEl && sourceEl.src.endsWith(cleanUrl)) {
-                shouldMount = false; // Already playing this video
-              } else {
-                existingVid.remove(); // Force remount
+              var cleanBase = cleanUrl.split('?')[0];
+              if (cleanBase && !existingVid.src.includes(cleanBase)) {
+                existingVid.src = cleanUrl;
+                existingVid.load();
               }
-            }
-            
-            if (shouldMount) {
-              customBg.innerHTML = '<video autoplay muted loop playsinline webkit-playsinline x5-playsinline x5-video-player-type="h5-page" id="mg-preview-bg-video" style="position:fixed; top:0; left:0; width:100vw; height:100vh; min-width:100%; min-height:100%; object-fit:cover; pointer-events:none; z-index:-999;"><source id="mg-preview-bg-source" src="' + cleanUrl + '"></video>';
-              
-              var vidEl = customBg.querySelector('video');
+              existingVid.muted = true;
+              existingVid.defaultMuted = true;
+              existingVid.playsInline = true;
+              existingVid.play().catch(function() {});
+            } else {
+              customBg.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-999; pointer-events:none; overflow:hidden; display:block;';
+              customBg.innerHTML = '<video autoplay muted loop playsinline webkit-playsinline id="mg-bg-video" style="position:fixed; top:0; left:0; width:100vw; height:100vh; min-width:100%; min-height:100%; object-fit:cover; pointer-events:none; z-index:-999;" src="' + cleanUrl + '"></video>';
+              var vidEl = document.getElementById('mg-bg-video');
               if (vidEl) {
                 vidEl.muted = true;
                 vidEl.defaultMuted = true;
                 vidEl.playsInline = true;
-                var playPromise = vidEl.play();
-                if (playPromise && typeof playPromise.catch === 'function') {
-                  playPromise.catch(function() {
-                    var unlock = function() {
-                      vidEl.play();
-                      document.removeEventListener('touchstart', unlock);
-                      document.removeEventListener('click', unlock);
-                    };
-                    document.addEventListener('touchstart', unlock, { once: true, passive: true });
-                    document.addEventListener('click', unlock, { once: true, passive: true });
-                  });
-                }
+                vidEl.play().catch(function() {});
               }
             }
           } else {
+            var existingVid = document.getElementById('mg-bg-video');
+            if (existingVid && existingVid.parentNode) existingVid.parentNode.remove();
             customBg.innerHTML = '';
             customBg.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-999; pointer-events:none; background-image: url("' + cleanUrl + '") !important; background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important; display:block;';
           }
         } else {
+          var existingVid = document.getElementById('mg-bg-video');
+          if (existingVid && existingVid.parentNode) existingVid.parentNode.remove();
           customBg.innerHTML = '';
           customBg.style.cssText = 'display:none;';
         }
       } else {
-        var bgStyle = document.getElementById('mg-live-bg-style');
-        if (bgStyle) bgStyle.innerHTML = '';
+        var existingVid = document.getElementById('mg-bg-video');
+        if (existingVid && existingVid.parentNode) existingVid.parentNode.remove();
         customBg.innerHTML = '';
         customBg.style.cssText = 'display:none;';
       }

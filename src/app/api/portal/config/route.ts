@@ -1076,17 +1076,67 @@ export async function POST(request: Request) {
       const uploadDir = path.join(process.cwd(), 'public', 'uploads');
       if (fs.existsSync(uploadDir)) {
         const activeUrls = new Set<string>();
+        
+        // Add current config (since it may not be fully saved/synced yet)
+        // Helper to safely extract absolute path from any url variant
+        const getSafePath = (urlStr: string) => {
+          if (!urlStr) return '';
+          let u = urlStr.split('?')[0];
+          if (u.startsWith('http')) {
+            try { u = new URL(u).pathname; } catch (e) {}
+          }
+          return u;
+        };
+
         if (newConfig.ad) {
-          if (newConfig.ad.mediaUrl) activeUrls.add(newConfig.ad.mediaUrl.split('?')[0]);
+          if (newConfig.ad.mediaUrl) {
+            const sp = getSafePath(newConfig.ad.mediaUrl);
+            if (sp) activeUrls.add(sp);
+          }
           if (Array.isArray(newConfig.ad.items)) {
             newConfig.ad.items.forEach((item: any) => {
-              if (item && item.url) activeUrls.add(item.url.split('?')[0]);
+              if (item && item.url) {
+                const sp = getSafePath(item.url);
+                if (sp) activeUrls.add(sp);
+              }
             });
           }
         }
-        
         if (newConfig.bg && newConfig.bg.url) {
-          activeUrls.add(newConfig.bg.url.split('?')[0]);
+          const sp = getSafePath(newConfig.bg.url);
+          if (sp) activeUrls.add(sp);
+        }
+        
+        // Gather ALL active urls from ALL OTHER templates to prevent cross-template deletion
+        const hotspotDir = path.join(process.cwd(), 'hotspot');
+        if (fs.existsSync(hotspotDir)) {
+          const templates = fs.readdirSync(hotspotDir);
+          templates.forEach(tpl => {
+            const cfgPath = path.join(hotspotDir, tpl, 'config.json');
+            if (fs.existsSync(cfgPath)) {
+              try {
+                const tplConfig = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+                if (tplConfig.ad) {
+                  if (tplConfig.ad.mediaUrl) {
+                    const sp = getSafePath(tplConfig.ad.mediaUrl);
+                    if (sp) activeUrls.add(sp);
+                  }
+                  if (Array.isArray(tplConfig.ad.items)) {
+                    tplConfig.ad.items.forEach((item: any) => {
+                      if (item && item.url) {
+                        const sp = getSafePath(item.url);
+                        if (sp) activeUrls.add(sp);
+                      }
+                    });
+                  }
+                }
+                if (tplConfig.bg && tplConfig.bg.url) {
+                  const sp = getSafePath(tplConfig.bg.url);
+                  if (sp) activeUrls.add(sp);
+                }
+              } catch (e) {}
+            }
+          });
         }
         
         const files = fs.readdirSync(uploadDir);
@@ -1357,8 +1407,9 @@ export async function POST(request: Request) {
       if (newConfig.bg && newConfig.bg.type !== 'default' && newConfig.bg.url) {
         // Force use of real LAN IP for assets. Hotspot DNS (e.g. portal.wifi.local) points to the router,
         // which will cause a 404 since the router does not have the /uploads/ folder.
-        const assetBaseUrl = `http://${getLocalLanIp()}`;
-        const directAssetUrl = newConfig.bg.url.startsWith('/') ? `${assetBaseUrl}${newConfig.bg.url}` : `${assetBaseUrl}/${newConfig.bg.url}`;
+        const assetBaseUrl = MG_SERVER_BASE;
+        const cleanBgUrl = newConfig.bg.url.split('?')[0];
+        const directAssetUrl = cleanBgUrl.startsWith('/') ? `${assetBaseUrl}${cleanBgUrl}` : `${assetBaseUrl}/${cleanBgUrl}`;
 
         if (newConfig.bg.type === 'video') {
           bgHtml = [
