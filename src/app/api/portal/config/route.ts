@@ -1077,16 +1077,16 @@ export async function POST(request: Request) {
       if (fs.existsSync(uploadDir)) {
         const activeUrls = new Set<string>();
         if (newConfig.ad) {
-          if (newConfig.ad.mediaUrl) activeUrls.add(newConfig.ad.mediaUrl);
+          if (newConfig.ad.mediaUrl) activeUrls.add(newConfig.ad.mediaUrl.split('?')[0]);
           if (Array.isArray(newConfig.ad.items)) {
             newConfig.ad.items.forEach((item: any) => {
-              if (item && item.url) activeUrls.add(item.url);
+              if (item && item.url) activeUrls.add(item.url.split('?')[0]);
             });
           }
         }
         
         if (newConfig.bg && newConfig.bg.url) {
-          activeUrls.add(newConfig.bg.url);
+          activeUrls.add(newConfig.bg.url.split('?')[0]);
         }
         
         const files = fs.readdirSync(uploadDir);
