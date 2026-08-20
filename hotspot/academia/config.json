@@ -115,9 +115,9 @@
   "badges": {
     "showWifiSpeed": false,
     "wifiSpeedText": "⚡ Wi-Fi 5G Turbo Fit",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Conexão Segura Atletas",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "58"
   },
   "customCode": {

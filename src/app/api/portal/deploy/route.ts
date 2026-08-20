@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import * as ftp from 'basic-ftp';
 import { prisma } from '@/lib/prisma';
+import { resolveTemplateDir } from '@/lib/portal-template-utils';
 
 export async function POST(request: Request) {
   const client = new ftp.Client();
@@ -33,13 +34,12 @@ export async function POST(request: Request) {
     }
 
     const template = body.template || 'default';
-    const safeName = template.replace(/[^a-zA-Z0-9_-]/g, '');
-    const localHotspotDir = path.join(process.cwd(), 'hotspot', safeName);
+    const localHotspotDir = resolveTemplateDir(template);
     
     if (!fs.existsSync(localHotspotDir)) {
       return NextResponse.json({ 
         success: false, 
-        message: `A pasta local "${safeName}" não foi encontrada no servidor.` 
+        message: `A pasta local "${template}" não foi encontrada no servidor.` 
       }, { status: 400 });
     }
 
@@ -158,8 +158,8 @@ export async function POST(request: Request) {
     try {
       await prisma.systemConfig.upsert({
         where: { key: 'LAST_DEPLOYED_TEMPLATE' },
-        update: { value: safeName },
-        create: { key: 'LAST_DEPLOYED_TEMPLATE', value: safeName }
+        update: { value: template },
+        create: { key: 'LAST_DEPLOYED_TEMPLATE', value: template }
       });
     } catch (e) {
       console.warn('Falha ao salvar LAST_DEPLOYED_TEMPLATE no DB:', e);

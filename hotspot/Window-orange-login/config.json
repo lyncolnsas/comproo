@@ -43,9 +43,9 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "⚡ Wi-Fi 5G Sunset",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Conexão Lounge Segura",
     "showConnectedCount": false,
     "connectedCountNumber": "28"

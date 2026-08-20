@@ -43,11 +43,11 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "📶 Wi-Fi Livre Comunitário",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🤝 Rede Aberta do Bairro",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "76"
   },
   "customCode": {

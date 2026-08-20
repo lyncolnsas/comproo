@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MikroGestor Voucher 🚀
 
-## Getting Started
+Sistema completo e profissional para **Gestão de Vouchers, Hotspot MikroTik, Estúdio de Portais Captive Personalizáveis, Captura de Leads e Autenticação WhatsApp**.
 
-First, run the development server:
+---
+
+## 💻 Instalação Rápida no Linux e Raspberry Pi
+
+Compatível com **Ubuntu, Debian, DietPi, Raspberry Pi OS (Raspbian - 32-bit e 64-bit)** e qualquer distribuição baseada em Debian.
+
+### ⚡ Comando Único de Instalação (1-Click)
+
+Execute o comando abaixo no terminal da sua máquina Linux ou Raspberry Pi:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+curl -fsSL https://raw.githubusercontent.com/lyncolnsas/mikrogestor-voucher22/master/install.sh | sudo bash
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 🛠️ Ou Instalação Manual via Git:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# 1. Clone o repositório
+git clone https://github.com/lyncolnsas/mikrogestor-voucher22.git /opt/mikrogestor-voucher
+cd /opt/mikrogestor-voucher
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# 2. Dê permissão e execute o instalador
+chmod +x install.sh
+sudo ./install.sh
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📋 Comandos de Gerenciamento no Linux / Raspberry Pi
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+O instalador configura automaticamente o **PM2** para manter o MikroGestor rodando 24/7 e iniciar sozinho caso a máquina reinicie.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Ver status do sistema:**
+  ```bash
+  pm2 status
+  ```
+- **Ver logs em tempo real:**
+  ```bash
+  pm2 logs mikrogestor-voucher
+  ```
+- **Reiniciar o sistema:**
+  ```bash
+  pm2 restart mikrogestor-voucher
+  ```
+- **Parar o sistema:**
+  ```bash
+  pm2 stop mikrogestor-voucher
+  ```
+- **Atualizar para a última versão do GitHub:**
+  ```bash
+  cd /opt/mikrogestor-voucher && sudo ./install.sh --update
+  ```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🪟 Instalação no Windows
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Certifique-se de ter o **Node.js (v18+)** instalado.
+2. Clone ou baixe este repositório.
+3. Dê dois cliques em `setup.bat` para instalar as dependências e configurar o banco de dados.
+4. Execute `Iniciar_MikroGestor.bat` para iniciar a aplicação.
+
+---
+
+## 🔑 Credenciais Padrão de Acesso
+
+- **URL do Painel:** `http://<IP-DO-SERVIDOR>/dashboard` (porta 80)
+- **Usuário:** `admin`
+- **Senha:** `123`
+
+---
+
+## ✨ Funcionalidades Principais
+
+- 📡 **Integração Nativa com MikroTik RouterOS** (v6 e v7 via API RouterOS e FTP).
+- 🎨 **Portal Studio Pro com 25 Nichos Temáticos** e 16 animações exclusivas em Canvas HTML5.
+- 📱 **Captura de Leads e Cadastro via Formulário Responsivo**.
+- 🎫 **Geração, Impressão e Gestão de Vouchers em Lote**.
+- 💬 **Fluxo de Conexão e Verificação via WhatsApp**.
+- 💳 **Integração de Pagamento Mercado Pago PIX**.
+- 🛡️ **Segurança Walled Garden, Bloqueio de Horários e Palavras-chave**.
+- 🚀 **Pronto para Produção com PM2 e SQLite/Prisma**.

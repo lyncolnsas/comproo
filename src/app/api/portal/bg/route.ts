@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { resolveTemplateDir } from '@/lib/portal-template-utils';
 
 export async function GET(request: Request) {
   try {
@@ -9,24 +10,47 @@ export async function GET(request: Request) {
     const safeName = template.replace(/[^a-zA-Z0-9_-]/g, '');
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
     
-    if (fs.existsSync(uploadDir)) {
+    // First, check template config.json for specific bg url
+    let filePath: string | null = null;
+    let bgFile: string | null = null;
+
+    const tDir = resolveTemplateDir(template);
+    const cfgPath = path.join(tDir, 'config.json');
+    if (fs.existsSync(cfgPath)) {
+      try {
+        const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+        if (cfg.bg && cfg.bg.url && String(cfg.bg.url).trim() !== '') {
+          const cleanUrl = String(cfg.bg.url).split('?')[0].replace(/^\//, '');
+          const localCandidate = path.join(process.cwd(), 'public', cleanUrl);
+          if (fs.existsSync(localCandidate)) {
+            filePath = localCandidate;
+            bgFile = path.basename(localCandidate);
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!filePath && fs.existsSync(uploadDir)) {
       const files = fs.readdirSync(uploadDir);
       // Search for template specific background or fallback background
-      let bgFile = files.find(f => f.startsWith(`bg_${safeName}_`) && (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.png') || f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.webp')));
-      if (!bgFile) {
-        bgFile = files.find(f => f.startsWith('bg_') && (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.png') || f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.webp')));
+      let found = files.find(f => f.startsWith(`bg_${safeName}_`) && (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.png') || f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.webp')));
+      if (!found) {
+        found = files.find(f => f.startsWith('bg_') && (f.endsWith('.mp4') || f.endsWith('.webm') || f.endsWith('.png') || f.endsWith('.jpg') || f.endsWith('.jpeg') || f.endsWith('.webp')));
       }
-      
-      if (bgFile) {
-        const filePath = path.join(uploadDir, bgFile);
-        
+      if (found) {
+        filePath = path.join(uploadDir, found);
+        bgFile = found;
+      }
+    }
+    
+    if (filePath && bgFile) {
         // Use streaming for videos to avoid loading the whole file in memory
         if (bgFile.endsWith('.mp4') || bgFile.endsWith('.webm')) {
             const stat = fs.statSync(filePath);
             const fileSize = stat.size;
             const range = request.headers.get('range');
             
-            let contentType = bgFile.endsWith('.mp4') ? 'video/mp4' : 'video/webm';
+            const contentType = bgFile.endsWith('.mp4') ? 'video/mp4' : 'video/webm';
             const corsHeaders = {
               'Access-Control-Allow-Origin': '*',
               'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
@@ -110,7 +134,6 @@ export async function GET(request: Request) {
               }
             });
         }
-      }
     }
 
     // High quality default dark/gradient SVG background fallback so mobile phones NEVER receive 404 HTTP errors

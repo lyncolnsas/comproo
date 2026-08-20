@@ -20,7 +20,7 @@
     "inputPlaceholder": "#fcd34d",
     "loginButtonText": "#ffffff",
     "registerButtonText": "#030712",
-    "glassOpacity": 0.63,
+    "glassOpacity": 63,
     "glassBlur": 24
   },
   "effects": {
@@ -35,7 +35,6 @@
     "titleGradient": true
   },
   "studio": {
-    "activeComponent": "submit_button",
     "fontFamily": "Geist",
     "titleFontSize": 20,
     "titleFontWeight": "700",
@@ -67,10 +66,11 @@
     "cardPaddingLeft": 15,
     "cardBorderWidth": 1,
     "cardBorderStyle": "solid",
-    "cardGap": 17,
     "inputHeight": 44,
     "inputRadius": 10,
-    "inputBorderWidth": 1
+    "inputBorderWidth": 1,
+    "activeComponent": "submit_button",
+    "cardGap": 17
   },
   "brand": {
     "headerStyle": "hidden",

@@ -113,9 +113,9 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "🍿 Wi-Fi 4K Streaming",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Conexão Cine Pipoca",
     "showConnectedCount": false,
     "connectedCountNumber": "45"

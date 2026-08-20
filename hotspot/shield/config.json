@@ -43,9 +43,9 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "⚡ Wi-Fi 5G Blindado",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🛡️ Shield Pro Active Defense",
     "showConnectedCount": false,
     "connectedCountNumber": "19"

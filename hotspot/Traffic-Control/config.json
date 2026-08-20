@@ -113,11 +113,11 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "🛡️ Firewall IDS/IPS Ativo",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Criptografia WPA3 Enterprise",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "44"
   },
   "customCode": {

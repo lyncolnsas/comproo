@@ -4,6 +4,7 @@ import { MikrotikAPI } from '@/lib/routeros';
 import { whatsappService } from '@/services/whatsapp';
 import fs from 'fs';
 import path from 'path';
+import { resolveTemplateDir } from '@/lib/portal-template-utils';
 
 interface PortalConfig {
   enabled?: boolean;
@@ -217,8 +218,8 @@ export async function POST(request: Request) {
       template = 'default';
     }
 
-    const safeTemplate = template.replace(/[^a-zA-Z0-9_-]/g, '');
-    let configPath = path.join(process.cwd(), 'hotspot', safeTemplate, 'config.json');
+    const templateDir = resolveTemplateDir(template);
+    let configPath = path.join(templateDir, 'config.json');
 
     // Fallback chain for config file path
     if (!fs.existsSync(configPath)) {
@@ -240,7 +241,7 @@ export async function POST(request: Request) {
 
     const enabled = config?.enabled !== undefined ? config.enabled : true;
     if (!enabled) {
-      logEvent('DISABLED', `Registration is disabled for template ${safeTemplate}`);
+      logEvent('DISABLED', `Registration is disabled for template ${template}`);
       return createResponse({ success: false, message: 'O cadastro de clientes está desativado.' }, isForm, 400);
     }
 

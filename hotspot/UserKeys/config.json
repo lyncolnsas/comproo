@@ -43,11 +43,11 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "🎮 Low Ping Gamer Net",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🕹️ 120 FPS Arcade Fiber",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "89"
   },
   "customCode": {

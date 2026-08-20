@@ -20,7 +20,7 @@
     "inputPlaceholder": "#4ade80",
     "loginButtonText": "#060d0a",
     "registerButtonText": "#060d0a",
-    "glassOpacity": 0.6,
+    "glassOpacity": 60,
     "glassBlur": 7
   },
   "effects": {
@@ -117,14 +117,14 @@
     "wifiSpeedText": "⚡ Wi-Fi 5G Ultra Rápido",
     "showSecurityBadge": false,
     "securityText": "🔒 Conexão Criptografada (WPA3)",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "42"
   },
   "customCode": {
     "customCss": "body button.btn-login.btn-login { border: 4px solid red !important; }"
   },
   "bg": {
-    "type": "default",
+    "type": "video",
     "url": "/uploads/bg_default_1787031728190.mp4?t=1787031728218"
   },
   "ad": {

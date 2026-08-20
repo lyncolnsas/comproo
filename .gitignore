@@ -42,3 +42,10 @@ next-env.d.ts
 
 # caddy reverse proxy binary (baixar via Instalar_Caddy.bat)
 /caddy/
+
+# local database & auth
+*.db
+*.db-journal
+/baileys_auth_info/
+/scratch/
+

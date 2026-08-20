@@ -950,9 +950,9 @@ export default function PortalEditor() {
   });
 
   const [badges, setBadges] = useState<BadgesConfig>({
-    showWifiSpeed: true,
+    showWifiSpeed: false,
     wifiSpeedText: '🚀 Turbo Launch 5G',
-    showSecurityBadge: true,
+    showSecurityBadge: false,
     securityText: '🔒 Ultra Fast Portal',
     showConnectedCount: false,
     connectedCountNumber: '42',
@@ -2980,8 +2980,6 @@ export default function PortalEditor() {
               } h-[620px] bg-slate-950 rounded-[2.5rem] shadow-2xl border-[10px] border-slate-900 overflow-hidden relative ring-4 ring-[#3d3d6b] flex flex-col`}
             >
               
-              {/* Notch */}
-              <div className="absolute top-0 inset-x-0 h-5 bg-slate-900 rounded-b-2xl w-36 mx-auto z-40 pointer-events-none"></div>
 
               {/* Captive Portal Top Bar Header (Matches Screenshot) */}
               <div className="bg-slate-900 border-b border-slate-800 pt-5 pb-2.5 px-4 text-white flex items-center justify-between z-30 relative select-none shrink-0 shadow-md">

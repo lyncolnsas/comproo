@@ -113,9 +113,9 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "⚡ Wi-Fi Android 5G",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Proteção Nougat WPA3",
     "showConnectedCount": false,
     "connectedCountNumber": "30"

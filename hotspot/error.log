@@ -6,3 +6,32 @@
 [2026-08-18T23:27:26.197Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36"}
 [2026-08-18T23:27:26.198Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
 [2026-08-18T23:27:26.198Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-08-19T11:48:28.351Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"99991561407","username":"Lucas","birthDate":null,"cpf":"","gender":"Homem","password":"***","customFieldValue":"","optInCourses":true,"template":"WifiElBarrio"}
+[2026-08-19T11:48:28.389Z] [DB_SAVE_SUCCESS] {"leadId":"fdcafd65-8c46-458b-badb-fc4148afda84","hotspotUser":"lucas"}
+[2026-08-19T11:48:28.395Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-08-19T11:48:28.667Z] [MIKROTIK_USER_CREATED] {"username":"lucas","result":{"$$path":"/ip/hotspot/user","id":"*E","server":"all","name":"lucas","password":123,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Gen: Homem"}}
+[2026-08-19T11:48:28.669Z] [SUCCESS] {"username":"lucas"}
+[2026-08-19T11:48:29.431Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36"}
+[2026-08-19T11:48:29.433Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-08-19T11:48:29.435Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-08-19T11:54:55.846Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"99991329412","username":"Lyncoln","birthDate":null,"cpf":"","gender":"Homem","password":"***","customFieldValue":"","optInCourses":true,"template":"WifiElBarrio"}
+[2026-08-19T11:54:55.856Z] [DB_SAVE_SUCCESS] {"leadId":"dfc04af7-9a54-46d8-a4c7-c76cc69e499f","hotspotUser":"lyncoln"}
+[2026-08-19T11:54:55.857Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-08-19T11:54:56.024Z] [MIKROTIK_USER_EXISTS] {"username":"lyncoln","id":"*D"}
+[2026-08-19T11:54:56.043Z] [MIKROTIK_USER_REMOVED] {"username":"lyncoln"}
+[2026-08-19T11:54:56.111Z] [MIKROTIK_USER_CREATED] {"username":"lyncoln","result":{"$$path":"/ip/hotspot/user","id":"*F","server":"all","name":"lyncoln","password":123,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Gen: Homem"}}
+[2026-08-19T11:54:56.112Z] [SUCCESS] {"username":"lyncoln"}
+[2026-08-19T11:54:57.005Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36"}
+[2026-08-19T11:54:57.006Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-08-19T11:54:57.007Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-08-19T11:54:57.022Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36"}
+[2026-08-19T11:54:57.024Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-08-19T11:54:57.025Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-08-19T11:58:23.347Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"99991329412","username":"Lyncoln","birthDate":null,"cpf":"","gender":"Homem","password":"***","customFieldValue":"","optInCourses":true,"template":"WifiElBarrio"}
+[2026-08-19T11:58:23.359Z] [DB_SAVE_SUCCESS] {"leadId":"57396a0b-23c7-43a9-b0ea-5b128cb02152","hotspotUser":"lyncoln"}
+[2026-08-19T11:58:23.360Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-08-19T11:58:23.547Z] [MIKROTIK_USER_CREATED] {"username":"lyncoln","result":{"$$path":"/ip/hotspot/user","id":"*10","server":"all","name":"lyncoln","password":123,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Gen: Homem"}}
+[2026-08-19T11:58:23.548Z] [SUCCESS] {"username":"lyncoln"}
+[2026-08-19T11:58:24.273Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36"}
+[2026-08-19T11:58:24.274Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-08-19T11:58:24.275Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}

@@ -43,11 +43,11 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "⚡ Wi-Fi 5G Seguro",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Lock WPA3 Encryption",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "37"
   },
   "customCode": {

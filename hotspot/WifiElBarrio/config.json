@@ -3,16 +3,16 @@
   "message": "Internet livre e gratuita para toda a comunidade. Conecte-se e fique por dentro do bairro.",
   "systemUrl": "http://portal.wifi.local",
   "colors": {
-    "brand": "#f97316",
+    "brand": "#f59e0b",
     "brandDark": "#ea580c",
-    "bg": "#0a0e17",
+    "bg": "#18181b",
     "ink": "#fff7ed",
     "muted": "#fdba74",
-    "blue": "#f97316",
+    "blue": "#ea580c",
     "green": "#0284c7",
     "trialButtonBg": "#f97316",
     "trialButtonText": "#0a0e17",
-    "cardBg": "#101827",
+    "cardBg": "#27272a",
     "cardBorder": "#f97316",
     "inputBg": "#070c14",
     "inputText": "#fff7ed",
@@ -20,24 +20,23 @@
     "inputPlaceholder": "#fb923c",
     "loginButtonText": "#0a0e17",
     "registerButtonText": "#000000",
-    "glassOpacity": 10,
-    "glassBlur": 0
+    "glassOpacity": 65,
+    "glassBlur": 6
   },
   "effects": {
-    "bgEffect": "nougat-fluid",
-    "bgEffectSpeed": "normal",
-    "cardShape": "rounded",
+    "bgEffect": "cardio-pulse",
+    "bgEffectSpeed": "slow",
+    "cardShape": "square",
     "cardNoiseTexture": false,
-    "cardGlowBorder": true,
+    "cardGlowBorder": false,
     "cardTilt3d": false,
     "btnShimmer": true,
     "btnPulse": false,
     "titleGradient": true
   },
   "studio": {
-    "activeComponent": "submit_button",
-    "fontFamily": "Inter",
-    "titleFontSize": 24,
+    "fontFamily": "Cabinet Grotesk",
+    "titleFontSize": 18,
     "titleFontWeight": "700",
     "titleLineHeight": 1.2,
     "titleLetterSpacing": 0,
@@ -47,30 +46,31 @@
     "btnFontSize": 14,
     "btnFontWeight": "600",
     "btnLetterSpacing": 0.5,
-    "btnHeight": 46,
+    "btnHeight": 53,
     "btnPaddingTop": 12,
     "btnPaddingRight": 20,
     "btnPaddingBottom": 12,
     "btnPaddingLeft": 20,
-    "btnRadiusTL": 12,
-    "btnRadiusTR": 12,
-    "btnRadiusBR": 12,
-    "btnRadiusBL": 12,
+    "btnRadiusTL": 13,
+    "btnRadiusTR": 13,
+    "btnRadiusBR": 13,
+    "btnRadiusBL": 13,
     "btnBorderWidth": 0,
     "cardRadiusTL": 20,
     "cardRadiusTR": 20,
     "cardRadiusBR": 20,
     "cardRadiusBL": 20,
-    "cardPaddingTop": 24,
-    "cardPaddingRight": 24,
-    "cardPaddingBottom": 24,
-    "cardPaddingLeft": 24,
+    "cardPaddingTop": 25,
+    "cardPaddingRight": 25,
+    "cardPaddingBottom": 25,
+    "cardPaddingLeft": 25,
     "cardBorderWidth": 1,
     "cardBorderStyle": "solid",
-    "cardGap": 20,
     "inputHeight": 44,
-    "inputRadius": 10,
-    "inputBorderWidth": 1
+    "inputRadius": 2,
+    "inputBorderWidth": 1,
+    "activeComponent": "submit_button",
+    "cardGap": 18
   },
   "brand": {
     "headerStyle": "transparent",
@@ -113,11 +113,11 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "📶 Wi-Fi Comunitário",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🤝 Conexão do Bairro",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "84"
   },
   "customCode": {
@@ -125,25 +125,25 @@
   },
   "bg": {
     "type": "default",
-    "url": "/uploads/bg_WifiElBarrio_1787137784320.mp4?t=1787137784331"
+    "url": ""
   },
   "ad": {
     "type": "none",
-    "mediaUrl": "/uploads/ad_1781809396452.mp4",
+    "mediaUrl": "/uploads/ad_1787155230329.png",
     "targetUrl": "",
     "items": [
       {
-        "url": "/uploads/ad_media_1.jpeg",
+        "url": "/uploads/ad_media_1.mp4",
+        "type": "video",
+        "targetUrl": ""
+      },
+      {
+        "url": "/uploads/ad_media_2.png",
         "type": "image",
         "targetUrl": ""
       },
       {
-        "url": "/uploads/ad_media_2.jpeg",
-        "type": "image",
-        "targetUrl": ""
-      },
-      {
-        "url": "/uploads/ad_media_3.JPG",
+        "url": "/uploads/ad_media_3.png",
         "type": "image",
         "targetUrl": ""
       },
@@ -158,7 +158,7 @@
         "targetUrl": ""
       }
     ],
-    "timerEnabled": false,
+    "timerEnabled": true,
     "timerDuration": 5
   },
   "fields": {
@@ -189,7 +189,7 @@
   "registerSubtitle": "Cadastre-se abaixo para liberar o acesso à internet",
   "registerSubmitText": "Cadastrar e Conectar",
   "termsText": "Ao se cadastrar, você concorda com nossos Termos de Uso e Política de Privacidade.",
-  "trialEnabled": false,
+  "trialEnabled": true,
   "trialText": "Acesso de teste disponível, ",
   "trialLinkText": "clique aqui",
   "trialModalTitle": "Acesso de Teste",

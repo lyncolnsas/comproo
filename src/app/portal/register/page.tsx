@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import ClientPage from './ClientPage';
 import { prisma } from '@/lib/prisma';
+import { resolveTemplateDir } from '@/lib/portal-template-utils';
 
 // Força a página a sempre buscar os dados frescos no servidor
 export const dynamic = 'force-dynamic';
@@ -31,11 +32,11 @@ export default async function RegisterPage({ searchParams }: PageProps) {
     template = 'default';
   }
 
-  const safeTemplate = template.replace(/[^a-zA-Z0-9_-]/g, '');
+  const templateDir = resolveTemplateDir(template);
   let initialConfig = null;
 
   try {
-    let configPath = path.join(process.cwd(), 'hotspot', safeTemplate, 'config.json');
+    let configPath = path.join(templateDir, 'config.json');
 
     // Fallback chains
     if (!fs.existsSync(configPath)) {
@@ -54,9 +55,9 @@ export default async function RegisterPage({ searchParams }: PageProps) {
   }
 
   if (initialConfig) {
-    initialConfig.template = safeTemplate;
+    initialConfig.template = template;
   } else {
-    initialConfig = { template: safeTemplate };
+    initialConfig = { template };
   }
 
   return <ClientPage initialConfig={initialConfig} />;

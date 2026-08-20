@@ -113,9 +113,9 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "📚 Rede de Aprendizado",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Ambiente Seguro para Alunos",
     "showConnectedCount": false,
     "connectedCountNumber": "35"

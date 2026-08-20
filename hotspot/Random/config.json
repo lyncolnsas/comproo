@@ -43,11 +43,11 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "✨ Prisma High Speed 5G",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Holographic Security",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "60"
   },
   "customCode": {

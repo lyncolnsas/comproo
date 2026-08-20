@@ -24,7 +24,7 @@
     "glassBlur": 9
   },
   "effects": {
-    "bgEffect": "chalk-constellation",
+    "bgEffect": "digital-ocean",
     "bgEffectSpeed": "slow",
     "cardShape": "pill",
     "cardNoiseTexture": false,
@@ -35,6 +35,7 @@
     "titleGradient": true
   },
   "studio": {
+    "activeComponent": "submit_button",
     "fontFamily": "Geist",
     "titleFontSize": 24,
     "titleFontWeight": "700",
@@ -66,11 +67,10 @@
     "cardPaddingLeft": 17,
     "cardBorderWidth": 1,
     "cardBorderStyle": "solid",
+    "cardGap": 20,
     "inputHeight": 44,
     "inputRadius": 10,
-    "inputBorderWidth": 1,
-    "activeComponent": "submit_button",
-    "cardGap": 20
+    "inputBorderWidth": 1
   },
   "brand": {
     "headerStyle": "transparent",

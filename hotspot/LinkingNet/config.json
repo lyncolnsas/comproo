@@ -24,7 +24,7 @@
     "glassBlur": 14
   },
   "effects": {
-    "bgEffect": "matrix",
+    "bgEffect": "community-bubbles",
     "bgEffectSpeed": "slow",
     "cardShape": "pill",
     "cardNoiseTexture": false,
@@ -35,7 +35,6 @@
     "titleGradient": true
   },
   "studio": {
-    "activeComponent": "submit_button",
     "fontFamily": "Inter",
     "titleFontSize": 24,
     "titleFontWeight": "700",
@@ -67,10 +66,11 @@
     "cardPaddingLeft": 24,
     "cardBorderWidth": 1,
     "cardBorderStyle": "solid",
-    "cardGap": 16,
     "inputHeight": 44,
     "inputRadius": 10,
-    "inputBorderWidth": 1
+    "inputBorderWidth": 1,
+    "activeComponent": "submit_button",
+    "cardGap": 16
   },
   "brand": {
     "headerStyle": "transparent",
@@ -117,7 +117,7 @@
     "wifiSpeedText": "⚡ Fibra Óptica 800Mbps",
     "showSecurityBadge": false,
     "securityText": "🔒 LinkingNet Telecom",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "68"
   },
   "customCode": {

@@ -41,8 +41,6 @@
     }
 
     /* Top bar */
-    #heading { display: none !important; }
-
     #wifilock {
       height: 50px;
       width: 50px;
@@ -52,8 +50,6 @@
     }
 
     /* Avatar */
-    #iden img { display: none !important; }
-
     /* Card */
     #box {
       position: relative;
@@ -251,13 +247,8 @@
   $(endif)
 
   $(if error)<div class="err">$(error)</div>$(endif)
-
-  <div id="heading">
-    <div id="wifilock"><img src="wifi-lock.png" alt="Wi-Fi"></div>
-  </div>
-  <div id="iden"><img src="human.png" alt="Avatar"></div>
-
-  <form class="vertical-form" name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()" $(endif)>
+</div>
+<form class="vertical-form" name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()" $(endif)>
 
     <input type="hidden" name="dst" value="$(link-orig)" />
     <input type="hidden" name="popup" value="true" />

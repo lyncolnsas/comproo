@@ -43,11 +43,11 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "🏆 Wi-Fi Campeões 5G",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Conexão Estádio Segura",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "156"
   },
   "customCode": {

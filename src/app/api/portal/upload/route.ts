@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { resolveTemplateDir } from '@/lib/portal-template-utils';
 
 export async function POST(request: Request) {
   try {
@@ -183,7 +184,8 @@ export async function DELETE(request: Request) {
     const template = searchParams.get('template') || 'default';
     const type = searchParams.get('type');
     const safeName = template.replace(/[^a-zA-Z0-9_-]/g, '');
-    const configPath = path.join(process.cwd(), 'hotspot', safeName, 'config.json');
+    const hDir = resolveTemplateDir(template);
+    const configPath = path.join(hDir, 'config.json');
 
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
 
@@ -204,7 +206,6 @@ export async function DELETE(request: Request) {
         } catch (e) {}
       }
 
-      const hDir = path.join(process.cwd(), 'hotspot', safeName);
       if (fs.existsSync(hDir)) {
         try {
           const hFiles = fs.readdirSync(hDir);

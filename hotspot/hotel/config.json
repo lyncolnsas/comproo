@@ -43,9 +43,9 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "⭐ Fibra Óptica Hóspede VIP",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Conexão WPA3 Segura",
     "showConnectedCount": false,
     "connectedCountNumber": "64"

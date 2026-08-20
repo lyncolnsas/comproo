@@ -9,25 +9,24 @@
   <!-- CSS que dita o formato, local e cores vem INTEIRAMENTE do MikroGestor -->
   <!-- MIKROGESTOR_THEME_LINK -->
   <style id="mg-theme-css-inline">
-
 /* ==============================================
    MIKROGESTOR PORTAL CSS — GERADO DINAMICAMENTE
    ============================================== */
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Outfit:wght@400;600;700&family=Poppins:wght@400;600;700&family=Roboto+Mono:wght@400;600;700&display=swap');
 
 :root {
-  --brand: #f97316;
+  --brand: #f59e0b;
   --brand-dark: #ea580c;
-  --bg: #0a0e17;
+  --bg: #18181b;
   --ink: #fff7ed;
   --muted: #fdba74;
-  --blue: #f97316;
+  --blue: #ea580c;
   --green: #0284c7;
-  --font-family: 'Inter', 'Outfit', 'Segoe UI', Roboto, Arial, sans-serif;
-  --glass-opacity: 0.10;
-  --glass-blur: 0px;
+  --font-family: 'Cabinet Grotesk', 'Outfit', 'Segoe UI', Roboto, Arial, sans-serif;
+  --glass-opacity: 0.65;
+  --glass-blur: 6px;
   --border-radius: 20px;
-  --card-bg-rgb: 16, 24, 39;
+  --card-bg-rgb: 39, 39, 42;
   --glow-color: transparent;
 }
 
@@ -38,43 +37,59 @@ body {
   padding: 0;
   min-width: 300px;
   font-family: var(--font-family);
-  background: transparent !important;
+  background: var(--bg);
   min-height: 100vh;
   color: var(--ink);
 }
 
-  /* Background Video */
+  /* Background Video & Image full cover responsive without borders */
   #mg-bg-video {
     position: fixed;
+    top: 0;
+    left: 0;
     right: 0;
     bottom: 0;
+    width: 100vw;
+    height: 100vh;
     min-width: 100%;
     min-height: 100%;
-    z-index: -100;
-    object-fit: cover;
+    z-index: -2;
+    object-fit: cover !important;
+    object-position: center center !important;
     background-color: #000;
     pointer-events: none;
   }
 
-#heading {
-  display: flex; align-items: center; justify-content: center;
-  background: var(--brand); color: #fff; width: 100%; height: 112px; position: relative; padding: 16px;
+  #mg-bg-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    min-width: 100%;
+    min-height: 100%;
+    z-index: -2;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    pointer-events: none;
+  }
+
+#mg-app-root, form, .container, main, .main, .content {
+  position: relative !important;
+  z-index: 1 !important;
 }
-#business-name {
-  font-size: 1.25rem; font-weight: 700; letter-spacing: -0.025em; text-align: center;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; padding-top: 16px; margin: 0; color: #fff;
-}
-#iden {
-  width: 64px; height: 64px; background-color: #fff; border-radius: 9999px; overflow: hidden;
-  border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; margin: -32px auto 0; position: relative; z-index: 10;
-}
-#iden img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
 #box {
-  position: relative; background: rgba(var(--card-bg-rgb), var(--glass-opacity)) !important;
+  position: relative;
+  z-index: 10 !important;
+  background: rgba(var(--card-bg-rgb), var(--glass-opacity)) !important;
   backdrop-filter: blur(var(--glass-blur)) !important; -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
   border-radius: var(--border-radius) !important; border: 1px solid rgba(255,255,255,0.25) !important;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06) !important;
-  padding: 20px; margin: 24px auto 0; max-width: 420px; width: calc(100% - 32px); padding-bottom: 24px;
+  padding: 20px; margin: 40px auto 24px; max-width: 420px; width: calc(100% - 32px); padding-bottom: 24px;
 }
 .mg-message { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 16px; }
 #user, #pass {
@@ -105,7 +120,6 @@ body {
   #box { padding: 16px; }
   .actions { grid-template-columns: 1fr !important; gap: 8px !important; }
 }
-
   </style>
   <!-- END_MIKROGESTOR_THEME_LINK -->
 
@@ -119,6 +133,92 @@ body {
 </head>
 
 <body>
+  <!-- MIKROGESTOR EFFECTS -->
+<link href="fonts/fonts.css" rel="stylesheet">
+<canvas id="mg-fx-niche" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none; background:#080a0c;"></canvas>
+
+
+<style>
+body { background: transparent !important; }
+html body, html body[class], body.theme-default, body[class*="theme-"], html, body, .theme-layout, #wrapper, .bg-overlay, .background-overlay { background: transparent !important; background-color: transparent !important; background-image: none !important; }
+#mg-app-root, form, .container, main, .main, .content { position: relative !important; z-index: 1 !important; }
+#box, .login-card, .card { border-radius: 4px !important; clip-path: none !important; }
+
+.btn-login, #btnSignup, button[type="submit"], input[type="submit"] {
+  position: relative !important;
+  overflow: hidden !important;
+}
+.btn-login::after, #btnSignup::after, button[type="submit"]::after {
+  content: '' !important;
+  position: absolute !important;
+  top: -50% !important;
+  left: -60% !important;
+  width: 40% !important;
+  height: 200% !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent) !important;
+  transform: rotate(30deg) !important;
+  animation: mgShimmerSweep 3.5s infinite !important;
+  pointer-events: none !important;
+}
+@keyframes mgShimmerSweep {
+  0% { left: -60%; }
+  30% { left: 140%; }
+  100% { left: 140%; }
+}
+
+#box h1, .card h1, #heading h1, .title {
+  background: linear-gradient(135deg, #f59e0b, #0284c7, #ea580c, #f59e0b) !important;
+  background-size: 300% 300% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  animation: mgTitleGradient 6s ease infinite alternate !important;
+}
+@keyframes mgTitleGradient {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+</style>
+<script>
+(function() {
+  var c = document.getElementById('mg-fx-niche'); if (!c) return;
+  var ctx = c.getContext('2d');
+  function resize() { c.width = window.innerWidth || document.documentElement.clientWidth || 360; c.height = window.innerHeight || document.documentElement.clientHeight || 640; }
+  window.addEventListener('resize', resize); window.addEventListener('load', resize); resize();
+  var sparks = []; var step = 0;
+  function addSpark(px, py) {
+    for (var i = 0; i < 8; i++) {
+      sparks.push({ x: px, y: py, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5, life: 1 });
+    }
+  }
+  function draw() {
+    ctx.fillStyle = 'rgba(8, 10, 12, 0.08)'; ctx.fillRect(0, 0, c.width, c.height);
+    step += 1.5;
+    var cx = (step * 3) % c.width;
+    var cy = c.height * 0.55;
+    var mod = (step * 3) % 220;
+    if (mod > 60 && mod < 75) cy -= 35;
+    else if (mod >= 75 && mod < 85) cy += 20;
+    else if (mod >= 85 && mod < 100) { cy -= 110; if (mod === 90) addSpark(cx, cy); }
+    else if (mod >= 100 && mod < 115) cy += 45;
+    else if (mod >= 115 && mod < 135) cy -= 25;
+
+    ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#f59e0b'; ctx.shadowBlur = 12; ctx.shadowColor = '#0284c7'; ctx.fill();
+
+    for (var i = sparks.length - 1; i >= 0; i--) {
+      var s = sparks[i]; s.x += s.vx; s.y += s.vy; s.life -= 0.03;
+      if (s.life <= 0) { sparks.splice(i, 1); continue; }
+      ctx.beginPath(); ctx.arc(s.x, s.y, 1.8 * s.life, 0, Math.PI * 2);
+      ctx.fillStyle = '#0284c7'; ctx.shadowBlur = 8; ctx.shadowColor = '#0284c7'; ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+<!-- END MIKROGESTOR EFFECTS -->
+
   <!-- Script que injeta o Video/Imagem de Fundo vindo do MikroGestor -->
   <!-- MIKROGESTOR_BG_SCRIPT -->
 <!-- END_MIKROGESTOR_BG_SCRIPT -->
@@ -148,14 +248,7 @@ body {
   <div id="mg-app-root">
     
     $(if error)<div class="err">$(error)</div>$(endif)
-    
-    <div id="heading">
-      <h2 id="business-name">Wi-Fi Conecta Bairro</h2>
-    </div>
-
-    <div id="iden"><img src="logo.png" onerror="this.src='human.png';this.onerror=null;" alt="Logo" style="" /></div>
-
-    <form name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()" $(endif)>
+<form name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()" $(endif)>
       <input type="hidden" name="dst" value="$(link-orig)">
       <input type="hidden" name="popup" value="true">
 
@@ -176,10 +269,10 @@ body {
 
         <!-- Botao de Trial Controlado pelo MikroGestor -->
         <!-- MIKROGESTOR_TRIAL_BLOCK -->
-<div id="trial-container" style="display: none; text-align: center; font-size: 11px; margin-top: 12px; color: var(--muted);">
-  $(if trial == 'yes')
-  Acesso de teste disponível, <a href="javascript:void(0)" onclick="if(confirm('Confirmar acesso de teste?')) confirmTrialLogin()" style="color: var(--blue); text-decoration: underline; font-weight: 600;">clique aqui</a>.
-  $(endif)
+<div id="trial-container" style="display: block; text-align: center; font-size: 11px; margin-top: 12px; color: var(--muted);">
+$(if trial == 'yes')
+Acesso de teste disponível, <a href="javascript:void(0)" onclick="if(confirm('Tem certeza de que deseja liberar o acesso grátis por 30 minutos?')) confirmTrialLogin()" style="color: var(--blue); text-decoration: underline; font-weight: 600;">clique aqui</a>.
+$(endif)
 </div>
 <!-- END_MIKROGESTOR_TRIAL_BLOCK -->
 

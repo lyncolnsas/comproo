@@ -81,11 +81,11 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "🍕 Wi-Fi Cardápio Digital",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Conexão Clientes",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "32"
   },
   "customCode": {

@@ -20,7 +20,7 @@
     "inputPlaceholder": "#67e8f9",
     "loginButtonText": "#020617",
     "registerButtonText": "#ffffff",
-    "glassOpacity": 10,
+    "glassOpacity": 85,
     "glassBlur": 8
   },
   "effects": {
@@ -35,7 +35,6 @@
     "titleGradient": false
   },
   "studio": {
-    "activeComponent": "submit_button",
     "fontFamily": "Inter",
     "titleFontSize": 24,
     "titleFontWeight": "700",
@@ -67,10 +66,11 @@
     "cardPaddingLeft": 24,
     "cardBorderWidth": 1,
     "cardBorderStyle": "solid",
-    "cardGap": 8,
     "inputHeight": 44,
     "inputRadius": 10,
-    "inputBorderWidth": 1
+    "inputBorderWidth": 1,
+    "activeComponent": "submit_button",
+    "cardGap": 8
   },
   "brand": {
     "headerStyle": "transparent",
@@ -113,9 +113,9 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "⚡ Wi-Fi 5G Alta Velocidade",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Privacidade & Dados Protegidos",
     "showConnectedCount": false,
     "connectedCountNumber": "25"
@@ -124,7 +124,7 @@
     "customCss": ""
   },
   "bg": {
-    "type": "default",
+    "type": "video",
     "url": "/uploads/bg_clinica_1787067767664.mp4?t=1787067767678"
   },
   "ad": {

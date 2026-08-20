@@ -20,7 +20,7 @@
     "inputPlaceholder": "#4ade80",
     "loginButtonText": "#0b1612",
     "registerButtonText": "#0b1612",
-    "glassOpacity": 0.31,
+    "glassOpacity": 31,
     "glassBlur": 21
   },
   "effects": {
@@ -115,16 +115,16 @@
   "badges": {
     "showWifiSpeed": false,
     "wifiSpeedText": "⚡ Wi-Fi 5G Acadêmico",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🎓 Rede Educacional Protegida",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "92"
   },
   "customCode": {
     "customCss": ""
   },
   "bg": {
-    "type": "default",
+    "type": "video",
     "url": "/uploads/bg_Escuela_1787012825492.mp4"
   },
   "ad": {

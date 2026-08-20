@@ -24,7 +24,7 @@
     "glassBlur": 12
   },
   "effects": {
-    "bgEffect": "stadium-lights",
+    "bgEffect": "divine-rays",
     "bgEffectSpeed": "fast",
     "cardShape": "scifi-cut",
     "cardNoiseTexture": false,
@@ -35,7 +35,6 @@
     "titleGradient": true
   },
   "studio": {
-    "activeComponent": "submit_button",
     "fontFamily": "Inter",
     "titleFontSize": 24,
     "titleFontWeight": "700",
@@ -67,10 +66,11 @@
     "cardPaddingLeft": 24,
     "cardBorderWidth": 1,
     "cardBorderStyle": "solid",
-    "cardGap": 8,
     "inputHeight": 44,
     "inputRadius": 10,
-    "inputBorderWidth": 1
+    "inputBorderWidth": 1,
+    "activeComponent": "submit_button",
+    "cardGap": 8
   },
   "brand": {
     "headerStyle": "transparent",
@@ -113,11 +113,11 @@
     "googleMapsUrl": ""
   },
   "badges": {
-    "showWifiSpeed": true,
+    "showWifiSpeed": false,
     "wifiSpeedText": "⚡ Wi-Fi 5G Arena",
-    "showSecurityBadge": true,
+    "showSecurityBadge": false,
     "securityText": "🔒 Conexão Torcedor",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "128"
   },
   "customCode": {

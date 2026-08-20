@@ -9,7 +9,6 @@
   <!-- CSS que dita o formato, local e cores vem INTEIRAMENTE do MikroGestor -->
   <!-- MIKROGESTOR_THEME_LINK -->
   <style id="mg-theme-css-inline">
-
 /* ==============================================
    MIKROGESTOR PORTAL CSS — GERADO DINAMICAMENTE
    ============================================== */
@@ -38,43 +37,59 @@ body {
   padding: 0;
   min-width: 300px;
   font-family: var(--font-family);
-  background: transparent !important;
+  background: var(--bg);
   min-height: 100vh;
   color: var(--ink);
 }
 
-  /* Background Video */
+  /* Background Video & Image full cover responsive without borders */
   #mg-bg-video {
     position: fixed;
+    top: 0;
+    left: 0;
     right: 0;
     bottom: 0;
+    width: 100vw;
+    height: 100vh;
     min-width: 100%;
     min-height: 100%;
-    z-index: -100;
-    object-fit: cover;
+    z-index: -2;
+    object-fit: cover !important;
+    object-position: center center !important;
     background-color: #000;
     pointer-events: none;
   }
 
-#heading {
-  display: flex; align-items: center; justify-content: center;
-  background: var(--brand); color: #fff; width: 100%; height: 112px; position: relative; padding: 16px;
+  #mg-bg-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    min-width: 100%;
+    min-height: 100%;
+    z-index: -2;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    pointer-events: none;
+  }
+
+#mg-app-root, form, .container, main, .main, .content {
+  position: relative !important;
+  z-index: 1 !important;
 }
-#business-name {
-  font-size: 1.25rem; font-weight: 700; letter-spacing: -0.025em; text-align: center;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; padding-top: 16px; margin: 0; color: #fff;
-}
-#iden {
-  width: 64px; height: 64px; background-color: #fff; border-radius: 9999px; overflow: hidden;
-  border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; margin: -32px auto 0; position: relative; z-index: 10;
-}
-#iden img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
 #box {
-  position: relative; background: rgba(var(--card-bg-rgb), var(--glass-opacity)) !important;
+  position: relative;
+  z-index: 10 !important;
+  background: rgba(var(--card-bg-rgb), var(--glass-opacity)) !important;
   backdrop-filter: blur(var(--glass-blur)) !important; -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
   border-radius: var(--border-radius) !important; border: 1px solid rgba(255,255,255,0.25) !important;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06) !important;
-  padding: 20px; margin: 24px auto 0; max-width: 420px; width: calc(100% - 32px); padding-bottom: 24px;
+  padding: 20px; margin: 40px auto 24px; max-width: 420px; width: calc(100% - 32px); padding-bottom: 24px;
 }
 .mg-message { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 16px; }
 #user, #pass {
@@ -105,7 +120,6 @@ body {
   #box { padding: 16px; }
   .actions { grid-template-columns: 1fr !important; gap: 8px !important; }
 }
-
   </style>
   <!-- END_MIKROGESTOR_THEME_LINK -->
 
@@ -119,31 +133,80 @@ body {
 </head>
 
 <body>
+  <!-- MIKROGESTOR EFFECTS -->
+<link href="fonts/fonts.css" rel="stylesheet">
+
+
+<style>
+#box, .login-card, .card { border-radius: 20px !important; clip-path: none !important; }
+
+.btn-login, #btnSignup, button[type="submit"], input[type="submit"] {
+  position: relative !important;
+  overflow: hidden !important;
+}
+.btn-login::after, #btnSignup::after, button[type="submit"]::after {
+  content: '' !important;
+  position: absolute !important;
+  top: -50% !important;
+  left: -60% !important;
+  width: 40% !important;
+  height: 200% !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent) !important;
+  transform: rotate(30deg) !important;
+  animation: mgShimmerSweep 3.5s infinite !important;
+  pointer-events: none !important;
+}
+@keyframes mgShimmerSweep {
+  0% { left: -60%; }
+  30% { left: 140%; }
+  100% { left: 140%; }
+}
+
+</style>
+<script>
+
+</script>
+<!-- END MIKROGESTOR EFFECTS -->
+
   <!-- Script que injeta o Video/Imagem de Fundo vindo do MikroGestor -->
   <!-- MIKROGESTOR_BG_SCRIPT -->
-<video id="mg-bg-video" src="http://portal.wifi.local/uploads/bg_Greenboard_1787032071640.mp4" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture controlslist="nodownload no-fullscreen noremoteplayback"></video>
+<video id="mg-bg-video" autoplay loop muted playsinline webkit-playsinline x5-playsinline preload="auto" poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" style="position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;min-width:100%;min-height:100%;object-fit:cover !important;object-position:center center !important;z-index:-2;background-color:#000;pointer-events:none;" disablepictureinpicture controlslist="nodownload no-fullscreen noremoteplayback">
+  <source src="/uploads/bg_Greenboard_1787032071640.mp4" type="video/mp4">
+</video>
 <script>
-  function mgInitVideo() {
-    var v = document.getElementById('mg-bg-video');
-    if (!v) return;
-    v.play().catch(function(){});
-    v.addEventListener('loadedmetadata', function() {
-      if (v.videoHeight > v.videoWidth) {
-        v.style.objectFit = 'contain';
-      } else {
-        v.style.objectFit = 'cover';
+  (function() {
+    function mgInitVideo() {
+      var v = document.getElementById('mg-bg-video');
+      if (!v) return;
+      v.muted = true;
+      v.defaultMuted = true;
+      v.playsInline = true;
+      v.setAttribute('muted', '');
+      v.setAttribute('playsinline', '');
+      v.setAttribute('webkit-playsinline', '');
+      v.setAttribute('poster', 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"%3E%3C/svg%3E');
+      if (v.paused) {
+        var p = v.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch(function() {
+            var unlock = function() {
+              v.play().catch(function(){});
+              document.removeEventListener('click', unlock);
+              document.removeEventListener('touchstart', unlock);
+            };
+            document.addEventListener('click', unlock, { once: true });
+            document.addEventListener('touchstart', unlock, { once: true });
+          });
+        }
       }
-    });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mgInitVideo);
-  } else {
-    mgInitVideo();
-  }
-  window.addEventListener('touchstart', function() {
-    var v = document.getElementById('mg-bg-video');
-    if (v) v.play().catch(function(){});
-  }, { once: true });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mgInitVideo);
+    } else {
+      mgInitVideo();
+    }
+    window.addEventListener('load', mgInitVideo);
+  })();
 </script>
 <!-- END_MIKROGESTOR_BG_SCRIPT -->
 
@@ -172,14 +235,7 @@ body {
   <div id="mg-app-root">
     
     $(if error)<div class="err">$(error)</div>$(endif)
-    
-    <div id="heading">
-      <h2 id="business-name">Wi-Fi Escola & Lousa</h2>
-    </div>
-
-    <div id="iden"><img src="logo.png" onerror="this.src='human.png';this.onerror=null;" alt="Logo" style="" /></div>
-
-    <form name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()" $(endif)>
+<form name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()" $(endif)>
       <input type="hidden" name="dst" value="$(link-orig)">
       <input type="hidden" name="popup" value="true">
 

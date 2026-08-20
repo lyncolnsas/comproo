@@ -8,17 +8,12 @@ import os from 'os';
 import { prisma } from '@/lib/prisma';
 import { getNicheEffectMarkup } from '@/lib/niche-effects';
 import { getBrandEffectsStyles } from '@/lib/brand-effects-styles';
+import { getTemplatePaths } from '@/lib/portal-template-utils';
 
 const DEFAULT_HOTSPOT_DIR = path.join(process.cwd(), 'hotspot', 'default');
 
 function getPaths(templateName?: string | null) {
-  const dirName = templateName ? templateName : 'default';
-  // Ensure we don't go out of root
-  const safeName = dirName.replace(/[^a-zA-Z0-9_-]/g, '');
-  const HOTSPOT_DIR = path.join(process.cwd(), 'hotspot', safeName);
-  const CONFIG_PATH = path.join(HOTSPOT_DIR, 'config.json');
-  const LOGIN_HTML_PATH = path.join(HOTSPOT_DIR, 'login.html');
-  return { HOTSPOT_DIR, CONFIG_PATH, LOGIN_HTML_PATH };
+  return getTemplatePaths(templateName);
 }
 
 function getLocalLanIp() {
@@ -107,9 +102,9 @@ const DEFAULT_CONFIG = {
     googleMapsUrl: '',
   },
   badges: {
-    showWifiSpeed: true,
+    showWifiSpeed: false,
     wifiSpeedText: '⚡ Wi-Fi 5G Ultra Rápido',
-    showSecurityBadge: true,
+    showSecurityBadge: false,
     securityText: '🔒 Conexão Criptografada',
     showConnectedCount: false,
     connectedCountNumber: '42',
@@ -813,8 +808,8 @@ function generateEffectsMarkup(effects: any = {}, colors: any = {}, social: any 
     bgHtml = fx.html;
     cssEffects += fx.css;
     jsEffects += fx.js;
-    // Adicionar transparência absoluta para que o efeito do nicho seja visível por trás do card de login
-    cssEffects += `\nhtml body, html body[class], body.theme-default, body[class*="theme-"], html, body, .wrapper, .login-wrapper, .main-container, .page-container, .theme-layout, #wrapper, .bg-overlay, .background-overlay, main, .main, .content, .login-panel { background: transparent !important; background-color: transparent !important; background-image: none !important; }\n`;
+    // Adicionar transparência apenas para o body e overlays para que o efeito do nicho seja visível por trás do card
+    cssEffects += `\nhtml body, html body[class], body.theme-default, body[class*="theme-"], html, body, .theme-layout, #wrapper, .bg-overlay, .background-overlay { background: transparent !important; background-color: transparent !important; background-image: none !important; }\n#mg-app-root, form, .container, main, .main, .content { position: relative !important; z-index: 1 !important; }\n`;
     if (bg && bg.url) {
       cssEffects += `\n#mg-fx-niche, #mg-fx-canvas-particles, #mg-fx-canvas-matrix, #mg-fx-canvas-warp, #mg-fx-canvas-waves, #mg-fx-cybergrid, #mg-fx-orbs, #mg-fx-fireflies, #mg-fx-aurora { background: transparent !important; }\n`;
     }
@@ -1167,420 +1162,284 @@ export async function POST(request: Request) {
       // Strip any accidentally compiled livePreviewScript blocks
       html = html.replace(/<!-- MG_LIVE_PREVIEW_SCRIPT -->[\s\S]*?<!-- END_MG_LIVE_PREVIEW_SCRIPT -->/gi, '');
 
-      // Update colors in :root
-      if (newConfig.colors) {
-        const c = newConfig.colors;
-        if (c.brand) html = html.replace(/--brand:\s*#[0-9a-fA-F]{3,8}/, `--brand: ${c.brand}`);
-        if (c.brandDark) html = html.replace(/--brand-dark:\s*#[0-9a-fA-F]{3,8}/, `--brand-dark: ${c.brandDark}`);
-        if (c.bg) html = html.replace(/--bg:\s*#[0-9a-fA-F]{3,8}/, `--bg: ${c.bg}`);
-        if (c.ink) html = html.replace(/--ink:\s*#[0-9a-fA-F]{3,8}/, `--ink: ${c.ink}`);
-        if (c.muted) html = html.replace(/--muted:\s*#[0-9a-fA-F]{3,8}/, `--muted: ${c.muted}`);
-        if (c.blue) html = html.replace(/--blue:\s*#[0-9a-fA-F]{3,8}/, `--blue: ${c.blue}`);
-        if (c.green) html = html.replace(/--green:\s*#[0-9a-fA-F]{3,8}/, `--green: ${c.green}`);
+      // ═══════════════════════════════════════════════════════════════
+      // THEME CSS COMPILATION (MIKROGESTOR_THEME_LINK)
+      // ═══════════════════════════════════════════════════════════════
+      const c = newConfig.colors || {};
+      const studio = newConfig.studio || {};
+      const brand = newConfig.brand || {};
+      
+      const brandColor = c.brand || '#f3d078';
+      const brandDarkColor = c.brandDark || '#c49d3b';
+      const bgColor = c.bg || '#141418';
+      const inkColor = c.ink || '#ffffff';
+      const mutedColor = c.muted || '#9a9aa8';
+      const blueColor = c.blue || brandColor || '#f3d078';
+      const greenColor = c.green || '#e5c158';
+      const fontFamily = studio.fontFamily || 'Outfit';
+      const rawGlass = c.glassOpacity !== undefined ? c.glassOpacity : 90;
+      let opVal = (rawGlass <= 1 && rawGlass > 0) ? Math.round(rawGlass * 100) : rawGlass;
+      if (opVal < 30) opVal = 85;
+      const glassOpacity = (opVal / 100).toFixed(2);
+      const glassBlur = c.glassBlur !== undefined ? `${c.glassBlur}px` : '12px';
+      const borderRadius = studio.cardRadiusTL !== undefined ? `${studio.cardRadiusTL}px` : '16px';
+      
+      function hexToRgb(hex: string) {
+        if (!hex) return '255, 255, 255';
+        hex = hex.replace('#', '');
+        if (hex.length === 3) hex = hex.split('').map(ch => ch + ch).join('');
+        if (hex.length !== 6) return '255, 255, 255';
+        const num = parseInt(hex, 16);
+        return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+      }
+      const cardBgRgb = hexToRgb(c.cardBg || '#ffffff');
+
+      const themeCss = `
+/* ==============================================
+   MIKROGESTOR PORTAL CSS — GERADO DINAMICAMENTE
+   ============================================== */
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Outfit:wght@400;600;700&family=Poppins:wght@400;600;700&family=Roboto+Mono:wght@400;600;700&display=swap');
+
+:root {
+  --brand: ${brandColor};
+  --brand-dark: ${brandDarkColor};
+  --bg: ${bgColor};
+  --ink: ${inkColor};
+  --muted: ${mutedColor};
+  --blue: ${blueColor};
+  --green: ${greenColor};
+  --font-family: '${fontFamily}', 'Outfit', 'Segoe UI', Roboto, Arial, sans-serif;
+  --glass-opacity: ${glassOpacity};
+  --glass-blur: ${glassBlur};
+  --border-radius: ${borderRadius};
+  --card-bg-rgb: ${cardBgRgb};
+  --glow-color: transparent;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 300px;
+  font-family: var(--font-family);
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--ink);
+}
+
+  /* Background Video & Image full cover responsive without borders */
+  #mg-bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    min-width: 100%;
+    min-height: 100%;
+    z-index: -2;
+    object-fit: cover !important;
+    object-position: center center !important;
+    background-color: #000;
+    pointer-events: none;
+  }
+
+  #mg-bg-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    min-width: 100%;
+    min-height: 100%;
+    z-index: -2;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    pointer-events: none;
+  }
+
+#mg-app-root, form, .container, main, .main, .content {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+#box {
+  position: relative;
+  z-index: 10 !important;
+  background: rgba(var(--card-bg-rgb), var(--glass-opacity)) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important; -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+  border-radius: var(--border-radius) !important; border: 1px solid rgba(255,255,255,0.25) !important;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06) !important;
+  padding: 20px; margin: 40px auto 24px; max-width: 420px; width: calc(100% - 32px); padding-bottom: 24px;
+}
+.mg-message { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+#user, #pass {
+  border: 1px solid #e2e8f0; color: #111827; background: rgba(248,250,252,0.9); height: 40px; font-size: 14px;
+  font-family: var(--font-family); display: block; width: 100%; border-radius: 8px; padding: 0 12px; margin: 12px 0;
+  -webkit-appearance: none; appearance: none; outline: none; transition: border-color 0.2s;
+}
+#user:focus, #pass:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+#user::placeholder, #pass::placeholder { color: var(--muted); }
+.actions { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; margin-top: 16px !important; }
+.btn {
+  -webkit-appearance: none; appearance: none; border: 0; height: 40px; border-radius: 8px; cursor: pointer; font-weight: 700;
+  font-size: 13px; font-family: var(--font-family); width: 100%; display: flex !important; align-items: center; justify-content: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: filter 0.2s ease, transform 0.1s; touch-action: manipulation; text-decoration: none; opacity: 0.95;
+}
+.btn:active { transform: translateY(1px); }
+.btn-login { background: var(--blue) !important; color: #fff !important; }
+.btn-login:hover { filter: brightness(0.92); }
+.btn-cad { background: var(--green) !important; color: #fff !important; }
+.btn-cad:hover { filter: brightness(0.92); }
+.footer { text-align: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.07); font-size: 9px; color: var(--muted); }
+.footer a { text-decoration: none; color: var(--blue); }
+.err {
+  background: #1f2937; border: 1px solid #7f1d1d; color: #fecaca; padding: 8px 12px; border-radius: 10px; margin: 16px auto 0;
+  max-width: 420px; width: calc(100% - 32px); text-align: center; font-size: 13px;
+}
+@media (max-width: 480px) {
+  #box { padding: 16px; }
+  .actions { grid-template-columns: 1fr !important; gap: 8px !important; }
+}
+`;
+
+      const colorsRegex = /(<!--\s*MIKROGESTOR_THEME_LINK\s*-->|<!--\s*MIKROGESTOR COLORS\s*-->)[\s\S]*?(<!--\s*END_MIKROGESTOR_THEME_LINK\s*-->|<!--\s*END MIKROGESTOR COLORS\s*-->)/i;
+      const themeHtml = `<!-- MIKROGESTOR_THEME_LINK -->\n  <style id="mg-theme-css-inline">${themeCss}  </style>\n  <!-- END_MIKROGESTOR_THEME_LINK -->`;
+
+      if (colorsRegex.test(html)) {
+         html = html.replace(colorsRegex, themeHtml);
+      } else if (html.includes('</head>')) {
+         html = html.replace('</head>', `${themeHtml}\n</head>`);
+      } else {
+         html = `${themeHtml}\n` + html;
       }
 
-      const c = newConfig.colors || {};
-      const colorsRegex = /(<!--\s*MIKROGESTOR COLORS\s*-->)[\s\S]*?(<!--\s*END MIKROGESTOR COLORS\s*-->)/i;
-      const colorsHtml = `<!-- MIKROGESTOR COLORS -->
-<style>
-  :root {
-    --brand: ${c.brand || '#2563eb'};
-    --brand-dark: ${c.brandDark || '#1d4ed8'};
-    --bg: ${c.bg || '#ffffff'};
-    --ink: ${c.ink || '#0f172a'};
-    --text-muted: ${c.muted || '#64748b'};
-    --btn-primary: ${c.blue || '#2563eb'};
-    --btn-primary-text: ${c.loginButtonText || '#ffffff'};
-    --btn-secondary: ${c.green || '#10b981'};
-    --btn-secondary-text: ${c.registerButtonText || '#ffffff'};
-    --trialButtonBg: ${c.trialButtonBg || '#1E90FF'};
-    --trialButtonText: ${c.trialButtonText || '#FFFFFF'};
-    --card-bg: ${c.cardBg || '#ffffff'};
-    --card-border: ${c.cardBorder || 'rgba(0,0,0,0.08)'};
-    --input-bg: ${c.inputBg || '#ffffff'};
-    --input-text: ${c.inputText || '#0f172a'};
-    --input-border: ${c.inputBorder || '#e2e8f0'};
-    --input-placeholder: ${c.inputPlaceholder || '#94a3b8'};
-    --glass-opacity: ${c.glassOpacity !== undefined ? c.glassOpacity : 100}%;
-    --glass-blur: ${c.glassBlur !== undefined ? c.glassBlur : 0}px;
-  }
-
-  /* ====== STUDIO INSPECTOR & UNIVERSAL THEME STYLING ====== */
-  ${newConfig.studio?.fontFamily ? `body, input, button, select, textarea, h1, h2, h3, p, span { font-family: "${newConfig.studio.fontFamily}", "Inter", -apple-system, sans-serif !important; }` : ''}
-
-  /* ====== BRAND / HEADING / LOGO STYLING ====== */
-  #mg-live-brand-container, .brand-container {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin-bottom: 20px !important;
-    width: 100% !important;
-    text-align: center !important;
-    ${(() => {
-      const b = newConfig.brand || {};
-      const animName = b.entranceAnimation || 'fade-zoom';
-      const animDur = (b.animationDuration || 1.2) + 's';
-      const animDel = (b.animationDelay || 0.1) + 's';
-      const animEase = b.animationEasing === 'elastic' ? 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' : b.animationEasing === 'expo' ? 'cubic-bezier(0.16, 1, 0.3, 1)' : b.animationEasing === 'linear' ? 'linear' : 'cubic-bezier(0.25, 1, 0.5, 1)';
-      const contFx = b.continuousEffect || 'none';
-      const animMap: Record<string, string> = {
-        'fade-zoom': 'mgFadeZoom',
-        'slide-up-3d': 'mgSlideUp3D',
-        'slide-down-bounce': 'mgSlideDownBounce',
-        'typewriter': 'mgTypewriter',
-        'glitch-cyber': 'mgGlitchCyber',
-        'neon-flicker': 'mgNeonFlicker',
-        'wave-reveal': 'mgWaveReveal',
-        'flip-3d-x': 'mgFlip3DX',
-        'flip-3d-y': 'mgFlip3DY',
-        'gold-shimmer-sweep': 'mgGoldShimmerSweep',
-        'kinetic-stamp': 'mgKineticStamp',
-        'blur-focus': 'mgBlurFocus',
-        'stagger-letter': 'mgStaggerLetter',
-        'matrix-decrypt': 'mgMatrixDecrypt',
-        'curtain-reveal': 'mgCurtainReveal',
-        'spiral-in': 'mgSpiralIn'
-      };
-      const contMap: Record<string, string> = {
-        'floating': 'mgContinuousFloating 3.5s ease-in-out infinite alternate',
-        'neon-breathe': 'mgContinuousNeonBreathe 2.5s ease-in-out infinite alternate',
-        'shimmer-loop': 'mgContinuousShimmerLoop 3.5s linear infinite',
-        'rainbow-cycle': 'mgContinuousRainbowCycle 5s linear infinite',
-        'jitter-glitch': 'mgContinuousJitterGlitch 2.5s infinite',
-        'wobble-3d': 'mgContinuousWobble3D 4s ease-in-out infinite alternate'
-      };
-      const entranceKeyframe = animMap[animName] || 'mgFadeZoom';
-      const parts = [`${entranceKeyframe} ${animDur} ${animEase} ${animDel} both`];
-      if (contFx !== 'none' && contMap[contFx]) parts.push(contMap[contFx]);
-      return `animation: ${parts.join(', ')} !important;`;
-    })()}
-  }
-
-  #heading, header.top-bar, .header-bar {
-    display: none !important;
-  }
-  .container, #main, .wrap {
-    margin-top: 24px !important;
-  }
-
-  ${newConfig.brand?.displayMode === 'none' ? `
-  .logo, #logo, img.brand-logo {
-    display: none !important;
-  }
-  ` : `
-  .logo, #logo, img.brand-logo {
-    display: block !important;
-    max-width: ${newConfig.brand?.logoSize || 120}px !important;
-    max-height: ${newConfig.brand?.logoSize || 120}px !important;
-    padding: ${newConfig.brand?.logoPadding || 0}px !important;
-    object-fit: contain !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-  }
-  `}
-
-  #mg-live-brand-text, .brand-title-text, #mg-live-brand-container div {
-    display: none !important;
-  }
-
-  #box, .login-card, .card, body[class*="theme-"] #box {
-    background: color-mix(in srgb, var(--card-bg) var(--glass-opacity), transparent) !important;
-    border: 1px solid var(--card-border) !important;
-    backdrop-filter: blur(var(--glass-blur)) !important;
-    -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
-    ${newConfig.studio?.cardRadiusTL !== undefined ? `border-radius: ${newConfig.studio.cardRadiusTL}px ${newConfig.studio.cardRadiusTR}px ${newConfig.studio.cardRadiusBR}px ${newConfig.studio.cardRadiusBL}px !important;` : ''}
-    ${newConfig.studio?.cardPaddingTop !== undefined ? `padding: ${newConfig.studio.cardPaddingTop}px ${newConfig.studio.cardPaddingRight}px ${newConfig.studio.cardPaddingBottom}px ${newConfig.studio.cardPaddingLeft}px !important;` : ''}
-    ${newConfig.studio?.cardBorderWidth !== undefined ? `border-width: ${newConfig.studio.cardBorderWidth}px !important; border-style: ${newConfig.studio.cardBorderStyle || 'solid'} !important;` : ''}
-  }
-
-  #box h1, #box h2, #box h3, .card h1, .card h2, .card h3, .title, body[class*="theme-"] #box h1 {
-    color: var(--ink) !important;
-    ${newConfig.studio?.titleFontSize ? `font-size: ${newConfig.studio.titleFontSize}px !important;` : ''}
-    ${newConfig.studio?.titleFontWeight ? `font-weight: ${newConfig.studio.titleFontWeight} !important;` : ''}
-    ${newConfig.studio?.titleLineHeight ? `line-height: ${newConfig.studio.titleLineHeight} !important;` : ''}
-    ${newConfig.studio?.titleLetterSpacing !== undefined ? `letter-spacing: ${newConfig.studio.titleLetterSpacing}px !important;` : ''}
-    ${newConfig.studio?.titleAlign ? `text-align: ${newConfig.studio.titleAlign} !important;` : ''}
-  }
-
-  #box p, .subtitle, .card p, .instructions, .text-muted, body[class*="theme-"] #box p {
-    color: var(--text-muted) !important;
-  }
-
-  input[type="text"], input[type="password"], select, .form-input, body[class*="theme-"] input {
-    background-color: var(--input-bg) !important;
-    color: var(--input-text) !important;
-    border-color: var(--input-border) !important;
-    ${newConfig.studio?.inputHeight ? `height: ${newConfig.studio.inputHeight}px !important; min-height: ${newConfig.studio.inputHeight}px !important;` : ''}
-    ${newConfig.studio?.inputRadius !== undefined ? `border-radius: ${newConfig.studio.inputRadius}px !important;` : ''}
-    ${newConfig.studio?.inputBorderWidth !== undefined ? `border-width: ${newConfig.studio.inputBorderWidth}px !important;` : ''}
-  }
-
-  input::placeholder {
-    color: var(--input-placeholder) !important;
-    opacity: 0.8 !important;
-  }
-
-  .btn-login, input[type="submit"], button[type="submit"], .btn-primary, body[class*="theme-"] .btn-login {
-    background-color: var(--btn-primary) !important;
-    color: var(--btn-primary-text) !important;
-    border-color: var(--btn-primary) !important;
-    ${newConfig.studio?.btnRadiusTL !== undefined ? `border-radius: ${newConfig.studio.btnRadiusTL}px ${newConfig.studio.btnRadiusTR}px ${newConfig.studio.btnRadiusBR}px ${newConfig.studio.btnRadiusBL}px !important;` : ''}
-    ${newConfig.studio?.btnPaddingTop !== undefined ? `padding: ${newConfig.studio.btnPaddingTop}px ${newConfig.studio.btnPaddingRight}px ${newConfig.studio.btnPaddingBottom}px ${newConfig.studio.btnPaddingLeft}px !important;` : ''}
-    ${newConfig.studio?.btnHeight ? `height: ${newConfig.studio.btnHeight}px !important; min-height: ${newConfig.studio.btnHeight}px !important;` : ''}
-    ${newConfig.studio?.btnFontSize ? `font-size: ${newConfig.studio.btnFontSize}px !important;` : ''}
-    ${newConfig.studio?.btnFontWeight ? `font-weight: ${newConfig.studio.btnFontWeight} !important;` : ''}
-    ${newConfig.studio?.btnLetterSpacing !== undefined ? `letter-spacing: ${newConfig.studio.btnLetterSpacing}px !important;` : ''}
-  }
-
-  #btnSignup, .btn-register, .btn-secondary, body[class*="theme-"] #btnSignup {
-    background-color: var(--btn-secondary) !important;
-    color: var(--btn-secondary-text) !important;
-    border-color: var(--btn-secondary) !important;
-    ${newConfig.studio?.btnRadiusTL !== undefined ? `border-radius: ${newConfig.studio.btnRadiusTL}px ${newConfig.studio.btnRadiusTR}px ${newConfig.studio.btnRadiusBR}px ${newConfig.studio.btnRadiusBL}px !important;` : ''}
-    ${newConfig.studio?.btnHeight ? `height: ${newConfig.studio.btnHeight}px !important; min-height: ${newConfig.studio.btnHeight}px !important;` : ''}
-  }
-
-  #trial-container button, .btn-trial {
-    background-color: var(--trialButtonBg) !important;
-    color: var(--trialButtonText) !important;
-  }
-
-  ${getBrandEffectsStyles(c.brand || '#2563eb')}
-</style>
-<!-- END MIKROGESTOR COLORS -->`;
-      
-      if (colorsRegex.test(html)) {
-         html = html.replace(colorsRegex, colorsHtml);
-      } else {
-         if (html.includes('</head>')) {
-             html = html.replace('</head>', `${colorsHtml}\n</head>`);
-         } else {
-             html = `${colorsHtml}\n` + html;
-         }
+      // Update Business Name in #business-name if present
+      const bName = newConfig.brand?.titleText || newConfig.businessName;
+      if (bName) {
+        html = html.replace(/(<h2[^>]*id="business-name"[^>]*>)[^<]*(<\/h2>)/i, `$1${bName}$2`);
+        html = html.replace(/(<title>)[^<]*(<\/title>)/i, `$1Hotspot - ${bName}$2`);
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // BACKGROUND INJECTION — REFACTORED
-      // MG_SERVER_BASE is the Mikrogestor server IP from provisioning.
-      // It is compiled DIRECTLY into the HTML attributes at save time.
-      // No runtime URL manipulation — the correct IP is baked in.
+      // BACKGROUND INJECTION (MIKROGESTOR_BG_SCRIPT)
       // ═══════════════════════════════════════════════════════════════
       const dbSystemUrl = await prisma.systemConfig.findUnique({ where: { key: 'SYSTEM_URL' } });
       const systemUrl = newConfig.systemUrl || dbSystemUrl?.value || `http://${getLocalLanIp()}`;
       const MG_SERVER_BASE = systemUrl.replace(/\/$/, '');
 
-      // Streaming endpoint served by Mikrogestor — never from MikroTik storage
-      const BG_SRC = `${MG_SERVER_BASE}/api/portal/bg?template=${safeName}`;
+      const bgBlockRegex = /(<!--\s*MIKROGESTOR_BG_SCRIPT\s*-->|<!--\s*MIKROGESTOR BG\s*-->)[\s\S]*?(<!--\s*END_MIKROGESTOR_BG_SCRIPT\s*-->|<!--\s*END MIKROGESTOR BG\s*-->)/i;
+      let bgHtml = '<!-- MIKROGESTOR_BG_SCRIPT -->\n';
 
-      // CSS that resets any template background so our BG layer is fully visible
-      const BG_RESET_CSS = `html,body,html body[class],body[class*="theme-"],.wrapper,.login-wrapper,.main-container,.page-container,.theme-layout,#wrapper,.bg-overlay,.background-overlay,main,.main,.content,.login-panel,.form-signin,.box-login,.container-fluid,.page-bg,.content-wrapper,section,article,.login-box,.card-body,canvas,#mg-live-canvas,#mg-fx-niche,div[class*="container"],div[class*="wrapper"],div[class*="login"],div[class*="bg"],div[class*="main"],div[class*="content"],div[class*="page"]{background:transparent!important;background-color:transparent!important;background-image:none!important}`;
-
-      // Script for video autoplay (required for mobile browsers in captive portal)
-      const BG_VIDEO_AUTOPLAY_SCRIPT = `<script>
-(function(){
-  function mgStartBg(){
-    var d=document.getElementById('mg-debug-overlay');
-    if(d&&d.parentNode)d.parentNode.removeChild(d);
-    var v=document.getElementById('mikrogestor-bg-video');
-    if(!v)return;
-    v.muted=true;v.defaultMuted=true;v.playsInline=true;
-    var p=v.play();
-    if(p&&typeof p.catch==='function'){
-      p.catch(function(){
-        function u(){v.play();document.removeEventListener('touchstart',u);document.removeEventListener('click',u);}
-        document.addEventListener('touchstart',u,{once:true,passive:true});
-        document.addEventListener('click',u,{once:true,passive:true});
-      });
-    }
-  }
-  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',mgStartBg);}else{mgStartBg();}
-  window.addEventListener('load',mgStartBg);
-})();
-</script>`;
-
-      const bgBlockRegex = /<!-- MIKROGESTOR BG -->[\s\S]*?<!-- END MIKROGESTOR BG -->/i;
-      let bgHtml = '';
-
-      if (newConfig.bg && newConfig.bg.type !== 'default' && newConfig.bg.url) {
-        // Force use of real LAN IP for assets. Hotspot DNS (e.g. portal.wifi.local) points to the router,
-        // which will cause a 404 since the router does not have the /uploads/ folder.
-        const assetBaseUrl = MG_SERVER_BASE;
+      if (newConfig.bg && newConfig.bg.url && String(newConfig.bg.url).trim() !== '') {
         const cleanBgUrl = newConfig.bg.url.split('?')[0];
-        const directAssetUrl = cleanBgUrl.startsWith('/') ? `${assetBaseUrl}${cleanBgUrl}` : `${assetBaseUrl}/${cleanBgUrl}`;
+        const isVideo = newConfig.bg.type === 'video' || cleanBgUrl.match(/\.(mp4|webm|ogg)$/i);
+        const directAssetUrl = cleanBgUrl.startsWith('http') ? cleanBgUrl : (cleanBgUrl.startsWith('/') ? `${MG_SERVER_BASE}${cleanBgUrl}` : `${MG_SERVER_BASE}/${cleanBgUrl}`);
 
-        if (newConfig.bg.type === 'video') {
-          bgHtml = [
-            '\n<!-- MIKROGESTOR BG -->',
-            `<style>${BG_RESET_CSS}</style>`,
-            `<style>.video-background-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -999; pointer-events: none; overflow: hidden; } #mg-bg-video { width: 100vw; height: 100vh; object-fit: cover; min-width: 100%; min-height: 100%; }</style>`,
-            `<div class="video-background-container">`,
-            `  <video `,
-            `    id="mg-bg-video" `,
-            `    src="${directAssetUrl}" `,
-            `    autoplay `,
-            `    muted `,
-            `    loop `,
-            `    playsinline `,
-            `    webkit-playsinline `,
-            `    preload="auto" `,
-            `    disablepictureinpicture `,
-            `    controlslist="nodownload no-fullscreen noremoteplayback">`,
-            `  </video>`,
-            `</div>`,
-            BG_VIDEO_AUTOPLAY_SCRIPT.replace('mikrogestor-bg-video', 'mg-bg-video'),
-            '<!-- END MIKROGESTOR BG -->\n'
-          ].join('\n');
-        } else if (newConfig.bg.type === 'image') {
-          bgHtml = [
-            '\n<!-- MIKROGESTOR BG -->',
-            `<style>${BG_RESET_CSS}</style>`,
-            `<div id="mikrogestor-bg-overlay" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:-999;background-image:url('${directAssetUrl}');background-size:cover;background-position:center;background-repeat:no-repeat;pointer-events:none;"></div>`,
-            `<script>(function(){var d=document.getElementById('mg-debug-overlay');if(d&&d.parentNode)d.parentNode.removeChild(d);})();<\/script>`,
-            '<!-- END MIKROGESTOR BG -->\n'
-          ].join('\n');
+        if (isVideo) {
+          bgHtml += `<video id="mg-bg-video" autoplay loop muted playsinline webkit-playsinline x5-playsinline preload="auto" poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" style="position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;min-width:100%;min-height:100%;object-fit:cover !important;object-position:center center !important;z-index:-2;background-color:#000;pointer-events:none;" disablepictureinpicture controlslist="nodownload no-fullscreen noremoteplayback">
+  <source src="${directAssetUrl}" type="video/mp4">
+</video>
+<script>
+  (function() {
+    function mgInitVideo() {
+      var v = document.getElementById('mg-bg-video');
+      if (!v) return;
+      v.muted = true;
+      v.defaultMuted = true;
+      v.playsInline = true;
+      v.setAttribute('muted', '');
+      v.setAttribute('playsinline', '');
+      v.setAttribute('webkit-playsinline', '');
+      v.setAttribute('poster', 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"%3E%3C/svg%3E');
+      if (v.paused) {
+        var p = v.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch(function() {
+            var unlock = function() {
+              v.play().catch(function(){});
+              document.removeEventListener('click', unlock);
+              document.removeEventListener('touchstart', unlock);
+            };
+            document.addEventListener('click', unlock, { once: true });
+            document.addEventListener('touchstart', unlock, { once: true });
+          });
         }
-      } else {
-        bgHtml = '\n<!-- MIKROGESTOR BG -->\n<!-- END MIKROGESTOR BG -->\n';
       }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mgInitVideo);
+    } else {
+      mgInitVideo();
+    }
+    window.addEventListener('load', mgInitVideo);
+  })();
+</script>
+`;
+        } else {
+          bgHtml += `<div id="mg-bg-image" style="position:fixed;right:0;bottom:0;min-width:100%;min-height:100%;width:100vw;height:100vh;z-index:-2;background-image:url('${directAssetUrl}');background-size:cover;background-position:center;background-repeat:no-repeat;pointer-events:none;"></div>
+`;
+        }
+      }
+      bgHtml += '<!-- END_MIKROGESTOR_BG_SCRIPT -->';
 
       if (bgBlockRegex.test(html)) {
         html = html.replace(bgBlockRegex, bgHtml);
-      } else if (bgHtml.trim() !== '<!-- MIKROGESTOR BG -->\n<!-- END MIKROGESTOR BG -->') {
-        // No existing block — inject right after <body>
-        html = html.replace(/(<body[^>]*>)/i, `$1\n${bgHtml}`);
+      } else {
+        html = html.replace(/(<body[^>]*>)/i, `$1\n  ${bgHtml}\n`);
       }
 
+      // ═══════════════════════════════════════════════════════════════
+      // EFFECTS & VISUAL NICHES INJECTION (MIKROGESTOR_EFFECTS)
+      // ═══════════════════════════════════════════════════════════════
+      const effectsMarkup = generateEffectsMarkup(
+        newConfig.effects,
+        newConfig.colors,
+        newConfig.social,
+        newConfig.badges,
+        newConfig.customCode,
+        newConfig.bg
+      );
 
-      // VISUAL EFFECTS INJECTION
-      const effectsBlockRegex = /<!--\s*MIKROGESTOR EFFECTS\s*-->[\s\S]*?<!--\s*END MIKROGESTOR EFFECTS\s*-->/i;
-      const effectsMarkup = generateEffectsMarkup(newConfig.effects, newConfig.colors, newConfig.social, newConfig.badges, newConfig.customCode, newConfig.bg);
+      const effectsBlockRegex = /<!--\s*MIKROGESTOR[_\s]EFFECTS\s*-->[\s\S]*?<!--\s*END[_\s]MIKROGESTOR[_\s]EFFECTS\s*-->/i;
       if (effectsBlockRegex.test(html)) {
-         html = html.replace(effectsBlockRegex, effectsMarkup);
+        html = html.replace(effectsBlockRegex, effectsMarkup);
       } else {
-         if (html.includes('</body>')) {
-            html = html.replace('</body>', `${effectsMarkup}\n</body>`);
-         } else {
-            html += `\n${effectsMarkup}`;
-         }
+        html = html.replace(/(<body[^>]*>)/i, `$1\n  ${effectsMarkup}\n`);
       }
 
-      // Update register button visibility, redirect URL and text based on configuration
-      const btnDisplay = newConfig.enabled !== false ? 'flex' : 'none';
-      const btnText = newConfig.registerButtonText || 'Cadastre-se aqui';
-      const systemUrlTarget = newConfig.systemUrl || '';
-
-      // Brand Title / Logo markup injection
-      const brandBlockRegex = /<!--\s*MIKROGESTOR_BRAND_BLOCK\s*-->[\s\S]*?<!--\s*END_MIKROGESTOR_BRAND_BLOCK\s*-->/i;
-      
-      let brandAnimStyle = '';
-      if (newConfig.brand) {
-        const animName = newConfig.brand.entranceAnimation || 'fade-zoom';
-        const animDur = (newConfig.brand.animationDuration || 1.2) + 's';
-        const animDel = (newConfig.brand.animationDelay || 0.1) + 's';
-        const animEase = newConfig.brand.animationEasing === 'elastic' ? 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' : newConfig.brand.animationEasing === 'expo' ? 'cubic-bezier(0.16, 1, 0.3, 1)' : newConfig.brand.animationEasing === 'linear' ? 'linear' : 'cubic-bezier(0.25, 1, 0.5, 1)';
-        const contFx = newConfig.brand.continuousEffect || 'none';
-        
-        const animMap: any = {
-          'fade-zoom': 'mgFadeZoom', 'slide-up-3d': 'mgSlideUp3D', 'slide-down-bounce': 'mgSlideDownBounce',
-          'typewriter': 'mgTypewriter', 'glitch-cyber': 'mgGlitchCyber', 'neon-flicker': 'mgNeonFlicker',
-          'wave-reveal': 'mgWaveReveal', 'flip-3d-x': 'mgFlip3DX', 'flip-3d-y': 'mgFlip3DY',
-          'gold-shimmer-sweep': 'mgGoldShimmerSweep', 'kinetic-stamp': 'mgKineticStamp', 'blur-focus': 'mgBlurFocus',
-          'stagger-letter': 'mgStaggerLetter', 'matrix-decrypt': 'mgMatrixDecrypt', 'curtain-reveal': 'mgCurtainReveal',
-          'spiral-in': 'mgSpiralIn'
-        };
-        const contMap: any = {
-          'floating': 'mgContinuousFloating 3.5s ease-in-out infinite alternate',
-          'neon-breathe': 'mgContinuousNeonBreathe 2.5s ease-in-out infinite alternate',
-          'shimmer-loop': 'mgContinuousShimmerLoop 3.5s linear infinite',
-          'rainbow-cycle': 'mgContinuousRainbowCycle 5s linear infinite',
-          'jitter-glitch': 'mgContinuousJitterGlitch 2.5s infinite',
-          'wobble-3d': 'mgContinuousWobble3D 4s ease-in-out infinite alternate'
-        };
-        
-        const entranceKeyframe = animMap[animName] || 'mgFadeZoom';
-        const animParts = [`${entranceKeyframe} ${animDur} ${animEase} ${animDel} both`];
-        if (contFx !== 'none' && contMap[contFx]) {
-          animParts.push(contMap[contFx]);
-        }
-        brandAnimStyle = `animation: ${animParts.join(', ')};`;
-      }
-
-      let brandMarkup = '';
-      if (newConfig.brand && (newConfig.brand.displayMode === 'text' || newConfig.brand.displayMode === 'both' || newConfig.brand.displayMode === 'badge')) {
-        const tText = newConfig.brand.titleText || newConfig.businessName || 'Super Wi-Fi';
-        const tSub = newConfig.brand.subtitleText || '';
-        const tagFont = newConfig.brand.taglineFontFamily || 'Outfit';
-        const tagSize = newConfig.brand.taglineFontSize || 12;
-        const tagColor = newConfig.brand.taglineColor || '#94a3b8';
-        const tagSpacing = newConfig.brand.taglineLetterSpacing !== undefined ? newConfig.brand.taglineLetterSpacing : 0;
-        const subHtml = tSub ? `<div style="font-family:'${tagFont}', sans-serif;font-size:${tagSize}px;font-weight:500;color:${tagColor};margin-top:6px;letter-spacing:${tagSpacing}px;">${tSub}</div>` : '';
-        brandMarkup = `<!-- MIKROGESTOR_BRAND_BLOCK -->\n<div id="mg-live-brand-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; text-align: center; ${brandAnimStyle}"><div id="mg-live-brand-text" class="mg-text-fx-${newConfig.brand.textEffect || 'gradient-metal'}" style="margin-bottom: 15px; text-align: ${newConfig.brand.textAlign || 'center'};"><span class="mg-brand-title-inner">${tText}</span>${subHtml}</div></div>\n<!-- END_MIKROGESTOR_BRAND_BLOCK -->`;
-      } else {
-        brandMarkup = `<!-- MIKROGESTOR_BRAND_BLOCK -->\n<div id="mg-live-brand-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; text-align: center; ${brandAnimStyle}"></div>\n<!-- END_MIKROGESTOR_BRAND_BLOCK -->`;
-      }
-
-      if (brandBlockRegex.test(html)) {
-        html = html.replace(brandBlockRegex, brandMarkup);
-      } else if (newConfig.brand) {
-        const logoImgRegex = /(<img[^>]*class="[^"]*logo[^"]*"[^>]*>|<img[^>]*id="logo"[^>]*>)/i;
-        if (logoImgRegex.test(html)) {
-          // Extract the brand container wrapper from brandMarkup, and put the logo inside it
-          const openDiv = `<div id="mg-live-brand-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; text-align: center; ${brandAnimStyle}">`;
-          
-          let innerTextMarkup = '';
-          if (newConfig.brand.displayMode !== 'image') {
-            const tText = newConfig.brand.titleText || newConfig.businessName || 'Super Wi-Fi';
-            const tSub = newConfig.brand.subtitleText || '';
-            const tagFont = newConfig.brand.taglineFontFamily || 'Outfit';
-            const tagSize = newConfig.brand.taglineFontSize || 12;
-            const tagColor = newConfig.brand.taglineColor || '#94a3b8';
-            const tagSpacing = newConfig.brand.taglineLetterSpacing !== undefined ? newConfig.brand.taglineLetterSpacing : 0;
-            const subHtml = tSub ? `<div style="font-family:'${tagFont}', sans-serif;font-size:${tagSize}px;font-weight:500;color:${tagColor};margin-top:6px;letter-spacing:${tagSpacing}px;">${tSub}</div>` : '';
-            innerTextMarkup = `<div id="mg-live-brand-text" class="mg-text-fx-${newConfig.brand.textEffect || 'gradient-metal'}" style="margin-bottom: 15px; text-align: ${newConfig.brand.textAlign || 'center'};"><span class="mg-brand-title-inner">${tText}</span>${subHtml}</div>`;
-          }
-          
-          html = html.replace(logoImgRegex, `<!-- MIKROGESTOR_BRAND_BLOCK -->\n${openDiv}\n$1\n${innerTextMarkup}\n</div>\n<!-- END_MIKROGESTOR_BRAND_BLOCK -->`);
-        } else {
-          const cardRegex = /(<div[^>]*id="box"[^>]*>|<div[^>]*class="[^"]*card[^"]*"[^>]*>)/i;
-          if (cardRegex.test(html)) {
-            html = html.replace(cardRegex, `$1\n${brandMarkup}`);
-          }
-        }
-      }
-
-      // ================= LIVE BUTTON INJECTION =================
+      // ═══════════════════════════════════════════════════════════════
+      // REGISTER BUTTON INJECTION (MIKROGESTOR_REGISTER_BTN)
+      // ═══════════════════════════════════════════════════════════════
       const btnRegex = /(<!--\s*MIKROGESTOR_REGISTER_BTN\s*-->)[\s\S]*?(<!--\s*END_MIKROGESTOR_REGISTER_BTN\s*-->)/i;
       const displayStyle = newConfig.enabled !== false ? 'flex' : 'none';
-      const registerButtonHTML = `<!-- MIKROGESTOR_REGISTER_BTN -->\n<button id="btnSignup" class="btn btn-cad" type="button" style="display: ${displayStyle}; width: 100%; border-radius: 8px; padding: 10px; cursor: pointer; font-weight: bold; border: none; font-size: 14px; background: var(--btn-secondary, ${newConfig.colors?.green || '#10b981'}); color: #fff;" onclick="window.location.href='${systemUrlTarget}/portal/register?link-login-only=$$(link-login-only)&link-orig=$$(link-orig)&t=' + new Date().getTime()">${btnText}</button>\n<!-- END_MIKROGESTOR_REGISTER_BTN -->`;
+      const btnText = newConfig.registerButtonText || 'ACESSAR REDE VIP';
+      const registerButtonHTML = `<!-- MIKROGESTOR_REGISTER_BTN -->\n<a id="btnSignup" class="btn btn-cad" href="${MG_SERVER_BASE}/portal/register?link-login-only=$$(link-login-only-esc)&link-orig=$$(link-orig-esc)" style="display: ${displayStyle};">${btnText}</a>\n<!-- END_MIKROGESTOR_REGISTER_BTN -->`;
 
       if (btnRegex.test(html)) {
          html = html.replace(btnRegex, registerButtonHTML);
       } else {
-         const oldBtnRegex = /(<button[^>]*id="btnSignup"[^>]*>)([\s\S]*?)<\/button>/i;
+         const oldBtnRegex = /(<a[^>]*id="btnSignup"[^>]*>|<button[^>]*id="btnSignup"[^>]*>)[\s\S]*?(<\/a>|<\/button>)/i;
          if (oldBtnRegex.test(html)) {
             html = html.replace(oldBtnRegex, registerButtonHTML);
-         } else {
-            const submitRegex = /(<input[^>]*type="submit"[^>]*>|<button[^>]*type="submit"[^>]*>[\s\S]*?<\/button>)/i;
-            if (submitRegex.test(html)) {
-              html = html.replace(submitRegex, `<div class="mikrogestor-actions" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; width: 100%;">\n$1\n${registerButtonHTML}\n</div>`);
-            } else {
-              html = html.replace(/<\/form>/i, `\n\n<!-- Botões Injetados Globalmente -->\n\n<div class="mikrogestor-actions" style="display: flex; justify-content: center; width: 100%; margin-top: 15px; box-sizing: border-box; padding: 0 10px;">\n${registerButtonHTML}\n</div>\n\n$&`);
-            }
          }
       }
 
-      // Update trial accessibility, text and link text based on configuration
-      const trialDisplay = newConfig.trialEnabled !== false ? 'flex' : 'none';
+      // ═══════════════════════════════════════════════════════════════
+      // TRIAL BLOCK INJECTION (MIKROGESTOR_TRIAL_BLOCK)
+      // ═══════════════════════════════════════════════════════════════
+      const trialDisplay = newConfig.trialEnabled !== false ? 'block' : 'none';
       const trialText = newConfig.trialText !== undefined ? newConfig.trialText : 'Acesso de teste disponível, ';
       const trialLinkText = newConfig.trialLinkText || 'clique aqui';
-      const trialBtnBg = newConfig.colors?.trialButtonBg || '#1E90FF'; // Default blue
-      const trialBtnText = newConfig.colors?.trialButtonText || '#FFFFFF'; // Default white
+      const trialConfirmMsg = newConfig.trialModalMessage || 'Confirmar acesso de teste?';
 
       const trialContainerRegex = /(<!--\s*MIKROGESTOR_TRIAL_BLOCK\s*-->)[\s\S]*?(<!--\s*END_MIKROGESTOR_TRIAL_BLOCK\s*-->)/i;
-      const trialHtml = `<!-- MIKROGESTOR_TRIAL_BLOCK -->\n<div id="trial-container" style="display: ${trialDisplay}; flex-direction: column; align-items: center; gap: 8px; margin-top: 15px; width: 100%; text-align: center;">\n$$(if trial == 'yes')\n<div style="font-size: 13px; color: var(--text-muted, #6b7280);">${trialText}</div>\n<button type="button" class="btn" style="background-color: var(--trialButtonBg, ${trialBtnBg}); color: var(--trialButtonText, ${trialBtnText}); width: 100%; border-radius: 8px; padding: 10px; font-weight: bold; cursor: pointer; border: none; font-size: 14px;" onclick="openTrialModal()">${trialLinkText}</button>\n$$(endif)\n</div>\n<!-- END_MIKROGESTOR_TRIAL_BLOCK -->`;
+      const trialHtml = `<!-- MIKROGESTOR_TRIAL_BLOCK -->\n<div id="trial-container" style="display: ${trialDisplay}; text-align: center; font-size: 11px; margin-top: 12px; color: var(--muted);">\n$$(if trial == 'yes')\n${trialText}<a href="javascript:void(0)" onclick="if(confirm('${trialConfirmMsg}')) confirmTrialLogin()" style="color: var(--blue); text-decoration: underline; font-weight: 600;">${trialLinkText}</a>.\n$$(endif)\n</div>\n<!-- END_MIKROGESTOR_TRIAL_BLOCK -->`;
 
       if (trialContainerRegex.test(html)) {
          html = html.replace(trialContainerRegex, trialHtml);
@@ -1589,9 +1448,9 @@ export async function POST(request: Request) {
          if (oldTrialRegex.test(html)) {
              html = html.replace(oldTrialRegex, trialHtml);
          } else if (html.includes('<div class="footer">')) {
-            html = html.replace('<div class="footer">', `<div class="footer">\n        ${trialHtml}`);
+             html = html.replace('<div class="footer">', `<div class="footer">\n        ${trialHtml}`);
          } else {
-            html = html.replace(/<\/form>/i, `\n\n${trialHtml}\n\n$&`);
+             html = html.replace(/<\/form>/i, `\n\n${trialHtml}\n\n$&`);
          }
       }
 

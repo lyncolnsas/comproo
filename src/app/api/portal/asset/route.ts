@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { resolveTemplateDir } from '@/lib/portal-template-utils';
 
 const MIME: Record<string, string> = {
   '.png':  'image/png',
@@ -32,8 +33,9 @@ export async function GET(request: Request) {
       return new NextResponse('Forbidden', { status: 403 });
     }
 
+    const templateDir = resolveTemplateDir(template);
     const safeName = template.replace(/[^a-zA-Z0-9_-]/g, '');
-    const filePath = path.join(process.cwd(), 'hotspot', safeName, file);
+    const filePath = path.join(templateDir, file);
 
     if (!fs.existsSync(filePath)) {
       const lowerFile = file.toLowerCase();

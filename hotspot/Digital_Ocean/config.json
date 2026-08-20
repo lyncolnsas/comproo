@@ -117,7 +117,7 @@
     "wifiSpeedText": "🚀 Fibra Óptica 1Gbps",
     "showSecurityBadge": false,
     "securityText": "🔒 WPA3 Cloud Enterprise",
-    "showConnectedCount": true,
+    "showConnectedCount": false,
     "connectedCountNumber": "72"
   },
   "customCode": {
