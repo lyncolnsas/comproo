@@ -26,6 +26,8 @@ export async function GET(
 
     const stat = fs.statSync(resolvedPath);
     const fileSize = stat.size;
+    const etag = `"${stat.mtimeMs.toString(16)}-${stat.size.toString(16)}"`;
+    const lastModified = stat.mtime.toUTCString();
 
     // Detect MIME type based on extension
     const ext = path.extname(filename).toLowerCase();
@@ -48,6 +50,21 @@ export async function GET(
       'Access-Control-Allow-Headers': '*',
     };
 
+    // Conditional GET: 304 Not Modified if client cache is fresh
+    const ifNoneMatch = request.headers.get('if-none-match');
+    const ifModifiedSince = request.headers.get('if-modified-since');
+    if (ifNoneMatch === etag || (ifModifiedSince && new Date(ifModifiedSince) >= stat.mtime)) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: {
+          ...corsHeaders,
+          'ETag': etag,
+          'Last-Modified': lastModified,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
+    }
+
     const range = request.headers.get('range');
 
     if (!range) {
@@ -60,6 +77,8 @@ export async function GET(
           'Content-Length': fileSize.toString(),
           'Content-Type': contentType,
           'Accept-Ranges': 'bytes',
+          'ETag': etag,
+          'Last-Modified': lastModified,
           'Cache-Control': 'public, max-age=31536000, immutable',
         },
       });
@@ -77,14 +96,16 @@ export async function GET(
         headers: {
           ...corsHeaders,
           'Content-Range': `bytes */${fileSize}`,
+          'ETag': etag,
+          'Last-Modified': lastModified,
         },
       });
     }
 
     const chunkSize = end - start + 1;
     
-    // Create read stream for the specific byte range
-    const stream = fs.createReadStream(resolvedPath, { start, end });
+    // Create read stream for the specific byte range with optimal highWaterMark (512KB for ultra-fast streaming)
+    const stream = fs.createReadStream(resolvedPath, { start, end, highWaterMark: 512 * 1024 });
     
     // Next.js App Router allows passing a ReadableStream in NextResponse.
     // We convert Node.js ReadStream to Web ReadableStream for compatibility.
@@ -113,12 +134,22 @@ export async function GET(
         'Accept-Ranges': 'bytes',
         'Content-Length': chunkSize.toString(),
         'Content-Type': contentType,
+        'ETag': etag,
+        'Last-Modified': lastModified,
+        'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
   } catch (error: any) {
     console.error('Error streaming file:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
+}
+
+export async function HEAD(
+  request: NextRequest,
+  context: { params: Promise<{ filename: string }> }
+) {
+  return GET(request, context);
 }
 
 export async function OPTIONS() {
@@ -131,3 +162,4 @@ export async function OPTIONS() {
     },
   });
 }
+

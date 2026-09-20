@@ -1,0 +1,5149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Galeria: 100 Estilos & Efeitos de Design UI</title>
+  
+  <!-- Google Fonts importados para atender todos os estilos -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Comfortaa:wght@600;700&family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&family=Montserrat:wght@500;700&family=Orbitron:wght@600;800&family=Playfair+Display:ital,wght@0,600;1,400&family=Poppins:wght@400;600;700&family=Press+Start+2P&family=Space+Grotesk:wght@500;700&family=Syne:wght@700;800&family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-page: #08090d;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+      padding: 40px 24px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 45px;
+    }
+
+    header h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc, #f43f5e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      max-width: 860px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 25px;
+      flex-wrap: wrap;
+    }
+
+    .badge-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .search-filter {
+      max-width: 480px;
+      width: 100%;
+      padding: 12px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.3s;
+    }
+
+    .search-filter:focus {
+      border-color: #38bdf8;
+    }
+
+    /* Grid do Dashboard */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 40px 28px;
+      max-width: 1800px;
+      margin: 40px auto 0;
+    }
+
+    /* Container de Cada Card */
+    .card-item {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: transform 0.2s ease;
+    }
+
+    .card-header-info {
+      padding: 0 4px;
+    }
+
+    .card-header-info .style-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .card-header-info h2 {
+      font-size: 1.05rem;
+      color: #f8fafc;
+      font-weight: 700;
+    }
+
+    .card-header-info .font-name {
+      font-size: 0.75rem;
+      color: #0ea5e9;
+      margin-top: 2px;
+    }
+
+    .preview-stage {
+      padding: 22px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 480px;
+      position: relative;
+    }
+
+    /* ESTRUTURA UNIVERSAL DO LOGIN */
+    .login-box {
+      width: 100%;
+      padding: 26px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .login-box:hover {
+      transform: translateY(-4px);
+    }
+
+    .login-brand {
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .login-brand .logo-icon {
+      font-size: 2.2rem;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+
+    .login-brand h3 {
+      font-size: 1.25rem;
+      letter-spacing: 0.5px;
+    }
+
+    .login-brand p {
+      font-size: 0.78rem;
+      opacity: 0.75;
+      margin-top: 2px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .form-group label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 11px 13px;
+      outline: none;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .action-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-top: 4px;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      filter: brightness(1.12);
+    }
+
+    .action-btn:active {
+      transform: scale(0.98);
+    }
+
+    .card-footer {
+      text-align: center;
+      font-size: 0.75rem;
+      opacity: 0.75;
+      margin-top: 6px;
+      cursor: pointer;
+    }
+  </style>
+
+  <style>
+
+    /* Estilo glass-deep-purple */
+    .stage-glass-deep-purple { background: radial-gradient(circle at 20% 20%, #4c1d95, #1e1b4b 60%, #09090b); }
+    .card-glass-deep-purple {
+      font-family: 'Poppins', sans-serif;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 16px 36px rgba(0,0,0,0.5);
+      color: #f1f5f9;
+      border-radius: 14px;
+    }
+    .card-glass-deep-purple .form-group input {
+      background: rgba(255, 255, 255, 0.08);
+      border: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      border-radius: 14px;
+    }
+    .card-glass-deep-purple .action-btn {
+      background: rgba(168, 85, 247, 0.5);
+      color: #fff;
+      border-radius: 14px;
+    }
+
+    /* Estilo glass-frosted-ice */
+    .stage-glass-frosted-ice { background: linear-gradient(135deg, #0284c7, #0f172a); }
+    .card-glass-frosted-ice {
+      font-family: 'Inter', sans-serif;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 32px rgba(0, 150, 255, 0.2);
+      color: #f8fafc;
+      border-radius: 16px;
+    }
+    .card-glass-frosted-ice .form-group input {
+      background: rgba(255, 255, 255, 0.15);
+      border: rgba(255, 255, 255, 0.4);
+      color: #fff;
+      border-radius: 16px;
+    }
+    .card-glass-frosted-ice .action-btn {
+      background: rgba(255, 255, 255, 0.35);
+      color: #0369a1;
+      border-radius: 16px;
+    }
+
+    /* Estilo glass-emerald */
+    .stage-glass-emerald { background: radial-gradient(circle at top, #065f46, #022c22); }
+    .card-glass-emerald {
+      font-family: 'Cinzel', sans-serif;
+      background: rgba(6, 78, 59, 0.35);
+      backdrop-filter: blur(18px); border: 1px solid #10b981; box-shadow: 0 12px 30px rgba(16, 185, 129, 0.25);
+      color: #a7f3d0;
+      border-radius: 12px;
+    }
+    .card-glass-emerald .form-group input {
+      background: rgba(4, 120, 87, 0.25);
+      border: #059669;
+      color: #fff;
+      border-radius: 12px;
+    }
+    .card-glass-emerald .action-btn {
+      background: #10b981;
+      color: #022c22;
+      border-radius: 12px;
+    }
+
+    /* Estilo glass-crimson */
+    .stage-glass-crimson { background: linear-gradient(135deg, #881337, #1f0208); }
+    .card-glass-crimson {
+      font-family: 'Montserrat', sans-serif;
+      background: rgba(225, 29, 72, 0.08);
+      backdrop-filter: blur(16px); border: 1px solid rgba(244, 63, 94, 0.3); box-shadow: 0 10px 30px rgba(225, 29, 72, 0.2);
+      color: #fecdd3;
+      border-radius: 14px;
+    }
+    .card-glass-crimson .form-group input {
+      background: rgba(255, 255, 255, 0.06);
+      border: rgba(244, 63, 94, 0.4);
+      color: #fff;
+      border-radius: 14px;
+    }
+    .card-glass-crimson .action-btn {
+      background: #e11d48;
+      color: #fff;
+      border-radius: 14px;
+    }
+
+    /* Estilo glass-amber-glow */
+    .stage-glass-amber-glow { background: radial-gradient(circle, #78350f, #1c0a00); }
+    .card-glass-amber-glow {
+      font-family: 'Comfortaa', sans-serif;
+      background: rgba(251, 191, 36, 0.06);
+      backdrop-filter: blur(22px); border: 1px solid rgba(245, 158, 11, 0.3); box-shadow: 0 10px 30px rgba(217, 119, 6, 0.2);
+      color: #fef3c7;
+      border-radius: 20px;
+    }
+    .card-glass-amber-glow .form-group input {
+      background: rgba(255, 255, 255, 0.06);
+      border: rgba(245, 158, 11, 0.35);
+      color: #fff;
+      border-radius: 20px;
+    }
+    .card-glass-amber-glow .action-btn {
+      background: #d97706;
+      color: #fff;
+      border-radius: 20px;
+    }
+
+    /* Estilo glass-sunset */
+    .stage-glass-sunset { background: linear-gradient(145deg, #4c0519, #7c2d12, #18052e); }
+    .card-glass-sunset {
+      font-family: 'Poppins', sans-serif;
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(20px); border: 1px solid rgba(251, 146, 60, 0.3); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.2);
+      color: #fed7aa;
+      border-radius: 18px;
+    }
+    .card-glass-sunset .form-group input {
+      background: rgba(255, 255, 255, 0.08);
+      border: rgba(251, 146, 60, 0.4);
+      color: #fff;
+      border-radius: 18px;
+    }
+    .card-glass-sunset .action-btn {
+      background: linear-gradient(90deg, #f43f5e, #f97316);
+      color: #fff;
+      border-radius: 18px;
+    }
+
+    /* Estilo glass-cyan-flow */
+    .stage-glass-cyan-flow { background: linear-gradient(180deg, #083344, #020617); }
+    .card-glass-cyan-flow {
+      font-family: 'Space Grotesk', sans-serif;
+      background: rgba(6, 182, 212, 0.08);
+      backdrop-filter: blur(15px); border: 1px solid #06b6d4; box-shadow: 0 12px 30px rgba(6, 182, 212, 0.2);
+      color: #cffafe;
+      border-radius: 12px;
+    }
+    .card-glass-cyan-flow .form-group input {
+      background: rgba(8, 51, 68, 0.5);
+      border: rgba(6, 182, 212, 0.4);
+      color: #fff;
+      border-radius: 12px;
+    }
+    .card-glass-cyan-flow .action-btn {
+      background: #0891b2;
+      color: #fff;
+      border-radius: 12px;
+    }
+
+    /* Estilo glass-smoked */
+    .stage-glass-smoked { background: radial-gradient(circle, #27272a, #09090b); }
+    .card-glass-smoked {
+      font-family: 'Inter', sans-serif;
+      background: rgba(24, 24, 27, 0.65);
+      backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+      color: #e4e4e7;
+      border-radius: 14px;
+    }
+    .card-glass-smoked .form-group input {
+      background: rgba(39, 39, 42, 0.6);
+      border: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-radius: 14px;
+    }
+    .card-glass-smoked .action-btn {
+      background: #3f3f46;
+      color: #fafafa;
+      border-radius: 14px;
+    }
+
+    /* Estilo glass-prismatic */
+    .stage-glass-prismatic { background: linear-gradient(135deg, #1e1b4b, #3b0764, #030712); }
+    .card-glass-prismatic {
+      font-family: 'Syne', sans-serif;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.25); box-shadow: 0 0 25px rgba(168, 85, 247, 0.25);
+      color: #f5d0fe;
+      border-radius: 16px;
+    }
+    .card-glass-prismatic .form-group input {
+      background: rgba(255, 255, 255, 0.07);
+      border: rgba(216, 180, 254, 0.3);
+      color: #fff;
+      border-radius: 16px;
+    }
+    .card-glass-prismatic .action-btn {
+      background: linear-gradient(90deg, #ec4899, #8b5cf6, #06b6d4);
+      color: #fff;
+      border-radius: 16px;
+    }
+
+    /* Estilo glass-soft-milk */
+    .stage-glass-soft-milk { background: linear-gradient(135deg, #fbcfe8, #fed7aa); }
+    .card-glass-soft-milk {
+      font-family: 'Comfortaa', sans-serif;
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.7); box-shadow: 0 10px 30px rgba(244, 63, 94, 0.12);
+      color: #881337;
+      border-radius: 22px;
+    }
+    .card-glass-soft-milk .form-group input {
+      background: rgba(255, 255, 255, 0.5);
+      border: rgba(255, 255, 255, 0.8);
+      color: #4c0519;
+      border-radius: 22px;
+    }
+    .card-glass-soft-milk .action-btn {
+      background: #f43f5e;
+      color: #fff;
+      border-radius: 22px;
+    }
+
+    /* Estilo neomorph-dark */
+    .stage-neomorph-dark { background: #1e2026; }
+    .card-neomorph-dark {
+      font-family: 'Comfortaa', sans-serif;
+      background: #1e2026;
+      box-shadow: 12px 12px 24px #131418, -12px -12px 24px #292c34;
+      color: #cbd5e1;
+      border-radius: 20px;
+    }
+    .card-neomorph-dark .form-group input {
+      background: #1e2026;
+      border: none;
+      color: #38bdf8;
+      border-radius: 20px;
+    }
+    .card-neomorph-dark .action-btn {
+      background: #1e2026;
+      color: #38bdf8;
+      border-radius: 20px;
+    }
+
+    /* Estilo neomorph-light */
+    .stage-neomorph-light { background: #e0e5ec; }
+    .card-neomorph-light {
+      font-family: 'Inter', sans-serif;
+      background: #e0e5ec;
+      box-shadow: 12px 12px 24px #bec3c9, -12px -12px 24px #ffffff;
+      color: #475569;
+      border-radius: 20px;
+    }
+    .card-neomorph-light .form-group input {
+      background: #e0e5ec;
+      border: none;
+      color: #1e293b;
+      border-radius: 20px;
+    }
+    .card-neomorph-light .action-btn {
+      background: #e0e5ec;
+      color: #2563eb;
+      border-radius: 20px;
+    }
+
+    /* Estilo neomorph-blue-accent */
+    .stage-neomorph-blue-accent { background: #151922; }
+    .card-neomorph-blue-accent {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #151922;
+      box-shadow: 10px 10px 20px #0b0d12, -10px -10px 20px #1f2532;
+      color: #94a3b8;
+      border-radius: 16px;
+    }
+    .card-neomorph-blue-accent .form-group input {
+      background: #151922;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      border-radius: 16px;
+    }
+    .card-neomorph-blue-accent .action-btn {
+      background: #0284c7;
+      color: #fff;
+      border-radius: 16px;
+    }
+
+    /* Estilo neomorph-pastel-peach */
+    .stage-neomorph-pastel-peach { background: #fbe7df; }
+    .card-neomorph-pastel-peach {
+      font-family: 'Comfortaa', sans-serif;
+      background: #fbe7df;
+      box-shadow: 10px 10px 20px #d5c4be, -10px -10px 20px #ffffff;
+      color: #7c4d3b;
+      border-radius: 24px;
+    }
+    .card-neomorph-pastel-peach .form-group input {
+      background: #fbe7df;
+      border: none;
+      color: #542e20;
+      border-radius: 24px;
+    }
+    .card-neomorph-pastel-peach .action-btn {
+      background: #fb7185;
+      color: #fff;
+      border-radius: 24px;
+    }
+
+    /* Estilo neomorph-mint */
+    .stage-neomorph-mint { background: #e8f5e9; }
+    .card-neomorph-mint {
+      font-family: 'Inter', sans-serif;
+      background: #e8f5e9;
+      box-shadow: 10px 10px 20px #c5d0c6, -10px -10px 20px #ffffff;
+      color: #2e7d32;
+      border-radius: 18px;
+    }
+    .card-neomorph-mint .form-group input {
+      background: #e8f5e9;
+      border: none;
+      color: #1b5e20;
+      border-radius: 18px;
+    }
+    .card-neomorph-mint .action-btn {
+      background: #2e7d32;
+      color: #fff;
+      border-radius: 18px;
+    }
+
+    /* Estilo neomorph-lavender */
+    .stage-neomorph-lavender { background: #ecebf7; }
+    .card-neomorph-lavender {
+      font-family: 'Comfortaa', sans-serif;
+      background: #ecebf7;
+      box-shadow: 10px 10px 20px #cac9d4, -10px -10px 20px #ffffff;
+      color: #5b5777;
+      border-radius: 22px;
+    }
+    .card-neomorph-lavender .form-group input {
+      background: #ecebf7;
+      border: none;
+      color: #383457;
+      border-radius: 22px;
+    }
+    .card-neomorph-lavender .action-btn {
+      background: #7c3aed;
+      color: #fff;
+      border-radius: 22px;
+    }
+
+    /* Estilo neomorph-carbon */
+    .stage-neomorph-carbon { background: #121214; }
+    .card-neomorph-carbon {
+      font-family: 'Montserrat', sans-serif;
+      background: #121214;
+      box-shadow: 8px 8px 16px #080809, -8px -8px 16px #1c1c1f;
+      color: #a1a1aa;
+      border-radius: 14px;
+    }
+    .card-neomorph-carbon .form-group input {
+      background: #121214;
+      border: none;
+      color: #e4e4e7;
+      border-radius: 14px;
+    }
+    .card-neomorph-carbon .action-btn {
+      background: #27272a;
+      color: #38bdf8;
+      border-radius: 14px;
+    }
+
+    /* Estilo neomorph-inset-heavy */
+    .stage-neomorph-inset-heavy { background: #1a1d20; }
+    .card-neomorph-inset-heavy {
+      font-family: 'Fira Code', sans-serif;
+      background: #1a1d20;
+      box-shadow: inset 6px 6px 12px #0f1113, inset -6px -6px 12px #25292d, 0 8px 20px rgba(0,0,0,0.5);
+      color: #00ffcc;
+      border-radius: 10px;
+    }
+    .card-neomorph-inset-heavy .form-group input {
+      background: #121416;
+      border: 1px solid #283037;
+      color: #00ffcc;
+      border-radius: 10px;
+    }
+    .card-neomorph-inset-heavy .action-btn {
+      background: #00ffcc;
+      color: #121416;
+      border-radius: 10px;
+    }
+
+    /* Estilo neomorph-warm-sand */
+    .stage-neomorph-warm-sand { background: #dfd8cb; }
+    .card-neomorph-warm-sand {
+      font-family: 'Playfair Display', sans-serif;
+      background: #dfd8cb;
+      box-shadow: 12px 12px 24px #bebaad, -12px -12px 24px #ffffff;
+      color: #575043;
+      border-radius: 16px;
+    }
+    .card-neomorph-warm-sand .form-group input {
+      background: #dfd8cb;
+      border: none;
+      color: #383126;
+      border-radius: 16px;
+    }
+    .card-neomorph-warm-sand .action-btn {
+      background: #78654c;
+      color: #ffffff;
+      border-radius: 16px;
+    }
+
+    /* Estilo neomorph-coral */
+    .stage-neomorph-coral { background: #24171a; }
+    .card-neomorph-coral {
+      font-family: 'Poppins', sans-serif;
+      background: #24171a;
+      box-shadow: 10px 10px 20px #140d0e, -10px -10px 20px #342126;
+      color: #f43f5e;
+      border-radius: 18px;
+    }
+    .card-neomorph-coral .form-group input {
+      background: #24171a;
+      border: none;
+      color: #fda4af;
+      border-radius: 18px;
+    }
+    .card-neomorph-coral .action-btn {
+      background: #e11d48;
+      color: #fff;
+      border-radius: 18px;
+    }
+
+    /* Estilo cyber-2077 */
+    .stage-cyber-2077 { background: #07070c; }
+    .card-cyber-2077 {
+      font-family: 'Orbitron', sans-serif;
+      background: #0a0b16;
+      border: 2px solid #00f0ff; box-shadow: 0 0 15px rgba(0,240,255,0.4), inset 0 0 15px rgba(255,0,85,0.2); clip-path: polygon(0 0, 92% 0, 100% 8%, 100% 100%, 8% 100%, 0 92%);
+      color: #00f0ff;
+      border-radius: 0px;
+    }
+    .card-cyber-2077 .form-group input {
+      background: #121327;
+      border: 1px solid #ff0055;
+      color: #ffff00;
+      border-radius: 0px;
+    }
+    .card-cyber-2077 .action-btn {
+      background: #ff0055;
+      color: #fff;
+      border-radius: 0px;
+    }
+
+    /* Estilo cyber-synthwave */
+    .stage-cyber-synthwave { background: #14002b; }
+    .card-cyber-synthwave {
+      font-family: 'Syne', sans-serif;
+      background: linear-gradient(180deg, rgba(38,10,66,0.9), rgba(12,2,25,0.95));
+      border: 2px solid #f43f5e; box-shadow: 0 0 20px #f43f5e, inset 0 0 15px #06b6d4;
+      color: #38bdf8;
+      border-radius: 14px;
+    }
+    .card-cyber-synthwave .form-group input {
+      background: #1e0938;
+      border: 1px solid #06b6d4;
+      color: #f43f5e;
+      border-radius: 14px;
+    }
+    .card-cyber-synthwave .action-btn {
+      background: linear-gradient(90deg, #f43f5e, #ec4899);
+      color: #fff;
+      border-radius: 14px;
+    }
+
+    /* Estilo cyber-matrix-green */
+    .stage-cyber-matrix-green { background: #000000; }
+    .card-cyber-matrix-green {
+      font-family: 'Fira Code', sans-serif;
+      background: #030c06;
+      border: 1px solid #22c55e; box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
+      color: #22c55e;
+      border-radius: 4px;
+    }
+    .card-cyber-matrix-green .form-group input {
+      background: #04150b;
+      border: 1px dashed #22c55e;
+      color: #86efac;
+      border-radius: 4px;
+    }
+    .card-cyber-matrix-green .action-btn {
+      background: #22c55e;
+      color: #000;
+      border-radius: 4px;
+    }
+
+    /* Estilo cyber-tokyo-neon */
+    .stage-cyber-tokyo-neon { background: #050510; }
+    .card-cyber-tokyo-neon {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #0c0c20;
+      border: 1px solid #a855f7; box-shadow: 0 0 25px rgba(168,85,247,0.4), 0 0 10px rgba(6,182,212,0.4);
+      color: #e879f9;
+      border-radius: 16px;
+    }
+    .card-cyber-tokyo-neon .form-group input {
+      background: #151538;
+      border: 1px solid #06b6d4;
+      color: #f0abfc;
+      border-radius: 16px;
+    }
+    .card-cyber-tokyo-neon .action-btn {
+      background: #a855f7;
+      color: #fff;
+      border-radius: 16px;
+    }
+
+    /* Estilo cyber-outrun-grid */
+    .stage-cyber-outrun-grid { background: #0d001a; }
+    .card-cyber-outrun-grid {
+      font-family: 'Orbitron', sans-serif;
+      background: #1a0033;
+      border: 2px solid #ff2a6d; box-shadow: 0 0 15px #ff2a6d;
+      color: #05d9e8;
+      border-radius: 8px;
+    }
+    .card-cyber-outrun-grid .form-group input {
+      background: #2b0054;
+      border: 1px solid #05d9e8;
+      color: #ff2a6d;
+      border-radius: 8px;
+    }
+    .card-cyber-outrun-grid .action-btn {
+      background: #ff2a6d;
+      color: #01012b;
+      border-radius: 8px;
+    }
+
+    /* Estilo cyber-glitch-red */
+    .stage-cyber-glitch-red { background: #0e0204; }
+    .card-cyber-glitch-red {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #170508;
+      border-left: 6px solid #ef4444; border-right: 6px solid #3b82f6; box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      border-radius: 6px;
+    }
+    .card-cyber-glitch-red .form-group input {
+      background: #24090f;
+      border: 1px solid #ef4444;
+      color: #fff;
+      border-radius: 6px;
+    }
+    .card-cyber-glitch-red .action-btn {
+      background: #ef4444;
+      color: #fff;
+      border-radius: 6px;
+    }
+
+    /* Estilo cyber-hacker-amber */
+    .stage-cyber-hacker-amber { background: #0a0700; }
+    .card-cyber-hacker-amber {
+      font-family: 'VT323', sans-serif;
+      background: #171003;
+      border: 2px solid #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.35);
+      color: #f59e0b;
+      border-radius: 0px;
+    }
+    .card-cyber-hacker-amber .form-group input {
+      background: #0f0a02;
+      border: 1px solid #f59e0b;
+      color: #fbbf24;
+      border-radius: 0px;
+    }
+    .card-cyber-hacker-amber .action-btn {
+      background: #f59e0b;
+      color: #000;
+      border-radius: 0px;
+    }
+
+    /* Estilo cyber-vaporwave */
+    .stage-cyber-vaporwave { background: #1c1630; }
+    .card-cyber-vaporwave {
+      font-family: 'Comfortaa', sans-serif;
+      background: linear-gradient(135deg, rgba(255, 113, 206, 0.2), rgba(1, 205, 254, 0.2));
+      border: 2px solid #ff71ce; box-shadow: 0 8px 25px rgba(255, 113, 206, 0.3);
+      color: #01cdfe;
+      border-radius: 20px;
+    }
+    .card-cyber-vaporwave .form-group input {
+      background: #18112b;
+      border: 1px solid #05ffa1;
+      color: #b967ff;
+      border-radius: 20px;
+    }
+    .card-cyber-vaporwave .action-btn {
+      background: #ff71ce;
+      color: #1c1630;
+      border-radius: 20px;
+    }
+
+    /* Estilo cyber-blade-runner */
+    .stage-cyber-blade-runner { background: #030508; }
+    .card-cyber-blade-runner {
+      font-family: 'Orbitron', sans-serif;
+      background: #080e14;
+      border: 1px solid #f97316; box-shadow: 0 0 18px rgba(249, 115, 22, 0.3);
+      color: #fdba74;
+      border-radius: 4px;
+    }
+    .card-cyber-blade-runner .form-group input {
+      background: #0e1823;
+      border: 1px solid #ea580c;
+      color: #ffedd5;
+      border-radius: 4px;
+    }
+    .card-cyber-blade-runner .action-btn {
+      background: #f97316;
+      color: #000;
+      border-radius: 4px;
+    }
+
+    /* Estilo cyber-biopunk */
+    .stage-cyber-biopunk { background: #030d05; }
+    .card-cyber-biopunk {
+      font-family: 'Fira Code', sans-serif;
+      background: #08190c;
+      border: 2px solid #84cc16; box-shadow: 0 0 20px rgba(132, 204, 22, 0.35);
+      color: #bef264;
+      border-radius: 12px;
+    }
+    .card-cyber-biopunk .form-group input {
+      background: #0e2413;
+      border: 1px solid #84cc16;
+      color: #ecfccb;
+      border-radius: 12px;
+    }
+    .card-cyber-biopunk .action-btn {
+      background: #65a30d;
+      color: #000;
+      border-radius: 12px;
+    }
+
+    /* Estilo brutal-yellow */
+    .stage-brutal-yellow { background: #fde047; }
+    .card-brutal-yellow {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #ffffff;
+      border: 4px solid #000000; box-shadow: 8px 8px 0px #000000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-yellow .form-group input {
+      background: #f1f5f9;
+      border: 3px solid #000000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-yellow .action-btn {
+      background: #f43f5e;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+
+    /* Estilo brutal-hot-pink */
+    .stage-brutal-hot-pink { background: #ff70a6; }
+    .card-brutal-hot-pink {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #ffffff;
+      border: 4px solid #000000; box-shadow: 8px 8px 0px #000000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-hot-pink .form-group input {
+      background: #ffffff;
+      border: 3px solid #000000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-hot-pink .action-btn {
+      background: #70d6ff;
+      color: #000000;
+      border-radius: 0px;
+    }
+
+    /* Estilo brutal-cyan-punch */
+    .stage-brutal-cyan-punch { background: #38bdf8; }
+    .card-brutal-cyan-punch {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #ffffff;
+      border: 4px solid #000000; box-shadow: 8px 8px 0px #000000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-cyan-punch .form-group input {
+      background: #f8fafc;
+      border: 3px solid #000000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-cyan-punch .action-btn {
+      background: #facc15;
+      color: #000000;
+      border-radius: 0px;
+    }
+
+    /* Estilo brutal-lime */
+    .stage-brutal-lime { background: #bef264; }
+    .card-brutal-lime {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #ffffff;
+      border: 4px solid #000000; box-shadow: 8px 8px 0px #000000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-lime .form-group input {
+      background: #f7fee7;
+      border: 3px solid #000000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-lime .action-btn {
+      background: #000000;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+
+    /* Estilo brutal-comic-pow */
+    .stage-brutal-comic-pow { background: #38bdf8; }
+    .card-brutal-comic-pow {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #fef08a;
+      border: 4px solid #000; box-shadow: 8px 8px 0px #ec4899;
+      color: #000000;
+      border-radius: 16px;
+    }
+    .card-brutal-comic-pow .form-group input {
+      background: #ffffff;
+      border: 3px solid #000;
+      color: #000000;
+      border-radius: 16px;
+    }
+    .card-brutal-comic-pow .action-btn {
+      background: #06b6d4;
+      color: #000000;
+      border-radius: 16px;
+    }
+
+    /* Estilo brutal-bauhaus */
+    .stage-brutal-bauhaus { background: #eae6df; }
+    .card-brutal-bauhaus {
+      font-family: 'Montserrat', sans-serif;
+      background: #ffffff;
+      border: 4px solid #000; box-shadow: 6px 6px 0px #dc2626, 12px 12px 0px #2563eb;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-bauhaus .form-group input {
+      background: #f4f4f5;
+      border: 2px solid #000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-bauhaus .action-btn {
+      background: #facc15;
+      color: #000000;
+      border-radius: 0px;
+    }
+
+    /* Estilo brutal-sticker-pack */
+    .stage-brutal-sticker-pack { background: #e0e7ff; }
+    .card-brutal-sticker-pack {
+      font-family: 'Poppins', sans-serif;
+      background: #ffffff;
+      border: 3px solid #000; box-shadow: 7px 7px 0px #818cf8; transform: rotate(-1deg);
+      color: #1e1b4b;
+      border-radius: 14px;
+    }
+    .card-brutal-sticker-pack .form-group input {
+      background: #f5f3ff;
+      border: 2px solid #000;
+      color: #1e1b4b;
+      border-radius: 14px;
+    }
+    .card-brutal-sticker-pack .action-btn {
+      background: #c084fc;
+      color: #000000;
+      border-radius: 14px;
+    }
+
+    /* Estilo brutal-high-contrast */
+    .stage-brutal-high-contrast { background: #ffffff; }
+    .card-brutal-high-contrast {
+      font-family: 'Syne', sans-serif;
+      background: #000000;
+      border: 4px solid #ffffff; box-shadow: 8px 8px 0px #dc2626;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+    .card-brutal-high-contrast .form-group input {
+      background: #000000;
+      border: 2px solid #ffffff;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+    .card-brutal-high-contrast .action-btn {
+      background: #dc2626;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+
+    /* Estilo brutal-tangerine */
+    .stage-brutal-tangerine { background: #fb923c; }
+    .card-brutal-tangerine {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #ffffff;
+      border: 4px solid #000; box-shadow: 8px 8px 0px #000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-tangerine .form-group input {
+      background: #fff7ed;
+      border: 3px solid #000;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-brutal-tangerine .action-btn {
+      background: #4f46e5;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+
+    /* Estilo brutal-bubblegum */
+    .stage-brutal-bubblegum { background: #f472b6; }
+    .card-brutal-bubblegum {
+      font-family: 'Comfortaa', sans-serif;
+      background: #ffffff;
+      border: 4px solid #000; box-shadow: 8px 8px 0px #38bdf8;
+      color: #000000;
+      border-radius: 18px;
+    }
+    .card-brutal-bubblegum .form-group input {
+      background: #fdf2f8;
+      border: 3px solid #000;
+      color: #000000;
+      border-radius: 18px;
+    }
+    .card-brutal-bubblegum .action-btn {
+      background: #4ade80;
+      color: #000000;
+      border-radius: 18px;
+    }
+
+    /* Estilo clay-periwinkle */
+    .stage-clay-periwinkle { background: #e0e7ff; }
+    .card-clay-periwinkle {
+      font-family: 'Poppins', sans-serif;
+      background: #818cf8;
+      border-radius: 28px; box-shadow: 16px 16px 32px #6366f1, inset -6px -6px 12px #4338ca, inset 6px 6px 12px #a5b4fc;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+    .card-clay-periwinkle .form-group input {
+      background: #6366f1;
+      border: none;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+    .card-clay-periwinkle .action-btn {
+      background: #f43f5e;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+
+    /* Estilo clay-strawberry */
+    .stage-clay-strawberry { background: #fce7f3; }
+    .card-clay-strawberry {
+      font-family: 'Comfortaa', sans-serif;
+      background: #f472b6;
+      border-radius: 30px; box-shadow: 14px 14px 28px #db2777, inset -5px -5px 10px #be185d, inset 5px 5px 10px #fbcfe8;
+      color: #ffffff;
+      border-radius: 22px;
+    }
+    .card-clay-strawberry .form-group input {
+      background: #ec4899;
+      border: none;
+      color: #ffffff;
+      border-radius: 22px;
+    }
+    .card-clay-strawberry .action-btn {
+      background: #fbbf24;
+      color: #831843;
+      border-radius: 22px;
+    }
+
+    /* Estilo clay-matcha */
+    .stage-clay-matcha { background: #ecfccb; }
+    .card-clay-matcha {
+      font-family: 'Inter', sans-serif;
+      background: #a3e635;
+      border-radius: 28px; box-shadow: 14px 14px 28px #65a30d, inset -5px -5px 10px #4d7c0f, inset 5px 5px 10px #d9f99d;
+      color: #14532d;
+      border-radius: 20px;
+    }
+    .card-clay-matcha .form-group input {
+      background: #84cc16;
+      border: none;
+      color: #14532d;
+      border-radius: 20px;
+    }
+    .card-clay-matcha .action-btn {
+      background: #15803d;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+
+    /* Estilo clay-marshmallow */
+    .stage-clay-marshmallow { background: #f1f5f9; }
+    .card-clay-marshmallow {
+      font-family: 'Comfortaa', sans-serif;
+      background: #ffffff;
+      border-radius: 32px; box-shadow: 15px 15px 30px #cbd5e1, inset -6px -6px 12px #e2e8f0, inset 6px 6px 12px #ffffff;
+      color: #475569;
+      border-radius: 22px;
+    }
+    .card-clay-marshmallow .form-group input {
+      background: #f8fafc;
+      border: none;
+      color: #1e293b;
+      border-radius: 22px;
+    }
+    .card-clay-marshmallow .action-btn {
+      background: #38bdf8;
+      color: #ffffff;
+      border-radius: 22px;
+    }
+
+    /* Estilo clay-bubble-gum */
+    .stage-clay-bubble-gum { background: #fed7aa; }
+    .card-clay-bubble-gum {
+      font-family: 'Poppins', sans-serif;
+      background: #fb923c;
+      border-radius: 30px; box-shadow: 14px 14px 28px #ea580c, inset -5px -5px 10px #c2410c, inset 5px 5px 10px #ffedd5;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+    .card-clay-bubble-gum .form-group input {
+      background: #f97316;
+      border: none;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+    .card-clay-bubble-gum .action-btn {
+      background: #8b5cf6;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+
+    /* Estilo clay-deep-ocean */
+    .stage-clay-deep-ocean { background: #cffafe; }
+    .card-clay-deep-ocean {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #22d3ee;
+      border-radius: 28px; box-shadow: 14px 14px 28px #0891b2, inset -5px -5px 10px #0e7490, inset 5px 5px 10px #a5f3fc;
+      color: #083344;
+      border-radius: 18px;
+    }
+    .card-clay-deep-ocean .form-group input {
+      background: #06b6d4;
+      border: none;
+      color: #ffffff;
+      border-radius: 18px;
+    }
+    .card-clay-deep-ocean .action-btn {
+      background: #0e7490;
+      color: #ffffff;
+      border-radius: 18px;
+    }
+
+    /* Estilo clay-lavender-pillow */
+    .stage-clay-lavender-pillow { background: #ede9fe; }
+    .card-clay-lavender-pillow {
+      font-family: 'Comfortaa', sans-serif;
+      background: #a78bfa;
+      border-radius: 30px; box-shadow: 14px 14px 28px #7c3aed, inset -5px -5px 10px #6d28d9, inset 5px 5px 10px #ddd6fe;
+      color: #ffffff;
+      border-radius: 22px;
+    }
+    .card-clay-lavender-pillow .form-group input {
+      background: #8b5cf6;
+      border: none;
+      color: #ffffff;
+      border-radius: 22px;
+    }
+    .card-clay-lavender-pillow .action-btn {
+      background: #ec4899;
+      color: #ffffff;
+      border-radius: 22px;
+    }
+
+    /* Estilo clay-lemon-drop */
+    .stage-clay-lemon-drop { background: #fef9c3; }
+    .card-clay-lemon-drop {
+      font-family: 'Poppins', sans-serif;
+      background: #facc15;
+      border-radius: 28px; box-shadow: 14px 14px 28px #ca8a04, inset -5px -5px 10px #a16207, inset 5px 5px 10px #fef08a;
+      color: #713f12;
+      border-radius: 20px;
+    }
+    .card-clay-lemon-drop .form-group input {
+      background: #eab308;
+      border: none;
+      color: #713f12;
+      border-radius: 20px;
+    }
+    .card-clay-lemon-drop .action-btn {
+      background: #3b82f6;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+
+    /* Estilo clay-dark-rubber */
+    .stage-clay-dark-rubber { background: #1e1e24; }
+    .card-clay-dark-rubber {
+      font-family: 'Inter', sans-serif;
+      background: #2b2b36;
+      border-radius: 28px; box-shadow: 12px 12px 24px #121217, inset -5px -5px 10px #1c1c24, inset 5px 5px 10px #3a3a48;
+      color: #e2e8f0;
+      border-radius: 18px;
+    }
+    .card-clay-dark-rubber .form-group input {
+      background: #202028;
+      border: none;
+      color: #ffffff;
+      border-radius: 18px;
+    }
+    .card-clay-dark-rubber .action-btn {
+      background: #06b6d4;
+      color: #000000;
+      border-radius: 18px;
+    }
+
+    /* Estilo clay-minty-cube */
+    .stage-clay-minty-cube { background: #ccfbf1; }
+    .card-clay-minty-cube {
+      font-family: 'Comfortaa', sans-serif;
+      background: #2dd4bf;
+      border-radius: 28px; box-shadow: 14px 14px 28px #0d9488, inset -5px -5px 10px #0f766e, inset 5px 5px 10px #99f6e4;
+      color: #134e4a;
+      border-radius: 20px;
+    }
+    .card-clay-minty-cube .form-group input {
+      background: #14b8a6;
+      border: none;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+    .card-clay-minty-cube .action-btn {
+      background: #f43f5e;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+
+    /* Estilo luxury-black-gold */
+    .stage-luxury-black-gold { background: #0c0a09; }
+    .card-luxury-black-gold {
+      font-family: 'Cinzel', sans-serif;
+      background: #171614;
+      border: 1px solid #d4af37; box-shadow: 0 10px 30px rgba(212, 175, 55, 0.15);
+      color: #e7e5e4;
+      border-radius: 0px;
+    }
+    .card-luxury-black-gold .form-group input {
+      background: #0c0a09;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #fef08a;
+      border-radius: 0px;
+    }
+    .card-luxury-black-gold .action-btn {
+      background: linear-gradient(135deg, #d4af37, #aa7c11);
+      color: #000000;
+      border-radius: 0px;
+    }
+
+    /* Estilo luxury-emerald-cartier */
+    .stage-luxury-emerald-cartier { background: #03170e; }
+    .card-luxury-emerald-cartier {
+      font-family: 'Cinzel', sans-serif;
+      background: #072418;
+      border: 1px solid #10b981; box-shadow: 0 12px 35px rgba(16, 185, 129, 0.2);
+      color: #d1fae5;
+      border-radius: 4px;
+    }
+    .card-luxury-emerald-cartier .form-group input {
+      background: #03170e;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #a7f3d0;
+      border-radius: 4px;
+    }
+    .card-luxury-emerald-cartier .action-btn {
+      background: linear-gradient(135deg, #10b981, #047857);
+      color: #ffffff;
+      border-radius: 4px;
+    }
+
+    /* Estilo luxury-marble-white */
+    .stage-luxury-marble-white { background: #f8f6f0; }
+    .card-luxury-marble-white {
+      font-family: 'Playfair Display', sans-serif;
+      background: #ffffff;
+      border: 1px solid #e7d8c9; box-shadow: 0 15px 35px rgba(184, 115, 51, 0.12);
+      color: #44403c;
+      border-radius: 8px;
+    }
+    .card-luxury-marble-white .form-group input {
+      background: #faf8f5;
+      border: 1px solid #d6c7b2;
+      color: #292524;
+      border-radius: 8px;
+    }
+    .card-luxury-marble-white .action-btn {
+      background: linear-gradient(135deg, #b76e79, #94535e);
+      color: #ffffff;
+      border-radius: 8px;
+    }
+
+    /* Estilo luxury-midnight-sapphire */
+    .stage-luxury-midnight-sapphire { background: #03071e; }
+    .card-luxury-midnight-sapphire {
+      font-family: 'Cinzel', sans-serif;
+      background: #081432;
+      border: 1px solid #3b82f6; box-shadow: 0 12px 35px rgba(59, 130, 246, 0.25);
+      color: #bfdbfe;
+      border-radius: 2px;
+    }
+    .card-luxury-midnight-sapphire .form-group input {
+      background: #050b1f;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+      border-radius: 2px;
+    }
+    .card-luxury-midnight-sapphire .action-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      border-radius: 2px;
+    }
+
+    /* Estilo luxury-champagne */
+    .stage-luxury-champagne { background: #1f1d19; }
+    .card-luxury-champagne {
+      font-family: 'Playfair Display', sans-serif;
+      background: #2b2721;
+      border: 1px solid #e2d9c8; box-shadow: 0 12px 30px rgba(226, 217, 200, 0.15);
+      color: #f5f0e6;
+      border-radius: 4px;
+    }
+    .card-luxury-champagne .form-group input {
+      background: #1c1a16;
+      border: 1px solid #a89f91;
+      color: #f5f0e6;
+      border-radius: 4px;
+    }
+    .card-luxury-champagne .action-btn {
+      background: #e2d9c8;
+      color: #1f1d19;
+      border-radius: 4px;
+    }
+
+    /* Estilo luxury-amethyst-velvet */
+    .stage-luxury-amethyst-velvet { background: #1a0b2e; }
+    .card-luxury-amethyst-velvet {
+      font-family: 'Cinzel', sans-serif;
+      background: #26123f;
+      border: 1px solid #c084fc; box-shadow: 0 12px 35px rgba(192, 132, 252, 0.2);
+      color: #f3e8ff;
+      border-radius: 6px;
+    }
+    .card-luxury-amethyst-velvet .form-group input {
+      background: #18082c;
+      border: 1px solid #a855f7;
+      color: #e9d5ff;
+      border-radius: 6px;
+    }
+    .card-luxury-amethyst-velvet .action-btn {
+      background: linear-gradient(135deg, #a855f7, #7e22ce);
+      color: #ffffff;
+      border-radius: 6px;
+    }
+
+    /* Estilo luxury-platinum */
+    .stage-luxury-platinum { background: #111215; }
+    .card-luxury-platinum {
+      font-family: 'Montserrat', sans-serif;
+      background: #1b1c22;
+      border: 1px solid #cbd5e1; box-shadow: 0 10px 30px rgba(255, 255, 255, 0.08);
+      color: #f8fafc;
+      border-radius: 8px;
+    }
+    .card-luxury-platinum .form-group input {
+      background: #121316;
+      border: 1px solid #64748b;
+      color: #ffffff;
+      border-radius: 8px;
+    }
+    .card-luxury-platinum .action-btn {
+      background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+      color: #0f172a;
+      border-radius: 8px;
+    }
+
+    /* Estilo luxury-rose-gold */
+    .stage-luxury-rose-gold { background: #24181b; }
+    .card-luxury-rose-gold {
+      font-family: 'Playfair Display', sans-serif;
+      background: #332126;
+      border: 1px solid #f43f5e; box-shadow: 0 10px 30px rgba(244, 63, 94, 0.18);
+      color: #fecdd3;
+      border-radius: 8px;
+    }
+    .card-luxury-rose-gold .form-group input {
+      background: #221417;
+      border: 1px solid #e11d48;
+      color: #ffe4e6;
+      border-radius: 8px;
+    }
+    .card-luxury-rose-gold .action-btn {
+      background: linear-gradient(135deg, #fb7185, #e11d48);
+      color: #ffffff;
+      border-radius: 8px;
+    }
+
+    /* Estilo luxury-bronze-age */
+    .stage-luxury-bronze-age { background: #191410; }
+    .card-luxury-bronze-age {
+      font-family: 'Cinzel', sans-serif;
+      background: #261e18;
+      border: 1px solid #b45309; box-shadow: 0 10px 30px rgba(180, 83, 9, 0.2);
+      color: #fef3c7;
+      border-radius: 0px;
+    }
+    .card-luxury-bronze-age .form-group input {
+      background: #17120e;
+      border: 1px solid #92400e;
+      color: #fde68a;
+      border-radius: 0px;
+    }
+    .card-luxury-bronze-age .action-btn {
+      background: linear-gradient(135deg, #d97706, #78350f);
+      color: #ffffff;
+      border-radius: 0px;
+    }
+
+    /* Estilo luxury-dark-ruby */
+    .stage-luxury-dark-ruby { background: #190408; }
+    .card-luxury-dark-ruby {
+      font-family: 'Cinzel', sans-serif;
+      background: #29080e;
+      border: 1px solid #e11d48; box-shadow: 0 12px 35px rgba(225, 29, 72, 0.25);
+      color: #ffe4e6;
+      border-radius: 4px;
+    }
+    .card-luxury-dark-ruby .form-group input {
+      background: #170307;
+      border: 1px solid #be123c;
+      color: #fecdd3;
+      border-radius: 4px;
+    }
+    .card-luxury-dark-ruby .action-btn {
+      background: linear-gradient(135deg, #e11d48, #9f1239);
+      color: #ffffff;
+      border-radius: 4px;
+    }
+
+    /* Estilo minimal-swiss-clean */
+    .stage-minimal-swiss-clean { background: #f4f4f5; }
+    .card-minimal-swiss-clean {
+      font-family: 'Inter', sans-serif;
+      background: #ffffff;
+      border: 1px solid #e4e4e7; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      color: #09090b;
+      border-radius: 4px;
+    }
+    .card-minimal-swiss-clean .form-group input {
+      background: #ffffff;
+      border: 1px solid #d4d4d8;
+      color: #09090b;
+      border-radius: 4px;
+    }
+    .card-minimal-swiss-clean .action-btn {
+      background: #09090b;
+      color: #ffffff;
+      border-radius: 4px;
+    }
+
+    /* Estilo minimal-vogue-editorial */
+    .stage-minimal-vogue-editorial { background: #fdfbf7; }
+    .card-minimal-vogue-editorial {
+      font-family: 'Playfair Display', sans-serif;
+      background: #fdfbf7;
+      border: 1px solid #d6d3d1;
+      color: #1c1917;
+      border-radius: 0px;
+    }
+    .card-minimal-vogue-editorial .form-group input {
+      background: #fdfbf7;
+      border: 1px solid #a8a29e;
+      color: #1c1917;
+      border-radius: 0px;
+    }
+    .card-minimal-vogue-editorial .action-btn {
+      background: #1c1917;
+      color: #fdfbf7;
+      border-radius: 0px;
+    }
+
+    /* Estilo minimal-bauhaus-clean */
+    .stage-minimal-bauhaus-clean { background: #eef0f2; }
+    .card-minimal-bauhaus-clean {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #ffffff;
+      border-left: 6px solid #2563eb;
+      color: #1e293b;
+      border-radius: 2px;
+    }
+    .card-minimal-bauhaus-clean .form-group input {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      border-radius: 2px;
+    }
+    .card-minimal-bauhaus-clean .action-btn {
+      background: #2563eb;
+      color: #ffffff;
+      border-radius: 2px;
+    }
+
+    /* Estilo minimal-warm-paper */
+    .stage-minimal-warm-paper { background: #f7f4ee; }
+    .card-minimal-warm-paper {
+      font-family: 'Inter', sans-serif;
+      background: #f0ede6;
+      border: 1px solid #e2ddd3;
+      color: #44403c;
+      border-radius: 6px;
+    }
+    .card-minimal-warm-paper .form-group input {
+      background: #faf8f5;
+      border: 1px solid #d6cfc4;
+      color: #292524;
+      border-radius: 6px;
+    }
+    .card-minimal-warm-paper .action-btn {
+      background: #78716c;
+      color: #faf8f5;
+      border-radius: 6px;
+    }
+
+    /* Estilo minimal-mono-stark */
+    .stage-minimal-mono-stark { background: #000000; }
+    .card-minimal-mono-stark {
+      font-family: 'Fira Code', sans-serif;
+      background: #000000;
+      border: 2px solid #ffffff;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+    .card-minimal-mono-stark .form-group input {
+      background: #000000;
+      border: 1px solid #ffffff;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+    .card-minimal-mono-stark .action-btn {
+      background: #ffffff;
+      color: #000000;
+      border-radius: 0px;
+    }
+
+    /* Estilo minimal-nordic-frost */
+    .stage-minimal-nordic-frost { background: #f1f5f9; }
+    .card-minimal-nordic-frost {
+      font-family: 'Montserrat', sans-serif;
+      background: #ffffff;
+      border-top: 4px solid #0d9488; box-shadow: 0 6px 20px rgba(13, 148, 136, 0.08);
+      color: #0f172a;
+      border-radius: 10px;
+    }
+    .card-minimal-nordic-frost .form-group input {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      border-radius: 10px;
+    }
+    .card-minimal-nordic-frost .action-btn {
+      background: #0d9488;
+      color: #ffffff;
+      border-radius: 10px;
+    }
+
+    /* Estilo minimal-wireframe */
+    .stage-minimal-wireframe { background: #f8fafc; }
+    .card-minimal-wireframe {
+      font-family: 'Fira Code', sans-serif;
+      background: #ffffff;
+      border: 2px dashed #2563eb;
+      color: #1e40af;
+      border-radius: 0px;
+    }
+    .card-minimal-wireframe .form-group input {
+      background: #ffffff;
+      border: 1px dashed #3b82f6;
+      color: #1e3a8a;
+      border-radius: 0px;
+    }
+    .card-minimal-wireframe .action-btn {
+      background: #2563eb;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+
+    /* Estilo minimal-botanical */
+    .stage-minimal-botanical { background: #f4f7f4; }
+    .card-minimal-botanical {
+      font-family: 'Playfair Display', sans-serif;
+      background: #ffffff;
+      border: 1px solid #cbd5cb; box-shadow: 0 4px 15px rgba(46, 125, 50, 0.05);
+      color: #1b4332;
+      border-radius: 12px;
+    }
+    .card-minimal-botanical .form-group input {
+      background: #f9faf9;
+      border: 1px solid #b7c4b7;
+      color: #081c15;
+      border-radius: 12px;
+    }
+    .card-minimal-botanical .action-btn {
+      background: #2d6a4f;
+      color: #ffffff;
+      border-radius: 12px;
+    }
+
+    /* Estilo minimal-slate-card */
+    .stage-minimal-slate-card { background: #0f172a; }
+    .card-minimal-slate-card {
+      font-family: 'Inter', sans-serif;
+      background: #1e293b;
+      border: 1px solid #334155; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      color: #f8fafc;
+      border-radius: 10px;
+    }
+    .card-minimal-slate-card .form-group input {
+      background: #0f172a;
+      border: 1px solid #475569;
+      color: #f8fafc;
+      border-radius: 10px;
+    }
+    .card-minimal-slate-card .action-btn {
+      background: #38bdf8;
+      color: #0f172a;
+      border-radius: 10px;
+    }
+
+    /* Estilo minimal-academic */
+    .stage-minimal-academic { background: #fcfbf9; }
+    .card-minimal-academic {
+      font-family: 'Playfair Display', sans-serif;
+      background: #ffffff;
+      border-bottom: 4px solid #991b1b; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      color: #1c1917;
+      border-radius: 0px;
+    }
+    .card-minimal-academic .form-group input {
+      background: #fdfbf7;
+      border: 1px solid #d6d3d1;
+      color: #000000;
+      border-radius: 0px;
+    }
+    .card-minimal-academic .action-btn {
+      background: #991b1b;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+
+    /* Estilo retro-pixel-arcade */
+    .stage-retro-pixel-arcade { background: #181824; }
+    .card-retro-pixel-arcade {
+      font-family: 'Press Start 2P', sans-serif;
+      background: #24253a;
+      border: 4px solid #ffffff; box-shadow: 6px 6px 0px #e11d48;
+      color: #facc15;
+      border-radius: 0px;
+    }
+    .card-retro-pixel-arcade .form-group input {
+      background: #000000;
+      border: 3px solid #ffffff;
+      color: #22c55e;
+      border-radius: 0px;
+    }
+    .card-retro-pixel-arcade .action-btn {
+      background: #e11d48;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+
+    /* Estilo retro-crt-amber */
+    .stage-retro-crt-amber { background: #080808; }
+    .card-retro-crt-amber {
+      font-family: 'VT323', sans-serif;
+      background: #141208;
+      border: 3px solid #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+      color: #f59e0b;
+      border-radius: 2px;
+    }
+    .card-retro-crt-amber .form-group input {
+      background: #0a0904;
+      border: 1px solid #f59e0b;
+      color: #fbbf24;
+      border-radius: 2px;
+    }
+    .card-retro-crt-amber .action-btn {
+      background: #f59e0b;
+      color: #000000;
+      border-radius: 2px;
+    }
+
+    /* Estilo retro-game-boy */
+    .stage-retro-game-boy { background: #8b956d; }
+    .card-retro-game-boy {
+      font-family: 'Press Start 2P', sans-serif;
+      background: #9bbc0f;
+      border: 4px solid #0f380f; box-shadow: 6px 6px 0px #0f380f;
+      color: #0f380f;
+      border-radius: 0px;
+    }
+    .card-retro-game-boy .form-group input {
+      background: #8bac0f;
+      border: 3px solid #0f380f;
+      color: #0f380f;
+      border-radius: 0px;
+    }
+    .card-retro-game-boy .action-btn {
+      background: #306230;
+      color: #9bbc0f;
+      border-radius: 0px;
+    }
+
+    /* Estilo retro-skeuo-leather */
+    .stage-retro-skeuo-leather { background: #3b281c; }
+    .card-retro-skeuo-leather {
+      font-family: 'Playfair Display', sans-serif;
+      background: linear-gradient(180deg, #6c4b31, #48301d);
+      border: 2px solid #291a10; box-shadow: inset 1px 1px 2px rgba(255,255,255,0.4), inset -1px -1px 2px rgba(0,0,0,0.7), 0 12px 25px rgba(0,0,0,0.6);
+      color: #f5ebe0;
+      border-radius: 12px;
+    }
+    .card-retro-skeuo-leather .form-group input {
+      background: #fbf6f0;
+      border: 2px solid #8d6b4f;
+      color: #2e1d11;
+      border-radius: 12px;
+    }
+    .card-retro-skeuo-leather .action-btn {
+      background: linear-gradient(180deg, #a66a38, #78491c);
+      color: #ffffff;
+      border-radius: 12px;
+    }
+
+    /* Estilo retro-cassette-tape */
+    .stage-retro-cassette-tape { background: #292524; }
+    .card-retro-cassette-tape {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #d6d3d1;
+      border: 3px solid #44403c; box-shadow: 6px 6px 0px #f97316;
+      color: #1c1917;
+      border-radius: 16px;
+    }
+    .card-retro-cassette-tape .form-group input {
+      background: #f5f5f4;
+      border: 2px solid #78716c;
+      color: #1c1917;
+      border-radius: 16px;
+    }
+    .card-retro-cassette-tape .action-btn {
+      background: #f97316;
+      color: #ffffff;
+      border-radius: 16px;
+    }
+
+    /* Estilo retro-commodore-64 */
+    .stage-retro-commodore-64 { background: #40318d; }
+    .card-retro-commodore-64 {
+      font-family: 'VT323', sans-serif;
+      background: #40318d;
+      border: 4px solid #a5a5ff; box-shadow: 0 0 15px rgba(165,165,255,0.3);
+      color: #a5a5ff;
+      border-radius: 0px;
+    }
+    .card-retro-commodore-64 .form-group input {
+      background: #000000;
+      border: 2px solid #a5a5ff;
+      color: #a5a5ff;
+      border-radius: 0px;
+    }
+    .card-retro-commodore-64 .action-btn {
+      background: #a5a5ff;
+      color: #000000;
+      border-radius: 0px;
+    }
+
+    /* Estilo retro-polaroid-film */
+    .stage-retro-polaroid-film { background: #475569; }
+    .card-retro-polaroid-film {
+      font-family: 'Comfortaa', sans-serif;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1; box-shadow: 0 12px 28px rgba(0,0,0,0.25); border-bottom: 24px solid #f8fafc;
+      color: #1e293b;
+      border-radius: 4px;
+    }
+    .card-retro-polaroid-film .form-group input {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      border-radius: 4px;
+    }
+    .card-retro-polaroid-film .action-btn {
+      background: #0284c7;
+      color: #ffffff;
+      border-radius: 4px;
+    }
+
+    /* Estilo retro-newspaper-1920 */
+    .stage-retro-newspaper-1920 { background: #e7e0d3; }
+    .card-retro-newspaper-1920 {
+      font-family: 'Playfair Display', sans-serif;
+      background: #f4efe6;
+      border: 2px solid #332d27; box-shadow: 4px 4px 0px #332d27;
+      color: #2b2520;
+      border-radius: 0px;
+    }
+    .card-retro-newspaper-1920 .form-group input {
+      background: #faf7f2;
+      border: 1px solid #544b42;
+      color: #1c1815;
+      border-radius: 0px;
+    }
+    .card-retro-newspaper-1920 .action-btn {
+      background: #332d27;
+      color: #f4efe6;
+      border-radius: 0px;
+    }
+
+    /* Estilo retro-dos-blue */
+    .stage-retro-dos-blue { background: #0000a8; }
+    .card-retro-dos-blue {
+      font-family: 'Fira Code', sans-serif;
+      background: #0000a8;
+      border: 3px double #ffffff; box-shadow: 6px 6px 0px #000054;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+    .card-retro-dos-blue .form-group input {
+      background: #0000a8;
+      border: 1px solid #ffffff;
+      color: #ffff54;
+      border-radius: 0px;
+    }
+    .card-retro-dos-blue .action-btn {
+      background: #ffffff;
+      color: #0000a8;
+      border-radius: 0px;
+    }
+
+    /* Estilo retro-blueprint */
+    .stage-retro-blueprint { background: #0b3c5d; }
+    .card-retro-blueprint {
+      font-family: 'Fira Code', sans-serif;
+      background: #0d4d77;
+      border: 2px solid #328cc1; box-shadow: inset 0 0 20px rgba(50,140,193,0.3);
+      color: #d9b310;
+      border-radius: 0px;
+    }
+    .card-retro-blueprint .form-group input {
+      background: #08334e;
+      border: 1px dashed #328cc1;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+    .card-retro-blueprint .action-btn {
+      background: #328cc1;
+      color: #ffffff;
+      border-radius: 0px;
+    }
+
+    /* Estilo scifi-starship-hud */
+    .stage-scifi-starship-hud { background: #030d1a; }
+    .card-scifi-starship-hud {
+      font-family: 'Orbitron', sans-serif;
+      background: rgba(2, 28, 56, 0.45);
+      backdrop-filter: blur(12px); border: 1px solid #0284c7; box-shadow: 0 0 25px rgba(2, 132, 199, 0.3);
+      color: #7dd3fc;
+      border-radius: 4px;
+    }
+    .card-scifi-starship-hud .form-group input {
+      background: rgba(3, 105, 161, 0.2);
+      border: 1px solid #38bdf8;
+      color: #bae6fd;
+      border-radius: 4px;
+    }
+    .card-scifi-starship-hud .action-btn {
+      background: #0284c7;
+      color: #ffffff;
+      border-radius: 4px;
+    }
+
+    /* Estilo scifi-interstellar-blackhole */
+    .stage-scifi-interstellar-blackhole { background: #000000; }
+    .card-scifi-interstellar-blackhole {
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle, #180800, #000000);
+      border: 1px solid #f97316; box-shadow: 0 0 35px rgba(249, 115, 22, 0.35);
+      color: #fed7aa;
+      border-radius: 14px;
+    }
+    .card-scifi-interstellar-blackhole .form-group input {
+      background: #0d0400;
+      border: 1px solid #ea580c;
+      color: #fff;
+      border-radius: 14px;
+    }
+    .card-scifi-interstellar-blackhole .action-btn {
+      background: linear-gradient(90deg, #f97316, #ea580c);
+      color: #000000;
+      border-radius: 14px;
+    }
+
+    /* Estilo scifi-mars-colony */
+    .stage-scifi-mars-colony { background: #1a0a07; }
+    .card-scifi-mars-colony {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #29110d;
+      border: 2px solid #c2410c; box-shadow: 0 8px 30px rgba(194, 65, 12, 0.3);
+      color: #ffedd5;
+      border-radius: 8px;
+    }
+    .card-scifi-mars-colony .form-group input {
+      background: #1e0b08;
+      border: 1px solid #ea580c;
+      color: #ffedd5;
+      border-radius: 8px;
+    }
+    .card-scifi-mars-colony .action-btn {
+      background: #c2410c;
+      color: #ffffff;
+      border-radius: 8px;
+    }
+
+    /* Estilo nature-bamboo-zen */
+    .stage-nature-bamboo-zen { background: #17231a; }
+    .card-nature-bamboo-zen {
+      font-family: 'Inter', sans-serif;
+      background: #203325;
+      border: 1px solid #4ade80; box-shadow: 0 10px 30px rgba(74, 222, 128, 0.12);
+      color: #bbf7d0;
+      border-radius: 18px;
+    }
+    .card-nature-bamboo-zen .form-group input {
+      background: #142117;
+      border: 1px solid #22c55e;
+      color: #dcfce7;
+      border-radius: 18px;
+    }
+    .card-nature-bamboo-zen .action-btn {
+      background: #16a34a;
+      color: #ffffff;
+      border-radius: 18px;
+    }
+
+    /* Estilo nature-volcano-magma */
+    .stage-nature-volcano-magma { background: #120402; }
+    .card-nature-volcano-magma {
+      font-family: 'Orbitron', sans-serif;
+      background: #240804;
+      border: 2px solid #ef4444; box-shadow: 0 0 25px rgba(239, 68, 68, 0.4), inset 0 0 15px rgba(249, 115, 22, 0.2);
+      color: #fca5a5;
+      border-radius: 8px;
+    }
+    .card-nature-volcano-magma .form-group input {
+      background: #180503;
+      border: 1px solid #f97316;
+      color: #fed7aa;
+      border-radius: 8px;
+    }
+    .card-nature-volcano-magma .action-btn {
+      background: #ef4444;
+      color: #ffffff;
+      border-radius: 8px;
+    }
+
+    /* Estilo nature-deep-abyss */
+    .stage-nature-deep-abyss { background: #010814; }
+    .card-nature-deep-abyss {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #03152e;
+      border: 1px solid #00f0ff; box-shadow: 0 0 25px rgba(0, 240, 255, 0.25);
+      color: #7df9ff;
+      border-radius: 12px;
+    }
+    .card-nature-deep-abyss .form-group input {
+      background: #020d1e;
+      border: 1px solid #0891b2;
+      color: #cffafe;
+      border-radius: 12px;
+    }
+    .card-nature-deep-abyss .action-btn {
+      background: #00bcd4;
+      color: #010814;
+      border-radius: 12px;
+    }
+
+    /* Estilo nature-aurora-borealis */
+    .stage-nature-aurora-borealis { background: #040d1a; }
+    .card-nature-aurora-borealis {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(6, 182, 212, 0.15), rgba(168, 85, 247, 0.15));
+      backdrop-filter: blur(18px); border: 1px solid rgba(56, 189, 248, 0.4); box-shadow: 0 10px 35px rgba(34, 197, 94, 0.2);
+      color: #e0f2fe;
+      border-radius: 20px;
+    }
+    .card-nature-aurora-borealis .form-group input {
+      background: rgba(255, 255, 255, 0.06);
+      border: rgba(56, 189, 248, 0.3);
+      color: #fff;
+      border-radius: 20px;
+    }
+    .card-nature-aurora-borealis .action-btn {
+      background: linear-gradient(90deg, #22c55e, #06b6d4);
+      color: #040d1a;
+      border-radius: 20px;
+    }
+
+    /* Estilo nature-sakura-blossom */
+    .stage-nature-sakura-blossom { background: #24141c; }
+    .card-nature-sakura-blossom {
+      font-family: 'Playfair Display', sans-serif;
+      background: #381e2b;
+      border: 1px solid #f472b6; box-shadow: 0 10px 30px rgba(244, 114, 182, 0.2);
+      color: #fbcfe8;
+      border-radius: 24px;
+    }
+    .card-nature-sakura-blossom .form-group input {
+      background: #291520;
+      border: 1px solid #f472b6;
+      color: #fdf2f8;
+      border-radius: 24px;
+    }
+    .card-nature-sakura-blossom .action-btn {
+      background: #ec4899;
+      color: #ffffff;
+      border-radius: 24px;
+    }
+
+    /* Estilo scifi-alien-xenomorph */
+    .stage-scifi-alien-xenomorph { background: #070d06; }
+    .card-scifi-alien-xenomorph {
+      font-family: 'Syne', sans-serif;
+      background: #0d1a0b;
+      border: 2px solid #84cc16; box-shadow: 0 0 25px rgba(132, 204, 22, 0.3);
+      color: #d9f99d;
+      border-radius: 6px;
+    }
+    .card-scifi-alien-xenomorph .form-group input {
+      background: #081207;
+      border: 1px solid #65a30d;
+      color: #bef264;
+      border-radius: 6px;
+    }
+    .card-scifi-alien-xenomorph .action-btn {
+      background: #4d7c0f;
+      color: #ffffff;
+      border-radius: 6px;
+    }
+
+    /* Estilo scifi-solar-flare */
+    .stage-scifi-solar-flare { background: #1a0800; }
+    .card-scifi-solar-flare {
+      font-family: 'Orbitron', sans-serif;
+      background: #2e0f00;
+      border: 2px solid #facc15; box-shadow: 0 0 30px rgba(250, 204, 21, 0.4);
+      color: #fef08a;
+      border-radius: 10px;
+    }
+    .card-scifi-solar-flare .form-group input {
+      background: #1c0900;
+      border: 1px solid #ea580c;
+      color: #fff;
+      border-radius: 10px;
+    }
+    .card-scifi-solar-flare .action-btn {
+      background: linear-gradient(90deg, #facc15, #f97316);
+      color: #000000;
+      border-radius: 10px;
+    }
+
+    /* Estilo modern-saas-clean */
+    .stage-modern-saas-clean { background: #0f172a; }
+    .card-modern-saas-clean {
+      font-family: 'Inter', sans-serif;
+      background: #1e293b;
+      border: 1px solid #334155; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      color: #f8fafc;
+      border-radius: 12px;
+    }
+    .card-modern-saas-clean .form-group input {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #fff;
+      border-radius: 12px;
+    }
+    .card-modern-saas-clean .action-btn {
+      background: #3b82f6;
+      color: #fff;
+      border-radius: 12px;
+    }
+
+    /* Estilo modern-fintech-dark */
+    .stage-modern-fintech-dark { background: #0a0e17; }
+    .card-modern-fintech-dark {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #111827;
+      border: 1px solid #10b981; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-radius: 14px;
+    }
+    .card-modern-fintech-dark .form-group input {
+      background: #0c1322;
+      border: 1px solid #1f2937;
+      color: #f3f4f6;
+      border-radius: 14px;
+    }
+    .card-modern-fintech-dark .action-btn {
+      background: #059669;
+      color: #fff;
+      border-radius: 14px;
+    }
+
+    /* Estilo modern-streaming-cinema */
+    .stage-modern-streaming-cinema { background: #0b0b0b; }
+    .card-modern-streaming-cinema {
+      font-family: 'Montserrat', sans-serif;
+      background: #141414;
+      border-top: 4px solid #e50914; box-shadow: 0 12px 35px rgba(229, 9, 20, 0.25);
+      color: #ffffff;
+      border-radius: 8px;
+    }
+    .card-modern-streaming-cinema .form-group input {
+      background: #222222;
+      border: 1px solid #333333;
+      color: #ffffff;
+      border-radius: 8px;
+    }
+    .card-modern-streaming-cinema .action-btn {
+      background: #e50914;
+      color: #ffffff;
+      border-radius: 8px;
+    }
+
+    /* Estilo modern-music-festival */
+    .stage-modern-music-festival { background: #121212; }
+    .card-modern-music-festival {
+      font-family: 'Poppins', sans-serif;
+      background: #181818;
+      border: 1px solid #282828; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      color: #ffffff;
+      border-radius: 16px;
+    }
+    .card-modern-music-festival .form-group input {
+      background: #242424;
+      border: none;
+      color: #ffffff;
+      border-radius: 16px;
+    }
+    .card-modern-music-festival .action-btn {
+      background: #1db954;
+      color: #121212;
+      border-radius: 16px;
+    }
+
+    /* Estilo modern-esports-clan */
+    .stage-modern-esports-clan { background: #08090c; }
+    .card-modern-esports-clan {
+      font-family: 'Orbitron', sans-serif;
+      background: #10121a;
+      border-left: 5px solid #a855f7; border-right: 5px solid #06b6d4; box-shadow: 0 8px 30px rgba(168, 85, 247, 0.25);
+      color: #f1f5f9;
+      border-radius: 4px;
+    }
+    .card-modern-esports-clan .form-group input {
+      background: #171a26;
+      border: 1px solid #33384f;
+      color: #ffffff;
+      border-radius: 4px;
+    }
+    .card-modern-esports-clan .action-btn {
+      background: linear-gradient(90deg, #a855f7, #06b6d4);
+      color: #ffffff;
+      border-radius: 4px;
+    }
+
+    /* Estilo modern-education-kids */
+    .stage-modern-education-kids { background: #eff6ff; }
+    .card-modern-education-kids {
+      font-family: 'Comfortaa', sans-serif;
+      background: #ffffff;
+      border: 3px solid #3b82f6; border-radius: 28px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
+      color: #1e3a8a;
+      border-radius: 20px;
+    }
+    .card-modern-education-kids .form-group input {
+      background: #dbeafe;
+      border: 2px solid #93c5fd;
+      color: #1e3a8a;
+      border-radius: 20px;
+    }
+    .card-modern-education-kids .action-btn {
+      background: #22c55e;
+      color: #ffffff;
+      border-radius: 20px;
+    }
+
+    /* Estilo modern-travel-wanderlust */
+    .stage-modern-travel-wanderlust { background: #0f2027; }
+    .card-modern-travel-wanderlust {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(180deg, #203a43, #2c5364);
+      border: 1px solid #4ca1af; box-shadow: 0 12px 35px rgba(76, 161, 175, 0.25);
+      color: #e0f7fa;
+      border-radius: 16px;
+    }
+    .card-modern-travel-wanderlust .form-group input {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #ffffff;
+      border-radius: 16px;
+    }
+    .card-modern-travel-wanderlust .action-btn {
+      background: #4ca1af;
+      color: #ffffff;
+      border-radius: 16px;
+    }
+
+    /* Estilo modern-health-wellness */
+    .stage-modern-health-wellness { background: #f0fdfa; }
+    .card-modern-health-wellness {
+      font-family: 'Inter', sans-serif;
+      background: #ffffff;
+      border: 1px solid #99f6e4; box-shadow: 0 10px 30px rgba(20, 184, 166, 0.1);
+      color: #115e59;
+      border-radius: 24px;
+    }
+    .card-modern-health-wellness .form-group input {
+      background: #f0fdfa;
+      border: 1px solid #ccfbf1;
+      color: #134e4a;
+      border-radius: 24px;
+    }
+    .card-modern-health-wellness .action-btn {
+      background: #0d9488;
+      color: #ffffff;
+      border-radius: 24px;
+    }
+
+    /* Estilo modern-food-gourmet */
+    .stage-modern-food-gourmet { background: #1a1412; }
+    .card-modern-food-gourmet {
+      font-family: 'Playfair Display', sans-serif;
+      background: #291f1c;
+      border: 1px solid #f97316; box-shadow: 0 10px 30px rgba(249, 115, 22, 0.15);
+      color: #fed7aa;
+      border-radius: 10px;
+    }
+    .card-modern-food-gourmet .form-group input {
+      background: #1d1513;
+      border: 1px solid #7c2d12;
+      color: #ffedd5;
+      border-radius: 10px;
+    }
+    .card-modern-food-gourmet .action-btn {
+      background: linear-gradient(135deg, #ea580c, #c2410c);
+      color: #ffffff;
+      border-radius: 10px;
+    }
+
+    /* Estilo modern-carbon-shield */
+    .stage-modern-carbon-shield { background: #050505; }
+    .card-modern-carbon-shield {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #0f1015;
+      border: 1px solid #27272a; box-shadow: 0 0 30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.1);
+      color: #e4e4e7;
+      border-radius: 14px;
+    }
+    .card-modern-carbon-shield .form-group input {
+      background: #18181b;
+      border: 1px solid #3f3f46;
+      color: #ffffff;
+      border-radius: 14px;
+    }
+    .card-modern-carbon-shield .action-btn {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #ffffff;
+      border-radius: 14px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Showcase UI: 100 Modelos de Design & Login</h1>
+    <p>Galeria completa de referência de UI/UX com 100 estilos de design totalmente funcionais e distintos em CSS3 e tipografia customizada.</p>
+    
+    <div class="toolbar">
+      <div class="badge-pill">Total: 100 Modelos Únicos</div>
+      <div class="badge-pill">HTML + CSS Puro</div>
+      <div class="badge-pill">Totalmente Responsivo</div>
+    </div>
+  </header>
+
+  <div class="dashboard-grid" id="gridContainer">
+
+    <!-- Card #1: 01. Glassmorphism Syabaab Dark -->
+    <div class="card-item" data-title="01. glassmorphism syabaab dark">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #01</span>
+        <h2>01. Glassmorphism Syabaab Dark</h2>
+        <div class="font-name">Fonte: Poppins</div>
+      </div>
+      <div class="preview-stage stage-glass-deep-purple">
+        <div class="login-box card-glass-deep-purple">
+          <div class="login-brand">
+            <span class="logo-icon">💠</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #2: 02. Frosted Ice Glass -->
+    <div class="card-item" data-title="02. frosted ice glass">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #02</span>
+        <h2>02. Frosted Ice Glass</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-glass-frosted-ice">
+        <div class="login-box card-glass-frosted-ice">
+          <div class="login-brand">
+            <span class="logo-icon">❄️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #3: 03. Emerald Glass & Velvet -->
+    <div class="card-item" data-title="03. emerald glass & velvet">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #03</span>
+        <h2>03. Emerald Glass & Velvet</h2>
+        <div class="font-name">Fonte: Cinzel</div>
+      </div>
+      <div class="preview-stage stage-glass-emerald">
+        <div class="login-box card-glass-emerald">
+          <div class="login-brand">
+            <span class="logo-icon">💎</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #4: 04. Crimson Blood Glass -->
+    <div class="card-item" data-title="04. crimson blood glass">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #04</span>
+        <h2>04. Crimson Blood Glass</h2>
+        <div class="font-name">Fonte: Montserrat</div>
+      </div>
+      <div class="preview-stage stage-glass-crimson">
+        <div class="login-box card-glass-crimson">
+          <div class="login-brand">
+            <span class="logo-icon">🩸</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #5: 05. Amber Warm Glass -->
+    <div class="card-item" data-title="05. amber warm glass">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #05</span>
+        <h2>05. Amber Warm Glass</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-glass-amber-glow">
+        <div class="login-box card-glass-amber-glow">
+          <div class="login-brand">
+            <span class="logo-icon">🍯</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #6: 06. Sunset Mirage Glass -->
+    <div class="card-item" data-title="06. sunset mirage glass">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #06</span>
+        <h2>06. Sunset Mirage Glass</h2>
+        <div class="font-name">Fonte: Poppins</div>
+      </div>
+      <div class="preview-stage stage-glass-sunset">
+        <div class="login-box card-glass-sunset">
+          <div class="login-brand">
+            <span class="logo-icon">🌅</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #7: 07. Deep Ocean Aqua Glass -->
+    <div class="card-item" data-title="07. deep ocean aqua glass">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #07</span>
+        <h2>07. Deep Ocean Aqua Glass</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-glass-cyan-flow">
+        <div class="login-box card-glass-cyan-flow">
+          <div class="login-brand">
+            <span class="logo-icon">🌊</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #8: 08. Smoked Dark Obsidian -->
+    <div class="card-item" data-title="08. smoked dark obsidian">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #08</span>
+        <h2>08. Smoked Dark Obsidian</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-glass-smoked">
+        <div class="login-box card-glass-smoked">
+          <div class="login-brand">
+            <span class="logo-icon">🖤</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #9: 09. Prismatic Aurora Glass -->
+    <div class="card-item" data-title="09. prismatic aurora glass">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #09</span>
+        <h2>09. Prismatic Aurora Glass</h2>
+        <div class="font-name">Fonte: Syne</div>
+      </div>
+      <div class="preview-stage stage-glass-prismatic">
+        <div class="login-box card-glass-prismatic">
+          <div class="login-brand">
+            <span class="logo-icon">🔮</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #10: 10. Frosted Milk Glass -->
+    <div class="card-item" data-title="10. frosted milk glass">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #10</span>
+        <h2>10. Frosted Milk Glass</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-glass-soft-milk">
+        <div class="login-box card-glass-soft-milk">
+          <div class="login-brand">
+            <span class="logo-icon">🥛</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #11: 11. Neumorphism Dark Slate -->
+    <div class="card-item" data-title="11. neumorphism dark slate">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #11</span>
+        <h2>11. Neumorphism Dark Slate</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-neomorph-dark">
+        <div class="login-box card-neomorph-dark">
+          <div class="login-brand">
+            <span class="logo-icon">🔘</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #12: 12. Neumorphism Soft Ivory -->
+    <div class="card-item" data-title="12. neumorphism soft ivory">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #12</span>
+        <h2>12. Neumorphism Soft Ivory</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-neomorph-light">
+        <div class="login-box card-neomorph-light">
+          <div class="login-brand">
+            <span class="logo-icon">☁️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #13: 13. Neumorphism Cyan Glow -->
+    <div class="card-item" data-title="13. neumorphism cyan glow">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #13</span>
+        <h2>13. Neumorphism Cyan Glow</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-neomorph-blue-accent">
+        <div class="login-box card-neomorph-blue-accent">
+          <div class="login-brand">
+            <span class="logo-icon">🌀</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #14: 14. Neumorphism Peach Cream -->
+    <div class="card-item" data-title="14. neumorphism peach cream">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #14</span>
+        <h2>14. Neumorphism Peach Cream</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-neomorph-pastel-peach">
+        <div class="login-box card-neomorph-pastel-peach">
+          <div class="login-brand">
+            <span class="logo-icon">🍑</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #15: 15. Neumorphism Fresh Mint -->
+    <div class="card-item" data-title="15. neumorphism fresh mint">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #15</span>
+        <h2>15. Neumorphism Fresh Mint</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-neomorph-mint">
+        <div class="login-box card-neomorph-mint">
+          <div class="login-brand">
+            <span class="logo-icon">🌱</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #16: 16. Neumorphism Soft Lilac -->
+    <div class="card-item" data-title="16. neumorphism soft lilac">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #16</span>
+        <h2>16. Neumorphism Soft Lilac</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-neomorph-lavender">
+        <div class="login-box card-neomorph-lavender">
+          <div class="login-brand">
+            <span class="logo-icon">🪻</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #17: 17. Neumorphism Deep Carbon -->
+    <div class="card-item" data-title="17. neumorphism deep carbon">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #17</span>
+        <h2>17. Neumorphism Deep Carbon</h2>
+        <div class="font-name">Fonte: Montserrat</div>
+      </div>
+      <div class="preview-stage stage-neomorph-carbon">
+        <div class="login-box card-neomorph-carbon">
+          <div class="login-brand">
+            <span class="logo-icon">⚫</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #18: 18. Neumorphism Inset Machine -->
+    <div class="card-item" data-title="18. neumorphism inset machine">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #18</span>
+        <h2>18. Neumorphism Inset Machine</h2>
+        <div class="font-name">Fonte: Fira Code</div>
+      </div>
+      <div class="preview-stage stage-neomorph-inset-heavy">
+        <div class="login-box card-neomorph-inset-heavy">
+          <div class="login-brand">
+            <span class="logo-icon">🎛️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #19: 19. Neumorphism Warm Sandstone -->
+    <div class="card-item" data-title="19. neumorphism warm sandstone">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #19</span>
+        <h2>19. Neumorphism Warm Sandstone</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-neomorph-warm-sand">
+        <div class="login-box card-neomorph-warm-sand">
+          <div class="login-brand">
+            <span class="logo-icon">🏺</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #20: 20. Neumorphism Velvet Coral -->
+    <div class="card-item" data-title="20. neumorphism velvet coral">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #20</span>
+        <h2>20. Neumorphism Velvet Coral</h2>
+        <div class="font-name">Fonte: Poppins</div>
+      </div>
+      <div class="preview-stage stage-neomorph-coral">
+        <div class="login-box card-neomorph-coral">
+          <div class="login-brand">
+            <span class="logo-icon">🌺</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #21: 21. Cyberpunk 2077 Night City -->
+    <div class="card-item" data-title="21. cyberpunk 2077 night city">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #21</span>
+        <h2>21. Cyberpunk 2077 Night City</h2>
+        <div class="font-name">Fonte: Orbitron</div>
+      </div>
+      <div class="preview-stage stage-cyber-2077">
+        <div class="login-box card-cyber-2077">
+          <div class="login-brand">
+            <span class="logo-icon">⚡</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #22: 22. Retrowave Sunset 1984 -->
+    <div class="card-item" data-title="22. retrowave sunset 1984">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #22</span>
+        <h2>22. Retrowave Sunset 1984</h2>
+        <div class="font-name">Fonte: Syne</div>
+      </div>
+      <div class="preview-stage stage-cyber-synthwave">
+        <div class="login-box card-cyber-synthwave">
+          <div class="login-brand">
+            <span class="logo-icon">🌴</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #23: 23. Matrix Terminal Green -->
+    <div class="card-item" data-title="23. matrix terminal green">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #23</span>
+        <h2>23. Matrix Terminal Green</h2>
+        <div class="font-name">Fonte: Fira Code</div>
+      </div>
+      <div class="preview-stage stage-cyber-matrix-green">
+        <div class="login-box card-cyber-matrix-green">
+          <div class="login-brand">
+            <span class="logo-icon">💻</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #24: 24. Tokyo Neon Rain -->
+    <div class="card-item" data-title="24. tokyo neon rain">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #24</span>
+        <h2>24. Tokyo Neon Rain</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-cyber-tokyo-neon">
+        <div class="login-box card-cyber-tokyo-neon">
+          <div class="login-brand">
+            <span class="logo-icon">🗼</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #25: 25. Outrun Neon Grid -->
+    <div class="card-item" data-title="25. outrun neon grid">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #25</span>
+        <h2>25. Outrun Neon Grid</h2>
+        <div class="font-name">Fonte: Orbitron</div>
+      </div>
+      <div class="preview-stage stage-cyber-outrun-grid">
+        <div class="login-box card-cyber-outrun-grid">
+          <div class="login-brand">
+            <span class="logo-icon">🏎️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #26: 26. Glitch Red Alert -->
+    <div class="card-item" data-title="26. glitch red alert">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #26</span>
+        <h2>26. Glitch Red Alert</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-cyber-glitch-red">
+        <div class="login-box card-cyber-glitch-red">
+          <div class="login-brand">
+            <span class="logo-icon">🚨</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #27: 27. Amber Phosphor Terminal -->
+    <div class="card-item" data-title="27. amber phosphor terminal">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #27</span>
+        <h2>27. Amber Phosphor Terminal</h2>
+        <div class="font-name">Fonte: VT323</div>
+      </div>
+      <div class="preview-stage stage-cyber-hacker-amber">
+        <div class="login-box card-cyber-hacker-amber">
+          <div class="login-brand">
+            <span class="logo-icon">📟</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #28: 28. Vaporwave Aesthetic 1995 -->
+    <div class="card-item" data-title="28. vaporwave aesthetic 1995">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #28</span>
+        <h2>28. Vaporwave Aesthetic 1995</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-cyber-vaporwave">
+        <div class="login-box card-cyber-vaporwave">
+          <div class="login-brand">
+            <span class="logo-icon">🗿</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #29: 29. Blade Runner Spinner -->
+    <div class="card-item" data-title="29. blade runner spinner">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #29</span>
+        <h2>29. Blade Runner Spinner</h2>
+        <div class="font-name">Fonte: Orbitron</div>
+      </div>
+      <div class="preview-stage stage-cyber-blade-runner">
+        <div class="login-box card-cyber-blade-runner">
+          <div class="login-brand">
+            <span class="logo-icon">🌧️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #30: 30. Biopunk Slime Lab -->
+    <div class="card-item" data-title="30. biopunk slime lab">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #30</span>
+        <h2>30. Biopunk Slime Lab</h2>
+        <div class="font-name">Fonte: Fira Code</div>
+      </div>
+      <div class="preview-stage stage-cyber-biopunk">
+        <div class="login-box card-cyber-biopunk">
+          <div class="login-brand">
+            <span class="logo-icon">🧪</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #31: 31. Neobrutalism Electric Lemon -->
+    <div class="card-item" data-title="31. neobrutalism electric lemon">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #31</span>
+        <h2>31. Neobrutalism Electric Lemon</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-brutal-yellow">
+        <div class="login-box card-brutal-yellow">
+          <div class="login-brand">
+            <span class="logo-icon">🍌</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #32: 32. Neobrutalism Radical Pink -->
+    <div class="card-item" data-title="32. neobrutalism radical pink">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #32</span>
+        <h2>32. Neobrutalism Radical Pink</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-brutal-hot-pink">
+        <div class="login-box card-brutal-hot-pink">
+          <div class="login-brand">
+            <span class="logo-icon">💖</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #33: 33. Neobrutalism Cyan Punch -->
+    <div class="card-item" data-title="33. neobrutalism cyan punch">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #33</span>
+        <h2>33. Neobrutalism Cyan Punch</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-brutal-cyan-punch">
+        <div class="login-box card-brutal-cyan-punch">
+          <div class="login-brand">
+            <span class="logo-icon">🥊</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #34: 34. Neobrutalism Acid Lime -->
+    <div class="card-item" data-title="34. neobrutalism acid lime">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #34</span>
+        <h2>34. Neobrutalism Acid Lime</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-brutal-lime">
+        <div class="login-box card-brutal-lime">
+          <div class="login-brand">
+            <span class="logo-icon">🍋</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #35: 35. Comic Pop-Art POW! -->
+    <div class="card-item" data-title="35. comic pop-art pow!">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #35</span>
+        <h2>35. Comic Pop-Art POW!</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-brutal-comic-pow">
+        <div class="login-box card-brutal-comic-pow">
+          <div class="login-brand">
+            <span class="logo-icon">💥</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #36: 36. Bauhaus Geometric Primary -->
+    <div class="card-item" data-title="36. bauhaus geometric primary">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #36</span>
+        <h2>36. Bauhaus Geometric Primary</h2>
+        <div class="font-name">Fonte: Montserrat</div>
+      </div>
+      <div class="preview-stage stage-brutal-bauhaus">
+        <div class="login-box card-brutal-bauhaus">
+          <div class="login-brand">
+            <span class="logo-icon">📐</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #37: 37. Sticker Collage Pop -->
+    <div class="card-item" data-title="37. sticker collage pop">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #37</span>
+        <h2>37. Sticker Collage Pop</h2>
+        <div class="font-name">Fonte: Poppins</div>
+      </div>
+      <div class="preview-stage stage-brutal-sticker-pack">
+        <div class="login-box card-brutal-sticker-pack">
+          <div class="login-brand">
+            <span class="logo-icon">🏷️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #38: 38. Neo-Punk Fanzine -->
+    <div class="card-item" data-title="38. neo-punk fanzine">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #38</span>
+        <h2>38. Neo-Punk Fanzine</h2>
+        <div class="font-name">Fonte: Syne</div>
+      </div>
+      <div class="preview-stage stage-brutal-high-contrast">
+        <div class="login-box card-brutal-high-contrast">
+          <div class="login-brand">
+            <span class="logo-icon">🎸</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #39: 39. Tangerine Neobrutal -->
+    <div class="card-item" data-title="39. tangerine neobrutal">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #39</span>
+        <h2>39. Tangerine Neobrutal</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-brutal-tangerine">
+        <div class="login-box card-brutal-tangerine">
+          <div class="login-brand">
+            <span class="logo-icon">🍊</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #40: 40. Bubblegum Hardcore -->
+    <div class="card-item" data-title="40. bubblegum hardcore">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #40</span>
+        <h2>40. Bubblegum Hardcore</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-brutal-bubblegum">
+        <div class="login-box card-brutal-bubblegum">
+          <div class="login-brand">
+            <span class="logo-icon">🍬</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #41: 41. Claymorphism Periwinkle -->
+    <div class="card-item" data-title="41. claymorphism periwinkle">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #41</span>
+        <h2>41. Claymorphism Periwinkle</h2>
+        <div class="font-name">Fonte: Poppins</div>
+      </div>
+      <div class="preview-stage stage-clay-periwinkle">
+        <div class="login-box card-clay-periwinkle">
+          <div class="login-brand">
+            <span class="logo-icon">🧸</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #42: 42. Claymorphism Strawberry Milk -->
+    <div class="card-item" data-title="42. claymorphism strawberry milk">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #42</span>
+        <h2>42. Claymorphism Strawberry Milk</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-clay-strawberry">
+        <div class="login-box card-clay-strawberry">
+          <div class="login-brand">
+            <span class="logo-icon">🍓</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #43: 43. Claymorphism Matcha Dough -->
+    <div class="card-item" data-title="43. claymorphism matcha dough">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #43</span>
+        <h2>43. Claymorphism Matcha Dough</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-clay-matcha">
+        <div class="login-box card-clay-matcha">
+          <div class="login-brand">
+            <span class="logo-icon">🍵</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #44: 44. Claymorphism Marshmallow Soft -->
+    <div class="card-item" data-title="44. claymorphism marshmallow soft">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #44</span>
+        <h2>44. Claymorphism Marshmallow Soft</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-clay-marshmallow">
+        <div class="login-box card-clay-marshmallow">
+          <div class="login-brand">
+            <span class="logo-icon">☁️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #45: 45. Claymorphism Bubble Gum 3D -->
+    <div class="card-item" data-title="45. claymorphism bubble gum 3d">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #45</span>
+        <h2>45. Claymorphism Bubble Gum 3D</h2>
+        <div class="font-name">Fonte: Poppins</div>
+      </div>
+      <div class="preview-stage stage-clay-bubble-gum">
+        <div class="login-box card-clay-bubble-gum">
+          <div class="login-brand">
+            <span class="logo-icon">🎈</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #46: 46. Claymorphism Blue Squishy -->
+    <div class="card-item" data-title="46. claymorphism blue squishy">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #46</span>
+        <h2>46. Claymorphism Blue Squishy</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-clay-deep-ocean">
+        <div class="login-box card-clay-deep-ocean">
+          <div class="login-brand">
+            <span class="logo-icon">🐬</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #47: 47. Claymorphism Lavender Cushion -->
+    <div class="card-item" data-title="47. claymorphism lavender cushion">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #47</span>
+        <h2>47. Claymorphism Lavender Cushion</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-clay-lavender-pillow">
+        <div class="login-box card-clay-lavender-pillow">
+          <div class="login-brand">
+            <span class="logo-icon">💜</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #48: 48. Claymorphism Lemon Drop -->
+    <div class="card-item" data-title="48. claymorphism lemon drop">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #48</span>
+        <h2>48. Claymorphism Lemon Drop</h2>
+        <div class="font-name">Fonte: Poppins</div>
+      </div>
+      <div class="preview-stage stage-clay-lemon-drop">
+        <div class="login-box card-clay-lemon-drop">
+          <div class="login-brand">
+            <span class="logo-icon">🍋</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #49: 49. Claymorphism Dark Silicone -->
+    <div class="card-item" data-title="49. claymorphism dark silicone">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #49</span>
+        <h2>49. Claymorphism Dark Silicone</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-clay-dark-rubber">
+        <div class="login-box card-clay-dark-rubber">
+          <div class="login-brand">
+            <span class="logo-icon">🎮</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #50: 50. Claymorphism Spearmint Pop -->
+    <div class="card-item" data-title="50. claymorphism spearmint pop">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #50</span>
+        <h2>50. Claymorphism Spearmint Pop</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-clay-minty-cube">
+        <div class="login-box card-clay-minty-cube">
+          <div class="login-brand">
+            <span class="logo-icon">🍃</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #51: 51. Luxury Noir & Royal Gold -->
+    <div class="card-item" data-title="51. luxury noir & royal gold">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #51</span>
+        <h2>51. Luxury Noir & Royal Gold</h2>
+        <div class="font-name">Fonte: Cinzel</div>
+      </div>
+      <div class="preview-stage stage-luxury-black-gold">
+        <div class="login-box card-luxury-black-gold">
+          <div class="login-brand">
+            <span class="logo-icon">⚜️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #52: 52. Cartier Imperial Emerald -->
+    <div class="card-item" data-title="52. cartier imperial emerald">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #52</span>
+        <h2>52. Cartier Imperial Emerald</h2>
+        <div class="font-name">Fonte: Cinzel</div>
+      </div>
+      <div class="preview-stage stage-luxury-emerald-cartier">
+        <div class="login-box card-luxury-emerald-cartier">
+          <div class="login-brand">
+            <span class="logo-icon">👑</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #53: 53. Carrara Marble & Rose Gold -->
+    <div class="card-item" data-title="53. carrara marble & rose gold">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #53</span>
+        <h2>53. Carrara Marble & Rose Gold</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-luxury-marble-white">
+        <div class="login-box card-luxury-marble-white">
+          <div class="login-brand">
+            <span class="logo-icon">🏛️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #54: 54. Midnight Sapphire Jewel -->
+    <div class="card-item" data-title="54. midnight sapphire jewel">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #54</span>
+        <h2>54. Midnight Sapphire Jewel</h2>
+        <div class="font-name">Fonte: Cinzel</div>
+      </div>
+      <div class="preview-stage stage-luxury-midnight-sapphire">
+        <div class="login-box card-luxury-midnight-sapphire">
+          <div class="login-brand">
+            <span class="logo-icon">💍</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #55: 55. Vintage Champagne Brut -->
+    <div class="card-item" data-title="55. vintage champagne brut">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #55</span>
+        <h2>55. Vintage Champagne Brut</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-luxury-champagne">
+        <div class="login-box card-luxury-champagne">
+          <div class="login-brand">
+            <span class="logo-icon">🥂</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #56: 56. Imperial Amethyst Velvet -->
+    <div class="card-item" data-title="56. imperial amethyst velvet">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #56</span>
+        <h2>56. Imperial Amethyst Velvet</h2>
+        <div class="font-name">Fonte: Cinzel</div>
+      </div>
+      <div class="preview-stage stage-luxury-amethyst-velvet">
+        <div class="login-box card-luxury-amethyst-velvet">
+          <div class="login-brand">
+            <span class="logo-icon">🔮</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #57: 57. Platinum Minimalist Prestige -->
+    <div class="card-item" data-title="57. platinum minimalist prestige">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #57</span>
+        <h2>57. Platinum Minimalist Prestige</h2>
+        <div class="font-name">Fonte: Montserrat</div>
+      </div>
+      <div class="preview-stage stage-luxury-platinum">
+        <div class="login-box card-luxury-platinum">
+          <div class="login-brand">
+            <span class="logo-icon">🪙</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #58: 58. Silk Rose Gold Atelier -->
+    <div class="card-item" data-title="58. silk rose gold atelier">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #58</span>
+        <h2>58. Silk Rose Gold Atelier</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-luxury-rose-gold">
+        <div class="login-box card-luxury-rose-gold">
+          <div class="login-brand">
+            <span class="logo-icon">🌹</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #59: 59. Antique Bronze Sculpture -->
+    <div class="card-item" data-title="59. antique bronze sculpture">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #59</span>
+        <h2>59. Antique Bronze Sculpture</h2>
+        <div class="font-name">Fonte: Cinzel</div>
+      </div>
+      <div class="preview-stage stage-luxury-bronze-age">
+        <div class="login-box card-luxury-bronze-age">
+          <div class="login-brand">
+            <span class="logo-icon">🛡️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #60: 60. Royal Dark Ruby -->
+    <div class="card-item" data-title="60. royal dark ruby">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #60</span>
+        <h2>60. Royal Dark Ruby</h2>
+        <div class="font-name">Fonte: Cinzel</div>
+      </div>
+      <div class="preview-stage stage-luxury-dark-ruby">
+        <div class="login-box card-luxury-dark-ruby">
+          <div class="login-brand">
+            <span class="logo-icon">🍷</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #61: 61. Swiss International Style -->
+    <div class="card-item" data-title="61. swiss international style">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #61</span>
+        <h2>61. Swiss International Style</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-minimal-swiss-clean">
+        <div class="login-box card-minimal-swiss-clean">
+          <div class="login-brand">
+            <span class="logo-icon">🇨🇭</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #62: 62. Editorial Vogue Serif -->
+    <div class="card-item" data-title="62. editorial vogue serif">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #62</span>
+        <h2>62. Editorial Vogue Serif</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-minimal-vogue-editorial">
+        <div class="login-box card-minimal-vogue-editorial">
+          <div class="login-brand">
+            <span class="logo-icon">📰</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #63: 63. Modernist Architecture Studio -->
+    <div class="card-item" data-title="63. modernist architecture studio">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #63</span>
+        <h2>63. Modernist Architecture Studio</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-minimal-bauhaus-clean">
+        <div class="login-box card-minimal-bauhaus-clean">
+          <div class="login-brand">
+            <span class="logo-icon">🏢</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #64: 64. Japanese Muji Muted Paper -->
+    <div class="card-item" data-title="64. japanese muji muted paper">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #64</span>
+        <h2>64. Japanese Muji Muted Paper</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-minimal-warm-paper">
+        <div class="login-box card-minimal-warm-paper">
+          <div class="login-brand">
+            <span class="logo-icon">🍵</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #65: 65. Stark Black & White -->
+    <div class="card-item" data-title="65. stark black & white">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #65</span>
+        <h2>65. Stark Black & White</h2>
+        <div class="font-name">Fonte: Fira Code</div>
+      </div>
+      <div class="preview-stage stage-minimal-mono-stark">
+        <div class="login-box card-minimal-mono-stark">
+          <div class="login-brand">
+            <span class="logo-icon">◼️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #66: 66. Nordic Scandinavian Spruce -->
+    <div class="card-item" data-title="66. nordic scandinavian spruce">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #66</span>
+        <h2>66. Nordic Scandinavian Spruce</h2>
+        <div class="font-name">Fonte: Montserrat</div>
+      </div>
+      <div class="preview-stage stage-minimal-nordic-frost">
+        <div class="login-box card-minimal-nordic-frost">
+          <div class="login-brand">
+            <span class="logo-icon">🌲</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #67: 67. UX Wireframe Blue Line -->
+    <div class="card-item" data-title="67. ux wireframe blue line">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #67</span>
+        <h2>67. UX Wireframe Blue Line</h2>
+        <div class="font-name">Fonte: Fira Code</div>
+      </div>
+      <div class="preview-stage stage-minimal-wireframe">
+        <div class="login-box card-minimal-wireframe">
+          <div class="login-brand">
+            <span class="logo-icon">📐</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #68: 68. Botanical Herbarium -->
+    <div class="card-item" data-title="68. botanical herbarium">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #68</span>
+        <h2>68. Botanical Herbarium</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-minimal-botanical">
+        <div class="login-box card-minimal-botanical">
+          <div class="login-brand">
+            <span class="logo-icon">🌿</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #69: 69. Slate Blue Product Studio -->
+    <div class="card-item" data-title="69. slate blue product studio">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #69</span>
+        <h2>69. Slate Blue Product Studio</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-minimal-slate-card">
+        <div class="login-box card-minimal-slate-card">
+          <div class="login-brand">
+            <span class="logo-icon">📂</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #70: 70. Academic Thesis Harvard -->
+    <div class="card-item" data-title="70. academic thesis harvard">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #70</span>
+        <h2>70. Academic Thesis Harvard</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-minimal-academic">
+        <div class="login-box card-minimal-academic">
+          <div class="login-brand">
+            <span class="logo-icon">🎓</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #71: 71. Arcade 8-Bit Pixel Stage -->
+    <div class="card-item" data-title="71. arcade 8-bit pixel stage">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #71</span>
+        <h2>71. Arcade 8-Bit Pixel Stage</h2>
+        <div class="font-name">Fonte: Press Start 2P</div>
+      </div>
+      <div class="preview-stage stage-retro-pixel-arcade">
+        <div class="login-box card-retro-pixel-arcade">
+          <div class="login-brand">
+            <span class="logo-icon">👾</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #72: 72. CRT Amber Phosphor Scanline -->
+    <div class="card-item" data-title="72. crt amber phosphor scanline">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #72</span>
+        <h2>72. CRT Amber Phosphor Scanline</h2>
+        <div class="font-name">Fonte: VT323</div>
+      </div>
+      <div class="preview-stage stage-retro-crt-amber">
+        <div class="login-box card-retro-crt-amber">
+          <div class="login-brand">
+            <span class="logo-icon">📼</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #73: 73. 1989 Monochrome Game Boy -->
+    <div class="card-item" data-title="73. 1989 monochrome game boy">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #73</span>
+        <h2>73. 1989 Monochrome Game Boy</h2>
+        <div class="font-name">Fonte: Press Start 2P</div>
+      </div>
+      <div class="preview-stage stage-retro-game-boy">
+        <div class="login-box card-retro-game-boy">
+          <div class="login-brand">
+            <span class="logo-icon">🕹️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #74: 74. Skeuomorphism Vintage Leather -->
+    <div class="card-item" data-title="74. skeuomorphism vintage leather">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #74</span>
+        <h2>74. Skeuomorphism Vintage Leather</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-retro-skeuo-leather">
+        <div class="login-box card-retro-skeuo-leather">
+          <div class="login-brand">
+            <span class="logo-icon">🕰️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #75: 75. Walkman Cassette 1982 -->
+    <div class="card-item" data-title="75. walkman cassette 1982">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #75</span>
+        <h2>75. Walkman Cassette 1982</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-retro-cassette-tape">
+        <div class="login-box card-retro-cassette-tape">
+          <div class="login-brand">
+            <span class="logo-icon">📻</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #76: 76. Commodore 64 BASIC -->
+    <div class="card-item" data-title="76. commodore 64 basic">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #76</span>
+        <h2>76. Commodore 64 BASIC</h2>
+        <div class="font-name">Fonte: VT323</div>
+      </div>
+      <div class="preview-stage stage-retro-commodore-64">
+        <div class="login-box card-retro-commodore-64">
+          <div class="login-brand">
+            <span class="logo-icon">💾</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #77: 77. Vintage Polaroid Snapshot -->
+    <div class="card-item" data-title="77. vintage polaroid snapshot">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #77</span>
+        <h2>77. Vintage Polaroid Snapshot</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-retro-polaroid-film">
+        <div class="login-box card-retro-polaroid-film">
+          <div class="login-brand">
+            <span class="logo-icon">📷</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #78: 78. 1920s Daily Gazette -->
+    <div class="card-item" data-title="78. 1920s daily gazette">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #78</span>
+        <h2>78. 1920s Daily Gazette</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-retro-newspaper-1920">
+        <div class="login-box card-retro-newspaper-1920">
+          <div class="login-brand">
+            <span class="logo-icon">🗞️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #79: 79. MS-DOS Editor Blue Screen -->
+    <div class="card-item" data-title="79. ms-dos editor blue screen">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #79</span>
+        <h2>79. MS-DOS Editor Blue Screen</h2>
+        <div class="font-name">Fonte: Fira Code</div>
+      </div>
+      <div class="preview-stage stage-retro-dos-blue">
+        <div class="login-box card-retro-dos-blue">
+          <div class="login-brand">
+            <span class="logo-icon">🖥️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #80: 80. Architecture Cyan Blueprint -->
+    <div class="card-item" data-title="80. architecture cyan blueprint">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #80</span>
+        <h2>80. Architecture Cyan Blueprint</h2>
+        <div class="font-name">Fonte: Fira Code</div>
+      </div>
+      <div class="preview-stage stage-retro-blueprint">
+        <div class="login-box card-retro-blueprint">
+          <div class="login-brand">
+            <span class="logo-icon">📐</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #81: 81. Starship Tactical HUD -->
+    <div class="card-item" data-title="81. starship tactical hud">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #81</span>
+        <h2>81. Starship Tactical HUD</h2>
+        <div class="font-name">Fonte: Orbitron</div>
+      </div>
+      <div class="preview-stage stage-scifi-starship-hud">
+        <div class="login-box card-scifi-starship-hud">
+          <div class="login-brand">
+            <span class="logo-icon">🛰️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #82: 82. Gargantua Black Hole -->
+    <div class="card-item" data-title="82. gargantua black hole">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #82</span>
+        <h2>82. Gargantua Black Hole</h2>
+        <div class="font-name">Fonte: Montserrat</div>
+      </div>
+      <div class="preview-stage stage-scifi-interstellar-blackhole">
+        <div class="login-box card-scifi-interstellar-blackhole">
+          <div class="login-brand">
+            <span class="logo-icon">🕳️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #83: 83. Mars Colony Hab-04 -->
+    <div class="card-item" data-title="83. mars colony hab-04">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #83</span>
+        <h2>83. Mars Colony Hab-04</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-scifi-mars-colony">
+        <div class="login-box card-scifi-mars-colony">
+          <div class="login-brand">
+            <span class="logo-icon">🚀</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #84: 84. Bamboo Forest Zen -->
+    <div class="card-item" data-title="84. bamboo forest zen">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #84</span>
+        <h2>84. Bamboo Forest Zen</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-nature-bamboo-zen">
+        <div class="login-box card-nature-bamboo-zen">
+          <div class="login-brand">
+            <span class="logo-icon">🎋</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #85: 85. Volcanic Magma Core -->
+    <div class="card-item" data-title="85. volcanic magma core">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #85</span>
+        <h2>85. Volcanic Magma Core</h2>
+        <div class="font-name">Fonte: Orbitron</div>
+      </div>
+      <div class="preview-stage stage-nature-volcano-magma">
+        <div class="login-box card-nature-volcano-magma">
+          <div class="login-brand">
+            <span class="logo-icon">🌋</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #86: 86. Mariana Trench Deep Sea -->
+    <div class="card-item" data-title="86. mariana trench deep sea">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #86</span>
+        <h2>86. Mariana Trench Deep Sea</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-nature-deep-abyss">
+        <div class="login-box card-nature-deep-abyss">
+          <div class="login-brand">
+            <span class="logo-icon">🐙</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #87: 87. Tromsø Aurora Borealis -->
+    <div class="card-item" data-title="87. tromsø aurora borealis">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #87</span>
+        <h2>87. Tromsø Aurora Borealis</h2>
+        <div class="font-name">Fonte: Poppins</div>
+      </div>
+      <div class="preview-stage stage-nature-aurora-borealis">
+        <div class="login-box card-nature-aurora-borealis">
+          <div class="login-brand">
+            <span class="logo-icon">🌌</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #88: 88. Kyoto Sakura Spring -->
+    <div class="card-item" data-title="88. kyoto sakura spring">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #88</span>
+        <h2>88. Kyoto Sakura Spring</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-nature-sakura-blossom">
+        <div class="login-box card-nature-sakura-blossom">
+          <div class="login-brand">
+            <span class="logo-icon">🌸</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #89: 89. Xenomorph Hive Biome -->
+    <div class="card-item" data-title="89. xenomorph hive biome">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #89</span>
+        <h2>89. Xenomorph Hive Biome</h2>
+        <div class="font-name">Fonte: Syne</div>
+      </div>
+      <div class="preview-stage stage-scifi-alien-xenomorph">
+        <div class="login-box card-scifi-alien-xenomorph">
+          <div class="login-brand">
+            <span class="logo-icon">👽</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #90: 90. Solar Flare Plasma Corona -->
+    <div class="card-item" data-title="90. solar flare plasma corona">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #90</span>
+        <h2>90. Solar Flare Plasma Corona</h2>
+        <div class="font-name">Fonte: Orbitron</div>
+      </div>
+      <div class="preview-stage stage-scifi-solar-flare">
+        <div class="login-box card-scifi-solar-flare">
+          <div class="login-brand">
+            <span class="logo-icon">☀️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #91: 91. B2B SaaS Enterprise Cloud -->
+    <div class="card-item" data-title="91. b2b saas enterprise cloud">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #91</span>
+        <h2>91. B2B SaaS Enterprise Cloud</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-modern-saas-clean">
+        <div class="login-box card-modern-saas-clean">
+          <div class="login-brand">
+            <span class="logo-icon">☁️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #92: 92. Fintech Crypto Dashboard -->
+    <div class="card-item" data-title="92. fintech crypto dashboard">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #92</span>
+        <h2>92. Fintech Crypto Dashboard</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-modern-fintech-dark">
+        <div class="login-box card-modern-fintech-dark">
+          <div class="login-brand">
+            <span class="logo-icon">💳</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #93: 93. Netflix Streaming Dark Red -->
+    <div class="card-item" data-title="93. netflix streaming dark red">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #93</span>
+        <h2>93. Netflix Streaming Dark Red</h2>
+        <div class="font-name">Fonte: Montserrat</div>
+      </div>
+      <div class="preview-stage stage-modern-streaming-cinema">
+        <div class="login-box card-modern-streaming-cinema">
+          <div class="login-brand">
+            <span class="logo-icon">🎬</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #94: 94. Spotify Electric Wave -->
+    <div class="card-item" data-title="94. spotify electric wave">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #94</span>
+        <h2>94. Spotify Electric Wave</h2>
+        <div class="font-name">Fonte: Poppins</div>
+      </div>
+      <div class="preview-stage stage-modern-music-festival">
+        <div class="login-box card-modern-music-festival">
+          <div class="login-brand">
+            <span class="logo-icon">🎧</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #95: 95. Esports Clan Tournament -->
+    <div class="card-item" data-title="95. esports clan tournament">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #95</span>
+        <h2>95. Esports Clan Tournament</h2>
+        <div class="font-name">Fonte: Orbitron</div>
+      </div>
+      <div class="preview-stage stage-modern-esports-clan">
+        <div class="login-box card-modern-esports-clan">
+          <div class="login-brand">
+            <span class="logo-icon">🏆</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #96: 96. Gamified Learning Quest -->
+    <div class="card-item" data-title="96. gamified learning quest">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #96</span>
+        <h2>96. Gamified Learning Quest</h2>
+        <div class="font-name">Fonte: Comfortaa</div>
+      </div>
+      <div class="preview-stage stage-modern-education-kids">
+        <div class="login-box card-modern-education-kids">
+          <div class="login-brand">
+            <span class="logo-icon">🎒</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #97: 97. Wanderlust Travel Horizon -->
+    <div class="card-item" data-title="97. wanderlust travel horizon">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #97</span>
+        <h2>97. Wanderlust Travel Horizon</h2>
+        <div class="font-name">Fonte: Poppins</div>
+      </div>
+      <div class="preview-stage stage-modern-travel-wanderlust">
+        <div class="login-box card-modern-travel-wanderlust">
+          <div class="login-brand">
+            <span class="logo-icon">✈️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #98: 98. Calm Meditation & Mindfulness -->
+    <div class="card-item" data-title="98. calm meditation & mindfulness">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #98</span>
+        <h2>98. Calm Meditation & Mindfulness</h2>
+        <div class="font-name">Fonte: Inter</div>
+      </div>
+      <div class="preview-stage stage-modern-health-wellness">
+        <div class="login-box card-modern-health-wellness">
+          <div class="login-brand">
+            <span class="logo-icon">🧘</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #99: 99. Gourmet Bistro Culinary -->
+    <div class="card-item" data-title="99. gourmet bistro culinary">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #99</span>
+        <h2>99. Gourmet Bistro Culinary</h2>
+        <div class="font-name">Fonte: Playfair Display</div>
+      </div>
+      <div class="preview-stage stage-modern-food-gourmet">
+        <div class="login-box card-modern-food-gourmet">
+          <div class="login-brand">
+            <span class="logo-icon">🍷</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card #100: 100. Carbon Armor Zero-Trust -->
+    <div class="card-item" data-title="100. carbon armor zero-trust">
+      <div class="card-header-info">
+        <span class="style-tag">Modelo #100</span>
+        <h2>100. Carbon Armor Zero-Trust</h2>
+        <div class="font-name">Fonte: Space Grotesk</div>
+      </div>
+      <div class="preview-stage stage-modern-carbon-shield">
+        <div class="login-box card-modern-carbon-shield">
+          <div class="login-brand">
+            <span class="logo-icon">🛡️</span>
+            <h3>Entrar na Conta</h3>
+            <p>Acesse o painel do sistema</p>
+          </div>
+          <div class="form-group">
+            <label>E-mail ou Usuário</label>
+            <input type="text" placeholder="exemplo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="action-btn">Confirmar Acesso</button>
+          <div class="card-footer">Esqueceu a senha? Recuperar</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -1,7 +1,32 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { exec } from 'child_process';
 import { resolveTemplateDir } from '@/lib/portal-template-utils';
+
+function optimizeVideoAndGeneratePoster(filePath: string) {
+  const isVideo = filePath.toLowerCase().match(/\.(mp4|webm|mov)$/);
+  if (!isVideo) return;
+
+  const posterPath = filePath.replace(/\.[^.]+$/, '_poster.jpg');
+  const tempPath = filePath.replace(/\.[^.]+$/, '_temp.mp4');
+
+  // 1. Gera o poster do vídeo a partir de 1.5s para evitar tela inicial estática ou ícones de play
+  exec(`ffmpeg -y -ss 00:00:01.500 -i "${filePath}" -vframes 1 -q:v 2 "${posterPath}"`, (err) => {
+    if (err) console.warn('[VideoOpt] Erro ao gerar poster:', err.message);
+  });
+
+  // 2. Otimiza o vídeo com faststart e compressão de streaming
+  exec(`ffmpeg -y -i "${filePath}" -vf "scale='min(720,iw)':-2,fps=30" -c:v libx264 -crf 26 -preset fast -movflags +faststart -c:a aac -b:a 64k "${tempPath}"`, (err) => {
+    if (!err && fs.existsSync(tempPath)) {
+      try {
+        fs.renameSync(tempPath, filePath);
+      } catch (e) {}
+    } else if (fs.existsSync(tempPath)) {
+      try { fs.unlinkSync(tempPath); } catch (e) {}
+    }
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -91,6 +116,7 @@ export async function POST(request: Request) {
       const fileName = `bg_${safeName}_${Date.now()}${cleanExt}`;
       const filePath = path.join(uploadDir, fileName);
       fs.writeFileSync(filePath, buffer);
+      if (isVideoFile) optimizeVideoAndGeneratePoster(filePath);
 
       // Clean old backgrounds for this template in public/uploads AFTER successful save
       try {
@@ -145,6 +171,7 @@ export async function POST(request: Request) {
           // Save to public/uploads (for admin preview and central streaming)
           const publicPath = path.join(uploadDir, fileName);
           fs.writeFileSync(publicPath, buffer);
+          optimizeVideoAndGeneratePoster(publicPath);
 
           const fileUrl = `/uploads/${fileName}`;
           return NextResponse.json({ 
@@ -161,6 +188,7 @@ export async function POST(request: Request) {
       const filePath = path.join(uploadDir, fileName);
       
       fs.writeFileSync(filePath, buffer);
+      optimizeVideoAndGeneratePoster(filePath);
 
       const fileUrl = `/uploads/${fileName}`;
       
@@ -226,6 +254,22 @@ export async function DELETE(request: Request) {
           const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
           cfg.bg = { type: 'default', url: '' };
           fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2), 'utf8');
+        } catch (e) {}
+      }
+
+      // Clean login.html to immediately strip background video / image
+      const loginHtmlPath = path.join(hDir, 'login.html');
+      if (fs.existsSync(loginHtmlPath)) {
+        try {
+          let html = fs.readFileSync(loginHtmlPath, 'utf8');
+          const bgBlockRegex = /(<!--\s*MIKROGESTOR_BG_SCRIPT\s*-->|<!--\s*MIKROGESTOR BG\s*-->)[\s\S]*?(<!--\s*END_MIKROGESTOR_BG_SCRIPT\s*-->|<!--\s*END MIKROGESTOR BG\s*-->)/i;
+          if (bgBlockRegex.test(html)) {
+            html = html.replace(bgBlockRegex, '<!-- MIKROGESTOR_BG_SCRIPT -->\n<!-- END_MIKROGESTOR_BG_SCRIPT -->');
+          }
+          html = html.replace(/<video[^>]*id=["']mg-bg-video["'][^>]*>[\s\S]*?<\/video>/gi, '');
+          html = html.replace(/<div[^>]*id=["']mg-bg-image["'][^>]*><\/div>/gi, '');
+          html = html.replace(/<script[^>]*>[\s\S]*?mgInitVideo[\s\S]*?<\/script>/gi, '');
+          fs.writeFileSync(loginHtmlPath, html, 'utf8');
         } catch (e) {}
       }
 

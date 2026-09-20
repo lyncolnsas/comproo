@@ -9,8 +9,7 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute = 
     path === '/' || 
     path.startsWith('/api/auth') || 
-    path.startsWith('/portal/register') || 
-    path.startsWith('/portal/verify') || 
+    path.startsWith('/portal') || 
     path.startsWith('/api/portal/') || 
     path.startsWith('/api/webhook') ||
     path.startsWith('/uploads/');

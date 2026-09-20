@@ -3,6 +3,16 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('Iniciando configuração do banco de dados...');
+
+  // Otimizações de performance e vida útil do cartão MicroSD (Raspberry Pi)
+  try {
+    await prisma.$queryRawUnsafe('PRAGMA journal_mode = WAL;');
+    await prisma.$queryRawUnsafe('PRAGMA synchronous = NORMAL;');
+    await prisma.$queryRawUnsafe('PRAGMA temp_store = MEMORY;');
+    console.log('SQLite configurado com sucesso em modo WAL (Write-Ahead Logging)!');
+  } catch (pragmaErr) {
+    console.warn('Aviso ao configurar PRAGMA SQLite:', pragmaErr.message);
+  }
   
   // Verifica se já existe algum usuário
   const userCount = await prisma.user.count();

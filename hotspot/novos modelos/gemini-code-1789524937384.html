@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de UI Design - 30 Modelos de Login Cards</title>
+  
+  <!-- Fontes do Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Comfortaa:wght@600&family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&family=Montserrat:wght@400;700&family=Orbitron:wght@600;800&family=Playfair+Display:ital,wght@0,600;1,400&family=Poppins:wght@400;600;700&family=Press+Start+2P&family=Space+Grotesk:wght@500;700&family=Syne:wght@700;800&family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-main: #0c0d14;
+      --card-min-w: 320px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(135deg, #a855f7, #3b82f6, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+      font-weight: 800;
+    }
+
+    header p {
+      color: #94a3b8;
+      font-size: 1.1rem;
+      max-width: 750px;
+      margin: 0 auto;
+    }
+
+    .badge-count {
+      display: inline-block;
+      margin-top: 15px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    /* Grid do Dashboard */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 40px 30px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* Wrapper de Cada Item */
+    .card-showcase {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .card-meta {
+      padding: 0 4px;
+    }
+
+    .card-meta .num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .card-meta h2 {
+      font-size: 1.15rem;
+      color: #f8fafc;
+      margin: 2px 0;
+    }
+
+    .card-meta p {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    /* ESTRUTURA BASE DO LOGIN CARD */
+    .login-box {
+      border-radius: 20px;
+      padding: 30px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      min-height: 420px;
+      justify-content: center;
+    }
+
+    .login-box:hover {
+      transform: translateY(-4px);
+    }
+
+    .logo-area {
+      text-align: center;
+      margin-bottom: 5px;
+    }
+
+    .logo-icon {
+      font-size: 2.2rem;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+
+    .login-box h3 {
+      font-size: 1.25rem;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .login-box .subtitle {
+      font-size: 0.8rem;
+      text-align: center;
+      margin-bottom: 12px;
+      opacity: 0.75;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-group label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: none;
+      outline: none;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-top: 6px;
+      transition: all 0.2s;
+    }
+
+    .footer-link {
+      text-align: center;
+      font-size: 0.75rem;
+      opacity: 0.8;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+
+    /* ==========================================================================
+       30 ESTILOS E MODELOS DE DESIGN DISTINTOS
+       ========================================================================== */
+
+    /* 1. Glassmorphism Puro (Igual ao seu exemplo roxo escuro) */
+    .style-1-bg {
+      background: radial-gradient(circle at 10% 20%, #4c1d95 0%, #1e1b4b 60%, #09090b 100%);
+      padding: 20px;
+      border-radius: 24px;
+    }
+    .card-glassmorphism {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+      color: #e2e8f0;
+      font-family: 'Poppins', sans-serif;
+    }
+    .card-glassmorphism input {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-radius: 14px;
+    }
+    .card-glassmorphism .login-btn {
+      background: rgba(168, 85, 247, 0.4);
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      color: #fff;
+      border-radius: 14px;
+      backdrop-filter: blur(5px);
+    }
+    .card-glassmorphism .login-btn:hover { background: rgba(168, 85, 247, 0.6); }
+
+    /* 2. Neumorfismo Dark (Soft UI) */
+    .style-2-bg { background: #1e2026; padding: 20px; border-radius: 24px; }
+    .card-neumorphism-dark {
+      background: #1e2026;
+      box-shadow: 10px 10px 20px #131418, -10px -10px 20px #292c34;
+      color: #cbd5e1;
+      font-family: 'Comfortaa', cursive;
+    }
+    .card-neumorphism-dark input {
+      background: #1e2026;
+      box-shadow: inset 4px 4px 8px #14151a, inset -4px -4px 8px #282b32;
+      color: #38bdf8;
+    }
+    .card-neumorphism-dark .login-btn {
+      background: #1e2026;
+      box-shadow: 5px 5px 10px #131418, -5px -5px 10px #292c34;
+      color: #38bdf8;
+    }
+    .card-neumorphism-dark .login-btn:active {
+      box-shadow: inset 3px 3px 6px #131418, inset -3px -3px 6px #292c34;
+    }
+
+    /* 3. Neumorfismo Light */
+    .style-3-bg { background: #e0e5ec; padding: 20px; border-radius: 24px; }
+    .card-neumorphism-light {
+      background: #e0e5ec;
+      box-shadow: 12px 12px 24px #bec3c9, -12px -12px 24px #ffffff;
+      color: #475569;
+      font-family: 'Inter', sans-serif;
+    }
+    .card-neumorphism-light input {
+      background: #e0e5ec;
+      box-shadow: inset 4px 4px 8px #bec3c9, inset -4px -4px 8px #ffffff;
+      color: #1e293b;
+    }
+    .card-neumorphism-light .login-btn {
+      background: #e0e5ec;
+      box-shadow: 6px 6px 12px #bec3c9, -6px -6px 12px #ffffff;
+      color: #2563eb;
+    }
+
+    /* 4. Cyberpunk Neon */
+    .style-4-bg { background: #05050a; padding: 20px; border-radius: 24px; }
+    .card-cyberpunk {
+      background: #090a12;
+      border: 2px solid #00f0ff;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4), inset 0 0 15px rgba(255, 0, 85, 0.2);
+      color: #00f0ff;
+      font-family: 'Orbitron', sans-serif;
+      clip-path: polygon(0 0, 93% 0, 100% 7%, 100% 100%, 7% 100%, 0 93%);
+    }
+    .card-cyberpunk input {
+      background: #121324;
+      border: 1px solid #ff0055;
+      color: #ffff00;
+    }
+    .card-cyberpunk .login-btn {
+      background: #ff0055;
+      color: #fff;
+      box-shadow: 0 0 12px #ff0055;
+      text-transform: uppercase;
+    }
+
+    /* 5. Brutalismo / Neobrutalismo */
+    .style-5-bg { background: #facc15; padding: 20px; border-radius: 24px; }
+    .card-brutalism {
+      background: #fff;
+      border: 4px solid #000;
+      box-shadow: 8px 8px 0px #000;
+      color: #000;
+      font-family: 'Space Grotesk', sans-serif;
+      border-radius: 0 !important;
+    }
+    .card-brutalism input {
+      border: 3px solid #000;
+      border-radius: 0;
+      background: #f1f5f9;
+      font-weight: 700;
+    }
+    .card-brutalism .login-btn {
+      background: #ff3366;
+      border: 3px solid #000;
+      color: #fff;
+      font-weight: 900;
+      text-transform: uppercase;
+      box-shadow: 4px 4px 0 #000;
+      border-radius: 0;
+    }
+
+    /* 6. Aurora / Mesh Glow */
+    .style-6-bg { background: #030712; padding: 20px; border-radius: 24px; }
+    .card-aurora {
+      background: linear-gradient(135deg, rgba(236,72,153,0.15), rgba(99,102,241,0.15), rgba(16,185,129,0.15));
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      position: relative;
+    }
+    .card-aurora input {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    .card-aurora .login-btn {
+      background: linear-gradient(90deg, #ec4899, #8b5cf6, #06b6d4);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(139,92,246,0.5);
+    }
+
+    /* 7. Claymorphism 3D */
+    .style-7-bg { background: #e0e7ff; padding: 20px; border-radius: 24px; }
+    .card-claymorphism {
+      background: #818cf8;
+      border-radius: 30px !important;
+      box-shadow: 20px 20px 40px #6366f1, inset -8px -8px 16px #4338ca, inset 8px 8px 16px #a5b4fc;
+      color: #ffffff;
+      font-family: 'Poppins', sans-serif;
+    }
+    .card-claymorphism input {
+      background: #6366f1;
+      border-radius: 20px;
+      color: #fff;
+      box-shadow: inset 4px 4px 8px #4338ca, inset -4px -4px 8px #818cf8;
+    }
+    .card-claymorphism .login-btn {
+      background: #f43f5e;
+      border-radius: 20px;
+      box-shadow: 6px 6px 14px #4338ca, inset -3px -3px 6px #be123c, inset 3px 3px 6px #fb7185;
+      color: #fff;
+    }
+
+    /* 8. Retro Pixel 8-Bit */
+    .style-8-bg { background: #181824; padding: 20px; border-radius: 24px; }
+    .card-pixel {
+      background: #24253a;
+      border: 4px solid #fff;
+      box-shadow: 6px 6px 0px #e11d48;
+      font-family: 'Press Start 2P', monospace;
+      color: #facc15;
+      border-radius: 0;
+    }
+    .card-pixel input {
+      background: #000;
+      border: 3px solid #fff;
+      color: #22c55e;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.65rem;
+      border-radius: 0;
+    }
+    .card-pixel .login-btn {
+      background: #e11d48;
+      border: 3px solid #fff;
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.7rem;
+      border-radius: 0;
+    }
+
+    /* 9. Holographic Prismatic */
+    .style-9-bg { background: #0a0a0f; padding: 20px; border-radius: 24px; }
+    .card-holo {
+      background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+      border: 2px solid transparent;
+      border-image: linear-gradient(45deg, #ff0080, #7928ca, #0070f3, #00dfd8) 1;
+      box-shadow: 0 8px 32px rgba(121, 40, 202, 0.3);
+      color: #f1f5f9;
+    }
+    .card-holo input {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    .card-holo .login-btn {
+      background: linear-gradient(90deg, #ff0080, #7928ca, #00dfd8);
+      color: #fff;
+      font-weight: 800;
+    }
+
+    /* 10. Minimalista Ultra Clean */
+    .style-10-bg { background: #ffffff; padding: 20px; border-radius: 24px; }
+    .card-minimal {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+      color: #0f172a;
+      font-family: 'Inter', sans-serif;
+    }
+    .card-minimal input {
+      background: transparent;
+      border-bottom: 2px solid #cbd5e1;
+      border-radius: 0;
+      padding-left: 0;
+      color: #0f172a;
+    }
+    .card-minimal input:focus {
+      border-bottom-color: #0f172a;
+    }
+    .card-minimal .login-btn {
+      background: #0f172a;
+      color: #fff;
+      border-radius: 6px;
+    }
+
+    /* 11. Luxury Black & Gold */
+    .style-11-bg { background: #0c0a09; padding: 20px; border-radius: 24px; }
+    .card-luxury {
+      background: #171614;
+      border: 1px solid #d4af37;
+      box-shadow: 0 10px 30px rgba(212, 175, 55, 0.15);
+      color: #e7e5e4;
+      font-family: 'Cinzel', serif;
+    }
+    .card-luxury input {
+      background: #0c0a09;
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      color: #fef08a;
+      border-radius: 0;
+    }
+    .card-luxury .login-btn {
+      background: linear-gradient(135deg, #d4af37, #aa7c11);
+      color: #000;
+      font-weight: 800;
+      border-radius: 0;
+    }
+
+    /* 12. Retrowave / Synthwave 80s */
+    .style-12-bg { background: #130026; padding: 20px; border-radius: 24px; }
+    .card-synthwave {
+      background: linear-gradient(180deg, rgba(38,10,66,0.9), rgba(12,2,25,0.95));
+      border: 2px solid #f43f5e;
+      box-shadow: 0 0 20px #f43f5e, inset 0 0 15px #06b6d4;
+      color: #38bdf8;
+      font-family: 'Syne', sans-serif;
+    }
+    .card-synthwave input {
+      background: #1e0938;
+      border: 1px solid #06b6d4;
+      color: #f43f5e;
+    }
+    .card-synthwave .login-btn {
+      background: linear-gradient(90deg, #f43f5e, #ec4899);
+      box-shadow: 0 0 12px #ec4899;
+      color: #fff;
+    }
+
+    /* 13. Terminal / Hacker CLI */
+    .style-13-bg { background: #000; padding: 20px; border-radius: 24px; }
+    .card-terminal {
+      background: #050505;
+      border: 1px solid #22c55e;
+      box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+      font-family: 'Fira Code', monospace;
+      border-radius: 4px;
+    }
+    .card-terminal input {
+      background: #0a100d;
+      border: 1px dashed #22c55e;
+      color: #86efac;
+      font-family: 'Fira Code', monospace;
+      border-radius: 0;
+    }
+    .card-terminal .login-btn {
+      background: #22c55e;
+      color: #000;
+      font-family: 'Fira Code', monospace;
+      border-radius: 0;
+    }
+
+    /* 14. Skeuomorphism Vintage */
+    .style-14-bg { background: #3b281c; padding: 20px; border-radius: 24px; }
+    .card-skeuo {
+      background: linear-gradient(180deg, #6c4b31, #48301d);
+      border: 2px solid #291a10;
+      box-shadow: inset 1px 1px 2px rgba(255,255,255,0.4), inset -1px -1px 2px rgba(0,0,0,0.7), 0 12px 25px rgba(0,0,0,0.6);
+      color: #f5ebe0;
+    }
+    .card-skeuo input {
+      background: #fbf6f0;
+      border: 2px solid #8d6b4f;
+      box-shadow: inset 2px 2px 4px rgba(0,0,0,0.4);
+      color: #2e1d11;
+    }
+    .card-skeuo .login-btn {
+      background: linear-gradient(180deg, #a66a38, #78491c);
+      border: 1px solid #4a2c0f;
+      box-shadow: inset 1px 1px 1px rgba(255,255,255,0.5), 0 4px 6px rgba(0,0,0,0.4);
+      color: #fff;
+    }
+
+    /* 15. Paper Cut / Origami Layered */
+    .style-15-bg { background: #f1f5f9; padding: 20px; border-radius: 24px; }
+    .card-papercut {
+      background: #ffffff;
+      box-shadow: 5px 5px 0px #cbd5e1, 10px 10px 0px #94a3b8, 15px 15px 0px #64748b;
+      color: #1e293b;
+      border: 1px solid #cbd5e1;
+      border-radius: 0;
+    }
+    .card-papercut input {
+      background: #f8fafc;
+      border: 1px solid #94a3b8;
+      box-shadow: inset 2px 2px 0px #cbd5e1;
+      border-radius: 0;
+    }
+    .card-papercut .login-btn {
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 3px 3px 0 #1e3a8a;
+      border-radius: 0;
+    }
+
+    /* 16. Y2K Aesthetic 2000s */
+    .style-16-bg { background: #ffdee9; padding: 20px; border-radius: 24px; }
+    .card-y2k {
+      background: linear-gradient(135deg, #b5fffc, #ffdee9);
+      border: 3px solid #ff598f;
+      border-radius: 35px 8px 35px 8px;
+      box-shadow: 6px 6px 0px #01dddd;
+      color: #d11270;
+      font-family: 'Comfortaa', cursive;
+    }
+    .card-y2k input {
+      background: rgba(255,255,255,0.9);
+      border: 2px solid #01dddd;
+      border-radius: 12px;
+      color: #d11270;
+    }
+    .card-y2k .login-btn {
+      background: #ff598f;
+      color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(255,89,143,0.4);
+    }
+
+    /* 17. Vibrant Flat Material 3 */
+    .style-17-bg { background: #e0f2fe; padding: 20px; border-radius: 24px; }
+    .card-material {
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 4px 20px rgba(14, 165, 233, 0.15);
+      color: #0f172a;
+    }
+    .card-material input {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 12px;
+    }
+    .card-material .login-btn {
+      background: #0284c7;
+      color: #fff;
+      border-radius: 20px;
+    }
+
+    /* 18. Monocromático High Contrast */
+    .style-18-bg { background: #000; padding: 20px; border-radius: 24px; }
+    .card-monochrome {
+      background: #000000;
+      border: 2px solid #ffffff;
+      color: #ffffff;
+      border-radius: 0;
+    }
+    .card-monochrome input {
+      background: #000;
+      border: 1px solid #fff;
+      color: #fff;
+      border-radius: 0;
+    }
+    .card-monochrome .login-btn {
+      background: #fff;
+      color: #000;
+      font-weight: 800;
+      border-radius: 0;
+    }
+
+    /* 19. Comic Pop-Art */
+    .style-19-bg { background: #38bdf8; padding: 20px; border-radius: 24px; }
+    .card-popart {
+      background: #fef08a;
+      border: 4px solid #000;
+      box-shadow: 8px 8px 0px #ec4899;
+      color: #000;
+      border-radius: 16px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .card-popart input {
+      border: 3px solid #000;
+      background: #fff;
+      font-weight: 700;
+    }
+    .card-popart .login-btn {
+      background: #06b6d4;
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0 #000;
+      color: #000;
+      font-size: 1rem;
+    }
+
+    /* 20. Futuristic Sci-Fi HUD */
+    .style-20-bg { background: #030d1a; padding: 20px; border-radius: 24px; }
+    .card-hud {
+      background: rgba(2, 28, 56, 0.4);
+      border: 1px solid #0284c7;
+      box-shadow: 0 0 25px rgba(2, 132, 199, 0.3);
+      color: #7dd3fc;
+      border-radius: 4px;
+      font-family: 'Orbitron', sans-serif;
+    }
+    .card-hud input {
+      background: rgba(3, 105, 161, 0.15);
+      border: 1px solid #38bdf8;
+      color: #bae6fd;
+    }
+    .card-hud .login-btn {
+      background: #0284c7;
+      border: 1px solid #7dd3fc;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* 21. Acid Graphic / Techno Club */
+    .style-21-bg { background: #0d0e15; padding: 20px; border-radius: 24px; }
+    .card-acid {
+      background: #11121d;
+      border: 2px dashed #a3e635;
+      color: #a3e635;
+      font-family: 'Syne', sans-serif;
+    }
+    .card-acid input {
+      background: #000;
+      border: 1px solid #a3e635;
+      color: #fff;
+    }
+    .card-acid .login-btn {
+      background: #a3e635;
+      color: #000;
+      font-weight: 900;
+    }
+
+    /* 22. Frosted Froth / Soft Glass */
+    .style-22-bg { background: linear-gradient(135deg, #fbcfe8, #fed7aa); padding: 20px; border-radius: 24px; }
+    .card-softglass {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 8px 32px rgba(244, 63, 94, 0.1);
+      color: #881337;
+    }
+    .card-softglass input {
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      color: #4c0519;
+    }
+    .card-softglass .login-btn {
+      background: #f43f5e;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+    }
+
+    /* 23. Dark Mode OLED Clean */
+    .style-23-bg { background: #000000; padding: 20px; border-radius: 24px; }
+    .card-oled {
+      background: #0a0a0a;
+      border: 1px solid #262626;
+      color: #fafafa;
+    }
+    .card-oled input {
+      background: #171717;
+      border: 1px solid #333;
+      color: #fff;
+    }
+    .card-oled .login-btn {
+      background: #ffffff;
+      color: #000000;
+    }
+
+    /* 24. Watercolor Art */
+    .style-24-bg { background: #faf5ff; padding: 20px; border-radius: 24px; }
+    .card-watercolor {
+      background: radial-gradient(circle at 10% 20%, #fbcfe8 0%, #e0e7ff 50%, #ddd6fe 100%);
+      box-shadow: 0 10px 30px rgba(192, 132, 252, 0.25);
+      color: #4c1d95;
+      font-family: 'Playfair Display', serif;
+    }
+    .card-watercolor input {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid #c084fc;
+      color: #581c87;
+    }
+    .card-watercolor .login-btn {
+      background: #9333ea;
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    /* 25. Cyber Glitch Dark */
+    .style-25-bg { background: #111; padding: 20px; border-radius: 24px; }
+    .card-glitch {
+      background: #16161a;
+      border-left: 5px solid #2cb67d;
+      border-right: 5px solid #ff0055;
+      box-shadow: -4px 0 10px rgba(44, 182, 125, 0.4), 4px 0 10px rgba(255, 0, 85, 0.4);
+      color: #fffffe;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .card-glitch input {
+      background: #242629;
+      border: 1px solid #72757e;
+      color: #fff;
+    }
+    .card-glitch .login-btn {
+      background: #2cb67d;
+      color: #010101;
+      font-weight: 800;
+    }
+
+    /* 26. Editorial Magazine / Serif */
+    .style-26-bg { background: #fdfbf7; padding: 20px; border-radius: 24px; }
+    .card-editorial {
+      background: #fdfbf7;
+      border: 1px solid #d6d3d1;
+      color: #1c1917;
+      font-family: 'Playfair Display', serif;
+    }
+    .card-editorial input {
+      border: 1px solid #a8a29e;
+      background: transparent;
+      border-radius: 0;
+      color: #1c1917;
+    }
+    .card-editorial .login-btn {
+      background: #1c1917;
+      color: #fdfbf7;
+      border-radius: 0;
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* 27. Deep Ocean Abyss */
+    .style-27-bg { background: #02131e; padding: 20px; border-radius: 24px; }
+    .card-ocean {
+      background: linear-gradient(180deg, #02273e, #011623);
+      border: 1px solid #00a8cc;
+      box-shadow: 0 12px 30px rgba(0, 168, 204, 0.2);
+      color: #e0f7fa;
+    }
+    .card-ocean input {
+      background: #021f31;
+      border: 1px solid #0c7b93;
+      color: #fff;
+    }
+    .card-ocean .login-btn {
+      background: #00a8cc;
+      color: #011623;
+      font-weight: 800;
+    }
+
+    /* 28. Emerald Glass & Velvet */
+    .style-28-bg { background: #022018; padding: 20px; border-radius: 24px; }
+    .card-emerald {
+      background: rgba(6, 78, 59, 0.45);
+      backdrop-filter: blur(15px);
+      border: 1px solid #10b981;
+      box-shadow: 0 15px 35px rgba(16, 185, 129, 0.15);
+      color: #a7f3d0;
+    }
+    .card-emerald input {
+      background: rgba(4, 120, 87, 0.2);
+      border: 1px solid #059669;
+      color: #fff;
+    }
+    .card-emerald .login-btn {
+      background: #10b981;
+      color: #022018;
+      font-weight: 800;
+    }
+
+    /* 29. Sunset Gradient Glow */
+    .style-29-bg { background: #180d19; padding: 20px; border-radius: 24px; }
+    .card-sunset {
+      background: linear-gradient(135deg, rgba(255, 94, 98, 0.1), rgba(255, 153, 102, 0.1));
+      border: 1px solid rgba(255, 94, 98, 0.3);
+      box-shadow: 0 10px 30px rgba(255, 94, 98, 0.15);
+      color: #fed7aa;
+    }
+    .card-sunset input {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 153, 102, 0.3);
+      color: #fff;
+    }
+    .card-sunset .login-btn {
+      background: linear-gradient(90deg, #ff5e62, #ff9966);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* 30. Retro Arcade CRT / Scanline */
+    .style-30-bg { background: #080808; padding: 20px; border-radius: 24px; }
+    .card-crt {
+      background: #12140e;
+      border: 3px solid #ff9900;
+      box-shadow: 0 0 15px rgba(255, 153, 0, 0.4);
+      color: #ff9900;
+      font-family: 'VT323', monospace;
+      position: relative;
+    }
+    .card-crt::before {
+      content: " ";
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+    .card-crt input {
+      background: #050604;
+      border: 1px solid #ff9900;
+      color: #ffb74d;
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+    }
+    .card-crt .login-btn {
+      background: #ff9900;
+      color: #000;
+      font-family: 'VT323', monospace;
+      font-size: 1.3rem;
+    }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Showcase de Design: 30 Estilos de UI</h1>
+    <p>Galeria com 30 modelos conceituais de cards de login e autenticação, demonstrando efeitos modernos de CSS, contrastes, tipografias e técnicas de UI/UX.</p>
+    <div class="badge-count">Total de 30 Efeitos Prontos</div>
+  </header>
+
+  <div class="dashboard-grid">
+
+    <!-- 1. Glassmorphism Puro -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#01</span>
+        <h2>Glassmorphism Dark (Exemplo Original)</h2>
+        <p>Efeito vidro fosco, blur de 25px e bordas translúcidas.</p>
+      </div>
+      <div class="style-1-bg">
+        <div class="login-box card-glassmorphism">
+          <div class="logo-area">
+            <span class="logo-icon">💠</span>
+            <h3>Kayuki Design</h3>
+            <p class="subtitle">Bem-vindo de volta!</p>
+          </div>
+          <div class="input-group">
+            <label>E-mail</label>
+            <input type="email" placeholder="usuario@email.com">
+          </div>
+          <div class="input-group">
+            <label>Senha</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Entrar na Conta</button>
+          <div class="footer-link">Novo membro? Cadastre-se</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Neumorfismo Dark -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#02</span>
+        <h2>Neumorphism Dark (Soft UI)</h2>
+        <p>Sombras internas e externas em relevo escuro.</p>
+      </div>
+      <div class="style-2-bg">
+        <div class="login-box card-neumorphism-dark">
+          <div class="logo-area">
+            <span class="logo-icon">🔘</span>
+            <h3>SoftDark</h3>
+            <p class="subtitle">Autenticação Biométrica</p>
+          </div>
+          <div class="input-group">
+            <label>Usuário</label>
+            <input type="text" placeholder="Nome de usuário">
+          </div>
+          <div class="input-group">
+            <label>Código PIN</label>
+            <input type="password" placeholder="••••">
+          </div>
+          <button class="login-btn">Desbloquear</button>
+          <div class="footer-link">Esqueceu a chave?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Neumorfismo Light -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#03</span>
+        <h2>Neumorphism Light</h2>
+        <p>Efeito clássico de extrusão de plástico fosco cinza claro.</p>
+      </div>
+      <div class="style-3-bg">
+        <div class="login-box card-neumorphism-light">
+          <div class="logo-area">
+            <span class="logo-icon">☁️</span>
+            <h3>CleanSoft</h3>
+            <p class="subtitle">Acesse seu painel</p>
+          </div>
+          <div class="input-group">
+            <label>E-mail</label>
+            <input type="email" placeholder="nome@empresa.com">
+          </div>
+          <div class="input-group">
+            <label>Senha</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Acessar Sistema</button>
+          <div class="footer-link">Criar nova conta</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Cyberpunk Neon -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#04</span>
+        <h2>Cyberpunk 2077 Neon</h2>
+        <p>Cores ciano e magenta com recortes diagonais angulares.</p>
+      </div>
+      <div class="style-4-bg">
+        <div class="login-box card-cyberpunk">
+          <div class="logo-area">
+            <span class="logo-icon">⚡</span>
+            <h3>NET_RUNNER</h3>
+            <p class="subtitle">Conexão Neural Ativa</p>
+          </div>
+          <div class="input-group">
+            <label>NEURAL_ID</label>
+            <input type="text" placeholder="CYBER_9021">
+          </div>
+          <div class="input-group">
+            <label>PASS_KEY</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">INICIALIZAR</button>
+          <div class="footer-link">Recuperar Chave Cripto</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Neobrutalismo -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#05</span>
+        <h2>Neobrutalismo Moderno</h2>
+        <p>Bordas grossas pretas, sombras sólidas e cores pop vibrantes.</p>
+      </div>
+      <div class="style-5-bg">
+        <div class="login-box card-brutalism">
+          <div class="logo-area">
+            <span class="logo-icon">👾</span>
+            <h3>BRUTAL.ID</h3>
+            <p class="subtitle">Sem frescuras no design.</p>
+          </div>
+          <div class="input-group">
+            <label>SEU EMAIL</label>
+            <input type="email" placeholder="voce@exemplo.com">
+          </div>
+          <div class="input-group">
+            <label>SUA SENHA</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">ENTRAR AGORA</button>
+          <div class="footer-link">Esqueceu? Azar o seu.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Aurora Glow Mesh -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#06</span>
+        <h2>Aurora Glow Mesh</h2>
+        <p>Gradientes difusos multidirecionais e botões holográficos.</p>
+      </div>
+      <div class="style-6-bg">
+        <div class="login-box card-aurora">
+          <div class="logo-area">
+            <span class="logo-icon">🌌</span>
+            <h3>Aurora UI</h3>
+            <p class="subtitle">Experiência imersiva</p>
+          </div>
+          <div class="input-group">
+            <label>Identificador</label>
+            <input type="text" placeholder="aurora.user">
+          </div>
+          <div class="input-group">
+            <label>Frase Secreta</label>
+            <input type="password" placeholder="••••••••••••">
+          </div>
+          <button class="login-btn">Conectar</button>
+          <div class="footer-link">Cadastre-se grátis</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Claymorphism 3D -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#07</span>
+        <h2>Claymorphism 3D</h2>
+        <p>Efeito massinha de modelar com curvas arredondadas infladas.</p>
+      </div>
+      <div class="style-7-bg">
+        <div class="login-box card-claymorphism">
+          <div class="logo-area">
+            <span class="logo-icon">🧸</span>
+            <h3>ClayWorld</h3>
+            <p class="subtitle">Interface fofa e amigável</p>
+          </div>
+          <div class="input-group">
+            <label>Apelido</label>
+            <input type="text" placeholder="SuperPanda">
+          </div>
+          <div class="input-group">
+            <label>Senha Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Vamos Lá!</button>
+          <div class="footer-link">Criar novo avatar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. Retro Pixel 8-Bit -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#08</span>
+        <h2>Retro Pixel 8-Bit</h2>
+        <p>Tipografia em pixel art e estilo clássico de console arcade.</p>
+      </div>
+      <div class="style-8-bg">
+        <div class="login-box card-pixel">
+          <div class="logo-area">
+            <span class="logo-icon">🎮</span>
+            <h3>STAGE 01</h3>
+            <p class="subtitle">INSERT COIN</p>
+          </div>
+          <div class="input-group">
+            <label>PLAYER_1</label>
+            <input type="text" placeholder="NICKNAME">
+          </div>
+          <div class="input-group">
+            <label>PASSWORD</label>
+            <input type="password" placeholder="PASS">
+          </div>
+          <button class="login-btn">START GAME</button>
+          <div class="footer-link">[ REGISTER ]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. Holographic Prismatic -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#09</span>
+        <h2>Holographic Prism</h2>
+        <p>Bordas com gradiente metálico prismático reflexivo.</p>
+      </div>
+      <div class="style-9-bg">
+        <div class="login-box card-holo">
+          <div class="logo-area">
+            <span class="logo-icon">🔮</span>
+            <h3>PRISM OS</h3>
+            <p class="subtitle">Reflexo espectral quântico</p>
+          </div>
+          <div class="input-group">
+            <label>Spectrum ID</label>
+            <input type="text" placeholder="holo_443">
+          </div>
+          <div class="input-group">
+            <label>Chave Laser</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">AUTENTICAR</button>
+          <div class="footer-link">Acesso Convidado</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. Minimalista Ultra Clean -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#10</span>
+        <h2>Minimalista Ultra Clean</h2>
+        <p>Espaços vazios generosos, inputs de linha e ausência de excessos.</p>
+      </div>
+      <div class="style-10-bg">
+        <div class="login-box card-minimal">
+          <div class="logo-area">
+            <span class="logo-icon">⚪</span>
+            <h3>Studio Simple</h3>
+            <p class="subtitle">Menos é mais</p>
+          </div>
+          <div class="input-group">
+            <label>E-MAIL</label>
+            <input type="email" placeholder="usuario@minimal.com">
+          </div>
+          <div class="input-group">
+            <label>SENHA</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Continuar</button>
+          <div class="footer-link">Esqueceu a senha?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. Luxury Black & Gold -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#11</span>
+        <h2>Luxury Gold & Noir</h2>
+        <p>Fundo escuro profundo com detalhes refinados em ouro polido.</p>
+      </div>
+      <div class="style-11-bg">
+        <div class="login-box card-luxury">
+          <div class="logo-area">
+            <span class="logo-icon">⚜️</span>
+            <h3>ROYAL CLUB</h3>
+            <p class="subtitle">Acesso Exclusivo para Membros</p>
+          </div>
+          <div class="input-group">
+            <label>CÓDIGO DE ACESSO</label>
+            <input type="text" placeholder="VIP-00984">
+          </div>
+          <div class="input-group">
+            <label>ASSINATURA</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">ENTRAR NO SALÃO</button>
+          <div class="footer-link">Solicitar Convite</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 12. Retrowave / Synthwave 80s -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#12</span>
+        <h2>Synthwave Sunset 80s</h2>
+        <p>Grade neon nostálgica com tons rosa chiclete e ciano elétrico.</p>
+      </div>
+      <div class="style-12-bg">
+        <div class="login-box card-synthwave">
+          <div class="logo-area">
+            <span class="logo-icon">🌴</span>
+            <h3>MIAMI 1984</h3>
+            <p class="subtitle">Drive into the night</p>
+          </div>
+          <div class="input-group">
+            <label>RIDER TAG</label>
+            <input type="text" placeholder="Outrun84">
+          </div>
+          <div class="input-group">
+            <label>PASSCODE</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">IGNITION</button>
+          <div class="footer-link">New Driver? Join Crew</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 13. Terminal / Hacker CLI -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#13</span>
+        <h2>Hacker Shell Terminal</h2>
+        <p>Fonte monoespaçada, linhas pontilhadas e verde fósforo.</p>
+      </div>
+      <div class="style-13-bg">
+        <div class="login-box card-terminal">
+          <div class="logo-area">
+            <span class="logo-icon">💻</span>
+            <h3>root@system:~#</h3>
+            <p class="subtitle">SSH Authentication Protocol</p>
+          </div>
+          <div class="input-group">
+            <label>username@ip:</label>
+            <input type="text" placeholder="admin@127.0.0.1">
+          </div>
+          <div class="input-group">
+            <label>rsa_key:</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">$ sudo login --force</button>
+          <div class="footer-link">[?] Forgot your ssh-key</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 14. Skeuomorphism Vintage -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#14</span>
+        <h2>Skeuomorphism Vintage</h2>
+        <p>Textura imitando couro, botões profundos em chanfro e chanfraduras.</p>
+      </div>
+      <div class="style-14-bg">
+        <div class="login-box card-skeuo">
+          <div class="logo-area">
+            <span class="logo-icon">🕰️</span>
+            <h3>The Workshop</h3>
+            <p class="subtitle">Autenticidade Manual</p>
+          </div>
+          <div class="input-group">
+            <label>Registro</label>
+            <input type="text" placeholder="Nome do artesão">
+          </div>
+          <div class="input-group">
+            <label>Chave Mecânica</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Pressionar Alavanca</button>
+          <div class="footer-link">Abrir novo livro</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 15. Paper Cut / Origami -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#15</span>
+        <h2>Paper Cut Origami</h2>
+        <p>Camadas de folhas empilhadas gerando relevos em degrau.</p>
+      </div>
+      <div class="style-15-bg">
+        <div class="login-box card-papercut">
+          <div class="logo-area">
+            <span class="logo-icon">📄</span>
+            <h3>PaperStack</h3>
+            <p class="subtitle">Design físico em camadas</p>
+          </div>
+          <div class="input-group">
+            <label>Documento</label>
+            <input type="text" placeholder="ID de Pasta">
+          </div>
+          <div class="input-group">
+            <label>Código do Selo</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Desdobrar Acesso</button>
+          <div class="footer-link">Criar novo envelope</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 16. Y2K Aesthetic -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#16</span>
+        <h2>Y2K Anos 2000</h2>
+        <p>Estética dos primórdios da internet com bordas orgânicas e rosa pastel.</p>
+      </div>
+      <div class="style-16-bg">
+        <div class="login-box card-y2k">
+          <div class="logo-area">
+            <span class="logo-icon">✨</span>
+            <h3>CyberGirl2000</h3>
+            <p class="subtitle">Bem-vinda ao meu diário!</p>
+          </div>
+          <div class="input-group">
+            <label>Nick do MSN</label>
+            <input type="text" placeholder="estrela_glitter@msn.com">
+          </div>
+          <div class="input-group">
+            <label>Segredo</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Conectar &lt;3</button>
+          <div class="footer-link">Não sou cadastrada ainda</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 17. Vibrant Flat Material 3 -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#17</span>
+        <h2>Material You (Flat 3.0)</h2>
+        <p>Curvatura de 28px nos cantos, tons pastéis amigáveis e clareza.</p>
+      </div>
+      <div class="style-17-bg">
+        <div class="login-box card-material">
+          <div class="logo-area">
+            <span class="logo-icon">📱</span>
+            <h3>Android Flow</h3>
+            <p class="subtitle">Conta sincronizada</p>
+          </div>
+          <div class="input-group">
+            <label>Conta</label>
+            <input type="email" placeholder="usuario@gmail.com">
+          </div>
+          <div class="input-group">
+            <label>Senha de Uso</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Próxima Etapa</button>
+          <div class="footer-link">Opções de recuperação</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 18. Monocromático High Contrast -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#18</span>
+        <h2>Monochrome Stark</h2>
+        <p>100% preto e branco absoluto sem tons intermediários.</p>
+      </div>
+      <div class="style-18-bg">
+        <div class="login-box card-monochrome">
+          <div class="logo-area">
+            <span class="logo-icon">◼️</span>
+            <h3>CONTRAST</h3>
+            <p class="subtitle">Modo Alto Contraste</p>
+          </div>
+          <div class="input-group">
+            <label>IDENTIFICAÇÃO</label>
+            <input type="text" placeholder="ID_DO_USUARIO">
+          </div>
+          <div class="input-group">
+            <label>CHAVE</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">SUBMETER</button>
+          <div class="footer-link">NOVO REGISTRO</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 19. Comic Pop-Art -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#19</span>
+        <h2>Pop-Art Comic Book</h2>
+        <p>Inspirado em quadrinhos de Roy Lichtenstein com cores quentes.</p>
+      </div>
+      <div class="style-19-bg">
+        <div class="login-box card-popart">
+          <div class="logo-area">
+            <span class="logo-icon">💥</span>
+            <h3>BOOM! LOGIN</h3>
+            <p class="subtitle">Poderes ativados!</p>
+          </div>
+          <div class="input-group">
+            <label>CODENAME</label>
+            <input type="text" placeholder="Capitão Hero">
+          </div>
+          <div class="input-group">
+            <label>CÓDIGO SECRETO</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">POW!! ENTRAR</button>
+          <div class="footer-link">Descobrir minha identidade</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 20. Futuristic Sci-Fi HUD -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#20</span>
+        <h2>Sci-Fi Starship HUD</h2>
+        <p>Displays de espaçonaves com cantos cortados e azul tático.</p>
+      </div>
+      <div class="style-20-bg">
+        <div class="login-box card-hud">
+          <div class="logo-area">
+            <span class="logo-icon">🛰️</span>
+            <h3>ORBITAL DOCK</h3>
+            <p class="subtitle">Atracação Segura</p>
+          </div>
+          <div class="input-group">
+            <label>PILOT_ID</label>
+            <input type="text" placeholder="CMDR-778">
+          </div>
+          <div class="input-group">
+            <label>TELEMETRY_KEY</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">TRANSMITIR CREDENCIAL</button>
+          <div class="footer-link">Sinal SOS de Emergência</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 21. Acid Graphic / Techno -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#21</span>
+        <h2>Acid Rave Techno</h2>
+        <p>Verde limão ácido com pontilhados underground e tipografia pesada.</p>
+      </div>
+      <div class="style-21-bg">
+        <div class="login-box card-acid">
+          <div class="logo-area">
+            <span class="logo-icon">☣️</span>
+            <h3>BERLIN_TECHNO</h3>
+            <p class="subtitle">Apenas para convidados da festa</p>
+          </div>
+          <div class="input-group">
+            <label>TICKET_CODE</label>
+            <input type="text" placeholder="00-RAVE-99">
+          </div>
+          <div class="input-group">
+            <label>PASS_WORD</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">ENTRAR NA PISTA</button>
+          <div class="footer-link">Lineup & Info</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 22. Frosted Froth / Soft Pastel -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#22</span>
+        <h2>Frosted Rose Pastel</h2>
+        <p>Vidro translúcido suave sobre tons de pêssego e morango.</p>
+      </div>
+      <div class="style-22-bg">
+        <div class="login-box card-softglass">
+          <div class="logo-area">
+            <span class="logo-icon">🌸</span>
+            <h3>Velvet Blossom</h3>
+            <p class="subtitle">Sensações suaves</p>
+          </div>
+          <div class="input-group">
+            <label>Seu e-mail doce</label>
+            <input type="email" placeholder="meu@email.com">
+          </div>
+          <div class="input-group">
+            <label>Senha</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Entrar com Carinho</button>
+          <div class="footer-link">Criar conta nova</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 23. Dark Mode OLED Clean -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#23</span>
+        <h2>OLED Pure Pitch Black</h2>
+        <p>Economia máxima de bateria em telas AMOLED com bordas em cinza 800.</p>
+      </div>
+      <div class="style-23-bg">
+        <div class="login-box card-oled">
+          <div class="logo-area">
+            <span class="logo-icon">🌑</span>
+            <h3>OLED TrueBlack</h3>
+            <p class="subtitle">Pixels desligados</p>
+          </div>
+          <div class="input-group">
+            <label>Username</label>
+            <input type="text" placeholder="dark_mode">
+          </div>
+          <div class="input-group">
+            <label>Password</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Sign In</button>
+          <div class="footer-link">Lost access?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 24. Watercolor Art -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#24</span>
+        <h2>Watercolor Aquarelle</h2>
+        <p>Gradientes orgânicos imitando manchas de tinta aquarela úmida.</p>
+      </div>
+      <div class="style-24-bg">
+        <div class="login-box card-watercolor">
+          <div class="logo-area">
+            <span class="logo-icon">🎨</span>
+            <h3>Atelier Aquarela</h3>
+            <p class="subtitle">Expressão Criativa</p>
+          </div>
+          <div class="input-group">
+            <label>Artista</label>
+            <input type="text" placeholder="monet@arte.com">
+          </div>
+          <div class="input-group">
+            <label>Assinatura Secreta</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Pintar Tela</button>
+          <div class="footer-link">Cadastrar nova paleta</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 25. Cyber Glitch Dark -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#25</span>
+        <h2>Cyber Glitch Aberration</h2>
+        <p>Aberração cromática simulada com bordas assimétricas em verde e vermelho.</p>
+      </div>
+      <div class="style-25-bg">
+        <div class="login-box card-glitch">
+          <div class="logo-area">
+            <span class="logo-icon">⚠️</span>
+            <h3>GLITCH//ERROR</h3>
+            <p class="subtitle">Bypass de Firewall</p>
+          </div>
+          <div class="input-group">
+            <label>INPUT_NODE</label>
+            <input type="text" placeholder="0x8929A">
+          </div>
+          <div class="input-group">
+            <label>OVERRIDE_KEY</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">EXECUTE_EXPLOIT</button>
+          <div class="footer-link">Clear Buffer</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 26. Editorial Magazine / Serif -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#26</span>
+        <h2>Editorial Vogue Serif</h2>
+        <p>Tipografia nobre serifada com papel de linho marfim.</p>
+      </div>
+      <div class="style-26-bg">
+        <div class="login-box card-editorial">
+          <div class="logo-area">
+            <span class="logo-icon">📰</span>
+            <h3>THE CHRONICLE</h3>
+            <p class="subtitle">Edição de Outono</p>
+          </div>
+          <div class="input-group">
+            <label>LEITOR REGISTRADO</label>
+            <input type="text" placeholder="assinante@revista.com">
+          </div>
+          <div class="input-group">
+            <label>CHAVE DO ARQUIVO</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Ler Edição</button>
+          <div class="footer-link">Assinar Impresso</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 27. Deep Ocean Abyss -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#27</span>
+        <h2>Deep Ocean Abyss</h2>
+        <p>Degradê marinho profundo com acentos de bioluminescência ciano.</p>
+      </div>
+      <div class="style-27-bg">
+        <div class="login-box card-ocean">
+          <div class="logo-area">
+            <span class="logo-icon">🌊</span>
+            <h3>Submarine 3000m</h3>
+            <p class="subtitle">Pressão Hidrostática Normal</p>
+          </div>
+          <div class="input-group">
+            <label>Mergulhador</label>
+            <input type="text" placeholder="sonar_id">
+          </div>
+          <div class="input-group">
+            <label>Código de Escotilha</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Submergir</button>
+          <div class="footer-link">Equipe de superfície</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 28. Emerald Glass & Velvet -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#28</span>
+        <h2>Emerald Velvet Glass</h2>
+        <p>Vidro verde esmeralda com brilho de joia e luxo orgânico.</p>
+      </div>
+      <div class="style-28-bg">
+        <div class="login-box card-emerald">
+          <div class="logo-area">
+            <span class="logo-icon">💎</span>
+            <h3>Emerald Vault</h3>
+            <p class="subtitle">Cofre de Criptoativos Verdes</p>
+          </div>
+          <div class="input-group">
+            <label>Titular do Cofre</label>
+            <input type="text" placeholder="carteira.eth">
+          </div>
+          <div class="input-group">
+            <label>Palavra-Semente</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Destrancar Cofre</button>
+          <div class="footer-link">Auditoria de Bloco</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 29. Sunset Gradient Glow -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#29</span>
+        <h2>Sunset Glow Horizon</h2>
+        <p>Cores crepusculares de pôr do sol em tons pêssego e coral radiante.</p>
+      </div>
+      <div class="style-29-bg">
+        <div class="login-box card-sunset">
+          <div class="logo-area">
+            <span class="logo-icon">🌅</span>
+            <h3>Solaris App</h3>
+            <p class="subtitle">Golden Hour Interface</p>
+          </div>
+          <div class="input-group">
+            <label>Seu perfil</label>
+            <input type="text" placeholder="solar_user">
+          </div>
+          <div class="input-group">
+            <label>Senha de raios</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">Alvorecer</button>
+          <div class="footer-link">Esperar o amanhecer</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 30. Retro Arcade CRT / Scanline -->
+    <div class="card-showcase">
+      <div class="card-meta">
+        <span class="num">#30</span>
+        <h2>Retro CRT Amber Scanlines</h2>
+        <p>Monitores antigos de fósforo âmbar dos anos 70 com linhas de varredura.</p>
+      </div>
+      <div class="style-30-bg">
+        <div class="login-box card-crt">
+          <div class="logo-area">
+            <span class="logo-icon">📼</span>
+            <h3>IBM MODEL-79</h3>
+            <p class="subtitle">MEMORY: 64KB OK</p>
+          </div>
+          <div class="input-group">
+            <label>OPERATOR_NAME:</label>
+            <input type="text" placeholder="SYS_OP">
+          </div>
+          <div class="input-group">
+            <label>AUTH_KEY:</label>
+            <input type="password" placeholder="••••••••">
+          </div>
+          <button class="login-btn">[ EXECUTE ]</button>
+          <div class="footer-link">PRESS TAPE LOAD</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

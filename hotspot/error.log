@@ -35,3 +35,295 @@
 [2026-08-19T11:58:24.273Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/150.0.7871.181 Mobile Safari/537.36"}
 [2026-08-19T11:58:24.274Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
 [2026-08-19T11:58:24.275Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-16T02:15:17.603Z] [START_REGISTRATION_FORM] {"password":null}
+[2026-09-16T02:15:17.617Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","template":"pizzaria","ddd":"99","celular":"991561407","username":"Valentina ","password":"***","confirmPassword":"123"}
+[2026-09-16T02:15:17.623Z] [VALIDATION_FAILED] Telefone/WhatsApp é obrigatório.
+[2026-09-16T02:15:17.648Z] [DB_SAVE_SUCCESS] {"leadId":"0dafc578-2ae1-4734-a95d-a225410d4020","hotspotUser":"valentina"}
+[2026-09-16T02:15:17.650Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-16T02:15:17.965Z] [MIKROTIK_USER_CREATED] {"username":"valentina","result":{"$$path":"/ip/hotspot/user","id":"*1","server":"all","name":"valentina","password":123,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-09-16T02:15:17.965Z] [SUCCESS] {"username":"valentina"}
+[2026-09-16T03:15:45.141Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","template":"futebol_copa","ddd":"99","celular":"991561407","username":"Fe","password":"***","confirmPassword":"1234"}
+[2026-09-16T03:15:45.156Z] [DB_SAVE_SUCCESS] {"leadId":"426a4e71-aad7-417d-900c-6ca7985f6b00","hotspotUser":"fe"}
+[2026-09-16T03:15:45.158Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-16T03:15:45.427Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","template":"futebol_copa","ddd":"99","celular":"991561407","username":"Fe","password":"***","confirmPassword":"1234"}
+[2026-09-16T03:15:45.431Z] [DB_SAVE_SUCCESS] {"leadId":"426a4e71-aad7-417d-900c-6ca7985f6b00","hotspotUser":"fe"}
+[2026-09-16T03:15:45.434Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-16T03:15:45.519Z] [MIKROTIK_USER_CREATED] {"username":"fe","result":{"$$path":"/ip/hotspot/user","id":"*2","server":"all","name":"fe","password":1234,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-09-16T03:15:45.519Z] [SUCCESS] {"username":"fe"}
+[2026-09-16T03:15:45.649Z] [MIKROTIK_USER_EXISTS] {"username":"fe","id":"*2"}
+[2026-09-16T03:15:45.667Z] [MIKROTIK_USER_REMOVED] {"username":"fe"}
+[2026-09-16T03:15:45.689Z] [MIKROTIK_USER_CREATED] {"username":"fe","result":{"$$path":"/ip/hotspot/user","id":"*3","server":"all","name":"fe","password":1234,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-09-16T03:15:45.689Z] [SUCCESS] {"username":"fe"}
+[2026-09-16T03:15:47.198Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-16T03:15:47.199Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-16T03:15:47.199Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-16T03:15:47.206Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-16T03:15:47.206Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-16T03:15:47.206Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-16T03:15:48.252Z] [WA_WELCOME_SENT] {"instanceId":"810f148d-5e5f-44c0-b517-de7830d19e81","targetPhone":"99991561407"}
+[2026-09-16T03:15:48.706Z] [WA_WELCOME_SENT] {"instanceId":"810f148d-5e5f-44c0-b517-de7830d19e81","targetPhone":"99991561407"}
+[2026-09-16T03:43:21.880Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","template":"academia","ddd":"99","celular":"991561407","username":"Valentina ","password":"***","confirmPassword":"1234"}
+[2026-09-16T03:43:21.886Z] [DB_SAVE_SUCCESS] {"leadId":"0dafc578-2ae1-4734-a95d-a225410d4020","hotspotUser":"valentina"}
+[2026-09-16T03:43:21.890Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-16T03:43:22.268Z] [MIKROTIK_USER_CREATED] {"username":"valentina","result":{"$$path":"/ip/hotspot/user","id":"*4","server":"all","name":"valentina","password":1234,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-09-16T03:43:22.270Z] [SUCCESS] {"username":"valentina"}
+[2026-09-16T03:43:23.820Z] [WA_WELCOME_DISPATCHED] {"instanceId":"e8d74de4-bba5-4143-b97e-7aa66f4691b3","targetPhone":"99991561407","sent":false}
+[2026-09-16T03:43:24.820Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-16T03:43:24.820Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-16T03:43:24.820Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-16T04:02:04.831Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","template":"pizzaria","ddd":"99","celular":"991561407","username":"Valentina ","password":"***","confirmPassword":"12345"}
+[2026-09-16T04:02:04.849Z] [DB_SAVE_SUCCESS] {"leadId":"0dafc578-2ae1-4734-a95d-a225410d4020","hotspotUser":"valentina"}
+[2026-09-16T04:02:04.852Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-16T04:02:05.161Z] [MIKROTIK_USER_EXISTS] {"username":"valentina","id":"*4"}
+[2026-09-16T04:02:05.179Z] [MIKROTIK_USER_REMOVED] {"username":"valentina"}
+[2026-09-16T04:02:05.199Z] [MIKROTIK_USER_CREATED] {"username":"valentina","result":{"$$path":"/ip/hotspot/user","id":"*5","server":"all","name":"valentina","password":12345,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-09-16T04:02:05.200Z] [SUCCESS] {"username":"valentina"}
+[2026-09-16T04:02:07.721Z] [WA_WELCOME_SENT] {"instanceId":"eb0e671d-fb4d-430a-914f-51db586bda7e","targetPhone":"99991561407","sent":true}
+[2026-09-16T13:46:05.675Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"99991561407","username":"Valentina","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"LinkingNet"}
+[2026-09-16T13:46:05.686Z] [DB_SAVE_SUCCESS] {"leadId":"0dafc578-2ae1-4734-a95d-a225410d4020","hotspotUser":"valentina"}
+[2026-09-16T13:46:05.687Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-16T13:46:05.882Z] [MIKROTIK_USER_CREATED] {"username":"valentina","result":{"$$path":"/ip/hotspot/user","id":"*2","server":"all","name":"valentina","password":12345,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-09-16T13:46:05.884Z] [SUCCESS] {"username":"valentina"}
+[2026-09-16T13:46:06.626Z] [WA_WELCOME_SENT] {"instanceId":"eb0e671d-fb4d-430a-914f-51db586bda7e","targetPhone":"99991561407","sent":true}
+[2026-09-16T13:46:07.522Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-16T13:46:07.524Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-16T13:46:07.524Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-16T14:04:49.183Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"11987654321","username":"TesteCliente","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"planId":"plan-1h","template":"LinkingNet"}
+[2026-09-16T14:04:49.242Z] [DB_SAVE_SUCCESS] {"leadId":"6fcf20b3-a894-44e3-aa8c-2d2a9140cfef","hotspotUser":"testecliente"}
+[2026-09-16T14:04:49.247Z] [MIKROTIK_BYPASS_PREVIEW] {"hotspotUser":"testecliente"}
+[2026-09-16T14:04:49.560Z] [SUCCESS] {"username":"testecliente"}
+[2026-09-16T14:04:50.457Z] [WA_WELCOME_SENT] {"instanceId":"eb0e671d-fb4d-430a-914f-51db586bda7e","targetPhone":"11987654321","sent":true}
+[2026-09-16T14:10:33.525Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"11987654321","username":"TesteCliente","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"planId":"plan-1h","template":"LinkingNet"}
+[2026-09-16T14:10:33.527Z] [DB_SAVE_SUCCESS] {"leadId":"6fcf20b3-a894-44e3-aa8c-2d2a9140cfef","hotspotUser":"testecliente"}
+[2026-09-16T14:10:33.529Z] [MIKROTIK_BYPASS_PREVIEW] {"hotspotUser":"testecliente"}
+[2026-09-16T14:10:33.845Z] [SUCCESS] {"username":"testecliente"}
+[2026-09-16T14:10:34.813Z] [WA_WELCOME_SENT] {"instanceId":"eb0e671d-fb4d-430a-914f-51db586bda7e","targetPhone":"11987654321","sent":true}
+[2026-09-16T14:15:14.260Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"11987654321","username":"TesteCliente","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"planId":"plan-1h","template":"LinkingNet"}
+[2026-09-16T14:15:14.263Z] [DB_SAVE_SUCCESS] {"leadId":"6fcf20b3-a894-44e3-aa8c-2d2a9140cfef","hotspotUser":"testecliente"}
+[2026-09-16T14:15:14.264Z] [MIKROTIK_BYPASS_PREVIEW] {"hotspotUser":"testecliente"}
+[2026-09-16T14:15:14.579Z] [SUCCESS] {"username":"testecliente"}
+[2026-09-16T14:15:15.220Z] [WA_WELCOME_SENT] {"instanceId":"eb0e671d-fb4d-430a-914f-51db586bda7e","targetPhone":"11987654321","sent":true}
+[2026-09-16T14:16:53.206Z] [START_REGISTRATION_JSON] {"name":"Teste Cliente","email":"","phone":"11987654321","username":"TesteCliente","birthDate":null,"cpf":"","gender":"","password":"***","optInCourses":false,"planId":"1","template":"LinkingNet"}
+[2026-09-16T14:16:53.209Z] [DB_SAVE_SUCCESS] {"leadId":"6fcf20b3-a894-44e3-aa8c-2d2a9140cfef","hotspotUser":"testecliente"}
+[2026-09-16T14:16:53.211Z] [MIKROTIK_BYPASS_PREVIEW] {"hotspotUser":"testecliente"}
+[2026-09-16T14:16:53.526Z] [SUCCESS] {"username":"testecliente"}
+[2026-09-16T14:16:54.383Z] [WA_WELCOME_SENT] {"instanceId":"eb0e671d-fb4d-430a-914f-51db586bda7e","targetPhone":"11987654321","sent":true}
+[2026-09-16T14:17:37.469Z] [START_REGISTRATION_JSON] {"name":"Teste Cliente","email":"","phone":"11987654321","username":"TesteCliente","birthDate":null,"cpf":"","gender":"","password":"***","optInCourses":false,"planId":"plan-1h","template":"LinkingNet"}
+[2026-09-16T14:17:37.471Z] [DB_SAVE_SUCCESS] {"leadId":"6fcf20b3-a894-44e3-aa8c-2d2a9140cfef","hotspotUser":"testecliente"}
+[2026-09-16T14:17:37.472Z] [MIKROTIK_BYPASS_PREVIEW] {"hotspotUser":"testecliente"}
+[2026-09-16T14:17:37.773Z] [SUCCESS] {"username":"testecliente"}
+[2026-09-16T14:17:38.411Z] [WA_WELCOME_SENT] {"instanceId":"eb0e671d-fb4d-430a-914f-51db586bda7e","targetPhone":"11987654321","sent":true}
+[2026-09-16T14:33:25.183Z] [START_REGISTRATION_JSON] {"name":"Teste Cliente","phone":"11987654321","password":"***","planId":"plan-1h"}
+[2026-09-16T14:33:25.189Z] [VALIDATION_FAILED] Nome de usuário é obrigatório.
+[2026-09-16T14:39:08.098Z] [START_REGISTRATION_JSON] {"name":"Teste Cliente","username":"testecliente","phone":"11987654321","password":"***","planId":"plan-1h"}
+[2026-09-16T14:39:08.107Z] [DB_SAVE_SUCCESS] {"leadId":"6fcf20b3-a894-44e3-aa8c-2d2a9140cfef","hotspotUser":"testecliente"}
+[2026-09-16T14:39:08.108Z] [MIKROTIK_BYPASS_PREVIEW] {"hotspotUser":"testecliente"}
+[2026-09-16T14:39:08.412Z] [SUCCESS] {"username":"testecliente"}
+[2026-09-16T14:39:09.612Z] [WA_WELCOME_SENT] {"instanceId":"eb0e671d-fb4d-430a-914f-51db586bda7e","targetPhone":"11987654321","sent":true}
+[2026-09-16T14:40:47.242Z] [START_REGISTRATION_JSON] {"name":"Teste Cliente","username":"testecliente","phone":"11987654321","password":"***","planId":"plan-1h"}
+[2026-09-16T14:40:47.248Z] [DB_SAVE_SUCCESS] {"leadId":"6fcf20b3-a894-44e3-aa8c-2d2a9140cfef","hotspotUser":"testecliente"}
+[2026-09-16T14:40:47.250Z] [PREVIEW_PIX_SIMULATED] {"amount":3,"planTitle":"1 Hora Turbo"}
+[2026-09-16T14:40:47.250Z] [MIKROTIK_BYPASS_PREVIEW] {"hotspotUser":"testecliente"}
+[2026-09-16T14:40:47.550Z] [SUCCESS] {"username":"testecliente"}
+[2026-09-16T14:40:48.341Z] [WA_WELCOME_SENT] {"instanceId":"eb0e671d-fb4d-430a-914f-51db586bda7e","targetPhone":"11987654321","sent":true}
+[2026-09-17T16:04:46.639Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"99991561407","username":"Dghg","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"planId":"plan-1h","template":"LinkingNet"}
+[2026-09-17T16:04:46.655Z] [DB_SAVE_SUCCESS] {"leadId":"66ae8ee0-b0e9-4fe7-bdf6-cf5f6e5111ee","hotspotUser":"dghg"}
+[2026-09-17T16:04:46.665Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-17T16:04:46.973Z] [MIKROTIK_USER_CREATED] {"username":"dghg","result":{"$$path":"/ip/hotspot/user","id":"*1","server":"all","name":"dghg","password":123456,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Plano: 1 Hora Turbo"}}
+[2026-09-17T16:04:46.974Z] [SUCCESS] {"username":"dghg"}
+[2026-09-17T16:04:46.979Z] [WA_WELCOME_DISPATCHED] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407","sent":false}
+[2026-09-17T16:04:47.829Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-17T16:04:47.830Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-17T16:04:47.831Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-17T16:04:47.908Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-17T16:04:47.909Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-17T16:04:47.909Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-17T16:18:45.654Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"99991561407","username":"Valentina","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"planId":"plan-1h","template":"LinkingNet"}
+[2026-09-17T16:18:45.662Z] [DB_SAVE_SUCCESS] {"leadId":"aa66a890-44de-4caa-aeb4-9eff4f9204dd","hotspotUser":"valentina"}
+[2026-09-17T16:18:45.665Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-17T16:18:45.976Z] [MIKROTIK_USER_CREATED] {"username":"valentina","result":{"$$path":"/ip/hotspot/user","id":"*2","server":"all","name":"valentina","password":123456,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Plano: 1 Hora Turbo"}}
+[2026-09-17T16:18:45.976Z] [SUCCESS] {"username":"valentina"}
+[2026-09-17T16:18:46.725Z] [WA_WELCOME_SENT] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407","sent":true}
+[2026-09-17T16:18:47.510Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-17T16:18:47.510Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-17T16:18:47.510Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-17T20:09:50.742Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"99991561407","username":"Valentina","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"planId":"plan-1h","template":"shield"}
+[2026-09-17T20:09:50.757Z] [DB_SAVE_SUCCESS] {"leadId":"aa66a890-44de-4caa-aeb4-9eff4f9204dd","hotspotUser":"valentina"}
+[2026-09-17T20:09:50.760Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-17T20:09:50.952Z] [MIKROTIK_USER_REMOVED] {"username":"valentina"}
+[2026-09-17T20:09:51.020Z] [MIKROTIK_USER_CREATED] {"username":"valentina","result":{"$$path":"/ip/hotspot/user","id":"*3","server":"all","name":"valentina","password":123456,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Plano: 1 Hora Turbo"}}
+[2026-09-17T20:09:51.020Z] [SUCCESS] {"username":"valentina"}
+[2026-09-17T20:09:51.021Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-17T20:09:53.276Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-17T20:09:53.275Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-17T20:09:53.276Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-17T20:12:58.872Z] [WA_WELCOME_SENT] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407"}
+[2026-09-17T20:24:40.524Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","template":"shield","ddd":"99","celular":"991561407","username":"Valentina ","password":"***","confirmPassword":"123456"}
+[2026-09-17T20:24:40.536Z] [DB_SAVE_SUCCESS] {"leadId":"a0fe4806-fcbb-4c7e-a7fe-59c4194c438f","hotspotUser":"valentina"}
+[2026-09-17T20:24:40.538Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-17T20:24:40.703Z] [MIKROTIK_USER_REMOVED] {"username":"valentina"}
+[2026-09-17T20:24:40.725Z] [MIKROTIK_USER_CREATED] {"username":"valentina","result":{"$$path":"/ip/hotspot/user","id":"*4","server":"all","name":"valentina","password":123456,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-09-17T20:24:40.726Z] [SUCCESS] {"username":"valentina"}
+[2026-09-17T20:24:40.726Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-17T20:24:40.966Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-17T20:24:40.968Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-17T20:24:40.969Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-17T20:25:10.033Z] [WA_WELCOME_SENT] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407"}
+[2026-09-17T20:31:45.273Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","template":"shield","ddd":"99","celular":"991561407","username":"Valentina ","password":"***","confirmPassword":"123456"}
+[2026-09-17T20:31:45.281Z] [DB_SAVE_SUCCESS] {"leadId":"a0fe4806-fcbb-4c7e-a7fe-59c4194c438f","hotspotUser":"valentina"}
+[2026-09-17T20:31:45.284Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-17T20:31:45.478Z] [MIKROTIK_USER_REMOVED] {"username":"valentina"}
+[2026-09-17T20:31:45.546Z] [MIKROTIK_USER_CREATED] {"username":"valentina","result":{"$$path":"/ip/hotspot/user","id":"*5","server":"all","name":"valentina","password":123456,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-09-17T20:31:45.546Z] [SUCCESS] {"username":"valentina"}
+[2026-09-17T20:31:45.547Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-17T20:31:45.736Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-17T20:31:45.738Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-17T20:31:45.737Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-17T20:32:13.413Z] [WA_WELCOME_SENT] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407"}
+[2026-09-17T20:38:18.992Z] [START_REGISTRATION_FORM] {"link-login-only":"http://192.168.88.1/login","link-orig":"","template":"shield","ddd":"99","celular":"991561407","username":"Val","password":"***","confirmPassword":"12345"}
+[2026-09-17T20:38:19.001Z] [DB_SAVE_SUCCESS] {"leadId":"e6a75431-ed42-4684-a12b-9077681375cf","hotspotUser":"val"}
+[2026-09-17T20:38:19.002Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-17T20:38:19.169Z] [MIKROTIK_USER_REMOVED] {"username":"val"}
+[2026-09-17T20:38:19.197Z] [MIKROTIK_USER_CREATED] {"username":"val","result":{"$$path":"/ip/hotspot/user","id":"*6","server":"all","name":"val","password":12345,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro"}}
+[2026-09-17T20:38:19.197Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-17T20:38:19.197Z] [SUCCESS] {"username":"val"}
+[2026-09-17T20:38:19.352Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-17T20:38:19.353Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-17T20:38:19.354Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-17T20:38:46.517Z] [WA_WELCOME_SENT] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407"}
+[2026-09-17T20:58:14.713Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"99991561407","username":"99991561407","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"planId":"plan-1h","template":"shield"}
+[2026-09-17T20:58:14.722Z] [DB_SAVE_SUCCESS] {"leadId":"55a668c4-424c-4077-ad92-46784c3e7a7f","hotspotUser":"99991561407"}
+[2026-09-17T20:58:14.728Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-17T20:58:14.894Z] [MIKROTIK_USER_REMOVED] {"username":"99991561407"}
+[2026-09-17T20:58:14.923Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*7","server":"all","name":99991561407,"password":99991561407,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Plano: 1 Hora Turbo"}}
+[2026-09-17T20:58:14.923Z] [SUCCESS] {"username":"99991561407"}
+[2026-09-17T20:58:14.924Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-17T20:58:15.654Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-17T20:58:15.657Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-17T20:58:15.656Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-17T20:58:17.081Z] [WA_WELCOME_SENT] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407"}
+[2026-09-17T22:45:35.266Z] [START_REGISTRATION_JSON] {"name":"","email":"","phone":"99991329412","username":"99991329412","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"planId":"plan-1h","template":"shield"}
+[2026-09-17T22:45:35.281Z] [DB_SAVE_SUCCESS] {"leadId":"ca1d0e8c-7740-4985-a052-0d88fe4a5557","hotspotUser":"99991329412"}
+[2026-09-17T22:45:35.287Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-17T22:45:35.454Z] [MIKROTIK_USER_REMOVED] {"username":"99991329412"}
+[2026-09-17T22:45:35.481Z] [MIKROTIK_USER_CREATED] {"username":"99991329412","result":{"$$path":"/ip/hotspot/user","id":"*8","server":"all","name":99991329412,"password":99991329412,"profile":"default","limitUptime":"15m","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Plano: 1 Hora Turbo"}}
+[2026-09-17T22:45:35.482Z] [SUCCESS] {"username":"99991329412"}
+[2026-09-17T22:45:35.482Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991329412"}
+[2026-09-17T22:45:36.414Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-17T22:45:36.414Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-17T22:45:36.414Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-17T22:45:38.180Z] [WA_WELCOME_SENT] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991329412"}
+[2026-09-17T23:53:49.448Z] [START_REGISTRATION_JSON] {"name":"Cliente 99991561407","email":"","phone":"99991561407","username":"99991561407","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"shield"}
+[2026-09-17T23:53:49.461Z] [DB_SAVE_SUCCESS] {"leadId":"35c671d6-dc2f-45c0-abb2-a2ceed0ee381","hotspotUser":"99991561407"}
+[2026-09-17T23:53:49.463Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-17T23:53:49.629Z] [MIKROTIK_USER_REMOVED] {"username":"99991561407"}
+[2026-09-17T23:53:49.657Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*9","server":"all","name":99991561407,"password":99991561407,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Nome: Cliente 99991561407"}}
+[2026-09-17T23:53:49.658Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-17T23:53:49.658Z] [SUCCESS] {"username":"99991561407"}
+[2026-09-17T23:54:04.919Z] [WA_WELCOME_FAILED] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407"}
+[2026-09-18T01:08:10.400Z] [START_REGISTRATION_JSON] {"name":"Lyncoln Samuel ","email":"","phone":"99991561407","username":"99991561407","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"default"}
+[2026-09-18T01:08:10.414Z] [DB_SAVE_SUCCESS] {"leadId":"35c671d6-dc2f-45c0-abb2-a2ceed0ee381","hotspotUser":"99991561407"}
+[2026-09-18T01:08:10.416Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-18T01:08:10.614Z] [MIKROTIK_USER_REMOVED] {"username":"99991561407"}
+[2026-09-18T01:08:10.643Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*A","server":"all","name":99991561407,"password":99991561407,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Nome: Lyncoln Samuel "}}
+[2026-09-18T01:08:10.644Z] [SUCCESS] {"username":"99991561407"}
+[2026-09-18T01:08:10.644Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-18T01:08:12.806Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-18T01:08:12.806Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-18T01:08:12.806Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-18T01:08:25.867Z] [WA_WELCOME_FAILED] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407"}
+[2026-09-18T01:15:42.748Z] [START_REGISTRATION_JSON] {"name":"Lyncoln Samuel ","email":"","phone":"99991561407","username":"99991561407","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"default"}
+[2026-09-18T01:15:42.754Z] [DB_SAVE_SUCCESS] {"leadId":"35c671d6-dc2f-45c0-abb2-a2ceed0ee381","hotspotUser":"99991561407"}
+[2026-09-18T01:15:42.757Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-18T01:15:43.065Z] [MIKROTIK_USER_REMOVED] {"username":"99991561407"}
+[2026-09-18T01:15:43.089Z] [SUCCESS] {"username":"99991561407"}
+[2026-09-18T01:15:43.088Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*E","server":"all","name":99991561407,"password":99991561407,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Nome: Lyncoln Samuel "}}
+[2026-09-18T01:15:43.089Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-18T01:15:43.823Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-18T01:15:43.823Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-18T01:15:43.823Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-18T01:15:46.174Z] [WA_WELCOME_SENT] {"instanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407"}
+[2026-09-18T03:35:08.486Z] [START_REGISTRATION_JSON] {"name":"Lyncoln s","email":"","phone":"99991561407","username":"99991561407","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"default"}
+[2026-09-18T03:35:08.493Z] [DB_SAVE_SUCCESS] {"leadId":"6ec88a0b-fbc9-4754-b3c3-c87cc4e1cbfa","hotspotUser":"99991561407"}
+[2026-09-18T03:35:08.499Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-18T03:35:08.739Z] [MIKROTIK_USER_REMOVED] {"username":"99991561407"}
+[2026-09-18T03:35:08.802Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*F","server":"all","name":99991561407,"password":99991561407,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Nome: Lyncoln s"}}
+[2026-09-18T03:35:08.802Z] [SUCCESS] {"username":"99991561407"}
+[2026-09-18T03:35:08.803Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-18T03:35:09.653Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-18T03:35:09.654Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-18T03:35:09.653Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-18T03:35:09.662Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-18T03:35:09.662Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-18T03:35:09.662Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-18T03:35:12.233Z] [WA_WELCOME_SENT] {"dispatchedInstanceId":"683fbfcf-e00f-49d7-91e1-7654047cdcf5","targetPhone":"99991561407"}
+[2026-09-18T03:35:23.517Z] [WA_WELCOME_LINK_SENT] {"pinnedInstanceId":"683fbfcf-e00f-49d7-91e1-7654047cdcf5","targetPhone":"99991561407"}
+[2026-09-18T03:40:29.183Z] [START_REGISTRATION_JSON] {"name":"Silva p","email":"","phone":"99991561407","username":"99991561407","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"default"}
+[2026-09-18T03:40:29.195Z] [DB_SAVE_SUCCESS] {"leadId":"95cf5f91-ac42-4882-8873-6e13b05bdc24","hotspotUser":"99991561407"}
+[2026-09-18T03:40:29.203Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-18T03:40:29.486Z] [MIKROTIK_USER_REMOVED] {"username":"99991561407"}
+[2026-09-18T03:40:29.551Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*10","server":"all","name":99991561407,"password":99991561407,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Wi-Fi Gratuito | Nome: Silva p"}}
+[2026-09-18T03:40:29.552Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-18T03:40:29.552Z] [SUCCESS] {"username":"99991561407"}
+[2026-09-18T03:40:30.303Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-18T03:40:30.304Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-18T03:40:30.305Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-18T03:40:31.522Z] [WA_WELCOME_SENT] {"dispatchedInstanceId":"683fbfcf-e00f-49d7-91e1-7654047cdcf5","targetPhone":"99991561407"}
+[2026-09-18T03:40:42.940Z] [WA_WELCOME_LINK_SENT] {"pinnedInstanceId":"683fbfcf-e00f-49d7-91e1-7654047cdcf5","targetPhone":"99991561407"}
+[2026-09-18T03:42:10.922Z] [START_REGISTRATION_JSON] {"name":"Hhag hjag","email":"","phone":"99991561407","username":"99991561407","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"default"}
+[2026-09-18T03:42:10.930Z] [DB_SAVE_SUCCESS] {"leadId":"95cf5f91-ac42-4882-8873-6e13b05bdc24","hotspotUser":"99991561407"}
+[2026-09-18T03:42:10.934Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-18T03:42:11.131Z] [MIKROTIK_USER_REMOVED] {"username":"99991561407"}
+[2026-09-18T03:42:11.151Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*11","server":"all","name":99991561407,"password":99991561407,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Wi-Fi Gratuito | Nome: Hhag hjag"}}
+[2026-09-18T03:42:11.151Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-18T03:42:11.151Z] [SUCCESS] {"username":"99991561407"}
+[2026-09-18T03:42:12.177Z] [WA_WELCOME_SENT] {"dispatchedInstanceId":"683fbfcf-e00f-49d7-91e1-7654047cdcf5","targetPhone":"99991561407"}
+[2026-09-18T03:42:23.318Z] [WA_WELCOME_LINK_SENT] {"pinnedInstanceId":"683fbfcf-e00f-49d7-91e1-7654047cdcf5","targetPhone":"99991561407"}
+[2026-09-18T05:14:06.734Z] [START_REGISTRATION_JSON] {"name":"H s","email":"","phone":"44997540481","username":"44997540481","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"default"}
+[2026-09-18T05:14:06.741Z] [DB_SAVE_SUCCESS] {"leadId":"6e51dcd2-27f5-4913-9e48-6c0679d9e1ab","hotspotUser":"44997540481"}
+[2026-09-18T05:14:06.746Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-18T05:14:06.990Z] [MIKROTIK_USER_REMOVED] {"username":"44997540481"}
+[2026-09-18T05:14:07.061Z] [MIKROTIK_USER_CREATED] {"username":"44997540481","result":{"$$path":"/ip/hotspot/user","id":"*12","server":"all","name":44997540481,"password":44997540481,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Wi-Fi Gratuito | Nome: H s"}}
+[2026-09-18T05:14:07.063Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"44997540481"}
+[2026-09-18T05:14:07.062Z] [SUCCESS] {"username":"44997540481"}
+[2026-09-18T05:14:09.226Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-18T05:14:09.227Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-18T05:14:09.226Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-18T05:14:09.325Z] [WA_WELCOME_SENT] {"dispatchedInstanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"44997540481"}
+[2026-09-18T05:14:20.540Z] [WA_WELCOME_LINK_SENT] {"pinnedInstanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"44997540481"}
+[2026-09-18T14:46:10.903Z] [START_REGISTRATION_JSON] {"name":"Rafael b","email":"","phone":"99991561407","username":"99991561407","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"default"}
+[2026-09-18T14:46:10.908Z] [DB_SAVE_SUCCESS] {"leadId":"95cf5f91-ac42-4882-8873-6e13b05bdc24","hotspotUser":"99991561407"}
+[2026-09-18T14:46:10.910Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-18T14:46:11.297Z] [MIKROTIK_USER_REMOVED] {"username":"99991561407"}
+[2026-09-18T14:46:11.322Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*13","server":"all","name":99991561407,"password":99991561407,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Wi-Fi Gratuito | Nome: Rafael b"}}
+[2026-09-18T14:46:11.322Z] [SUCCESS] {"username":"99991561407"}
+[2026-09-18T14:46:11.323Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-18T14:46:13.170Z] [WA_WELCOME_SENT] {"dispatchedInstanceId":"683fbfcf-e00f-49d7-91e1-7654047cdcf5","targetPhone":"99991561407"}
+[2026-09-18T14:46:13.487Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-18T14:46:13.488Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-18T14:46:13.488Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-18T14:46:24.322Z] [WA_WELCOME_LINK_SENT] {"pinnedInstanceId":"683fbfcf-e00f-49d7-91e1-7654047cdcf5","targetPhone":"99991561407"}
+[2026-09-18T15:02:57.672Z] [START_REGISTRATION_JSON] {"name":"Thiago h","email":"","phone":"99991561407","username":"99991561407","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"default"}
+[2026-09-18T15:02:57.683Z] [DB_SAVE_SUCCESS] {"leadId":"0771c461-bbaf-473c-97db-2722a629adcb","hotspotUser":"99991561407"}
+[2026-09-18T15:02:57.687Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-18T15:02:57.918Z] [MIKROTIK_USER_REMOVED] {"username":"99991561407"}
+[2026-09-18T15:02:57.990Z] [MIKROTIK_USER_CREATED] {"username":"99991561407","result":{"$$path":"/ip/hotspot/user","id":"*14","server":"all","name":99991561407,"password":99991561407,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Wi-Fi Gratuito | Nome: Thiago h"}}
+[2026-09-18T15:02:57.990Z] [SUCCESS] {"username":"99991561407"}
+[2026-09-18T15:02:57.990Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"99991561407"}
+[2026-09-18T15:03:00.268Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-18T15:03:00.268Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-18T15:03:00.268Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-18T15:03:00.549Z] [WA_WELCOME_SENT] {"dispatchedInstanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407"}
+[2026-09-18T15:03:11.905Z] [WA_WELCOME_LINK_SENT] {"pinnedInstanceId":"076c16bf-2c56-448e-a7f9-6215bea3a0e7","targetPhone":"99991561407"}
+[2026-09-18T16:58:28.005Z] [START_REGISTRATION_JSON] {"name":"Suzaeny Lima","email":"suzaeny@gmail.com","phone":"44999527725","username":"44999527725","birthDate":null,"cpf":"","gender":"","password":"***","customFieldValue":"","optInCourses":true,"template":"FAP"}
+[2026-09-18T16:58:28.012Z] [DB_SAVE_SUCCESS] {"leadId":"463576d4-611d-44c3-9dca-ead5e5ef780d","hotspotUser":"44999527725"}
+[2026-09-18T16:58:28.020Z] [MIKROTIK_CONNECT_START] {"host":"192.168.88.1","port":8728,"user":"admin"}
+[2026-09-18T16:58:28.265Z] [MIKROTIK_USER_REMOVED] {"username":"44999527725"}
+[2026-09-18T16:58:28.331Z] [MIKROTIK_USER_CREATED] {"username":"44999527725","result":{"$$path":"/ip/hotspot/user","id":"*16","server":"all","name":44999527725,"password":44999527725,"profile":"default","uptime":"0s","bytesIn":0,"bytesOut":0,"packetsIn":0,"packetsOut":0,"dynamic":false,"disabled":false,"comment":"AutoCadastro | Wi-Fi Gratuito | Nome: Suzaeny Lima | Email: suzaeny@gmail.com"}}
+[2026-09-18T16:58:28.332Z] [SUCCESS] {"username":"44999527725"}
+[2026-09-18T16:58:28.332Z] [WA_WELCOME_DISPATCHED] {"targetPhone":"44999527725"}
+[2026-09-18T16:58:30.583Z] [BYPASS_REQUEST] {"targetUrl":"https://www.google.com","userAgent":"Mozilla/5.0 (Linux; Android 16; 2311DRK48G Build/BP2A.250605.031.A3; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/152.0.7977.88 Mobile Safari/537.36"}
+[2026-09-18T16:58:30.583Z] [BYPASS_ANDROID_CNA_DETECTED] {"targetUrl":"https://www.google.com"}
+[2026-09-18T16:58:30.583Z] [BYPASS_ANDROID_INTENT_REDIRECT] {"intentUrl":"intent://www.google.com#Intent;scheme=https;action=android.intent.action.VIEW;end"}
+[2026-09-18T16:58:30.985Z] [WA_WELCOME_SENT] {"dispatchedInstanceId":"683fbfcf-e00f-49d7-91e1-7654047cdcf5","targetPhone":"44999527725"}
+[2026-09-18T16:58:42.193Z] [WA_WELCOME_LINK_SENT] {"pinnedInstanceId":"683fbfcf-e00f-49d7-91e1-7654047cdcf5","targetPhone":"44999527725"}

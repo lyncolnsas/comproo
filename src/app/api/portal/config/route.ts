@@ -8,7 +8,8 @@ import os from 'os';
 import { prisma } from '@/lib/prisma';
 import { getNicheEffectMarkup } from '@/lib/niche-effects';
 import { getBrandEffectsStyles } from '@/lib/brand-effects-styles';
-import { getTemplatePaths } from '@/lib/portal-template-utils';
+import { getTemplatePaths, normalizeHtmlStructure } from '@/lib/portal-template-utils';
+import { getMaskedPortalDomain, getMaskedPortalUrl } from '@/lib/domain';
 
 const DEFAULT_HOTSPOT_DIR = path.join(process.cwd(), 'hotspot', 'default');
 
@@ -47,6 +48,7 @@ function getLocalLanIp() {
 
 const DEFAULT_CONFIG = {
   enabled: true,
+  saleMode: false,
   redirectUrl: '',
   businessName: 'Super Wi-Fi',
   registerButtonText: 'Cadastre-se aqui',
@@ -216,16 +218,17 @@ const DEFAULT_CONFIG = {
   }
 };
 
-function generateAdMarkup(ad: any, systemUrl?: string) {
+function generateAdMarkup(ad: any, systemUrl?: string, providerName?: string) {
   if (!ad || ad.type === 'none') {
     return { css: '', html: '', js: '' };
   }
 
+  const providerTitle = providerName || 'Wi-Fi Shield Security';
+
   let items = [];
-  if (ad.type === 'image' && ad.mediaUrl) {
-    items.push({ url: ad.mediaUrl, type: 'image', targetUrl: ad.targetUrl });
-  } else if (ad.type === 'video' && ad.mediaUrl) {
-    items.push({ url: ad.mediaUrl, type: 'video', targetUrl: ad.targetUrl });
+  if ((ad.type === 'single' || ad.type === 'image' || ad.type === 'video') && ad.mediaUrl) {
+    const isVid = ad.type === 'video' || /\.(mp4|webm|mov)(\?.*)?$/i.test(ad.mediaUrl);
+    items.push({ url: ad.mediaUrl, type: isVid ? 'video' : 'image', targetUrl: ad.targetUrl });
   } else if (ad.type === 'carousel' && Array.isArray(ad.items)) {
     items = ad.items.filter((item: any) => item && item.url);
   }
@@ -235,7 +238,92 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
   }
 
   const css = `
-    /* ====== NOVO POPUP DE VÍDEO TELA CHEIA ====== */
+    /* ====== PRELOADER DISCRETO COM IDENTIDADE DA MARCA ====== */
+    .ad-preloader-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #020617;
+      z-index: 10001 !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+      pointer-events: none;
+    }
+    .ad-preloader-overlay.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+    .ad-preloader-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+    .ad-preloader-icon-wrap {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+      animation: adPulse 2s ease-in-out infinite alternate;
+    }
+    .ad-preloader-icon {
+      width: 26px;
+      height: 26px;
+      color: #06b6d4;
+    }
+    .ad-preloader-title {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #06b6d4, #3b82f6, #06b6d4, #06b6d4) !important;
+      background-size: 300% 300% !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      animation: mgTitleGradient 4s ease infinite alternate !important;
+      margin-bottom: 12px;
+    }
+    .ad-preloader-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+    }
+    .ad-preloader-dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #06b6d4;
+      opacity: 0.35;
+      animation: adDotPulse 1.2s infinite ease-in-out both;
+    }
+    .ad-preloader-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .ad-preloader-dots span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes adPulse {
+      0% { transform: scale(0.96); box-shadow: 0 0 12px rgba(6, 182, 212, 0.15); }
+      100% { transform: scale(1.04); box-shadow: 0 0 25px rgba(6, 182, 212, 0.4); }
+    }
+    @keyframes adDotPulse {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+      40% { transform: scale(1.1); opacity: 1; }
+    }
+    @keyframes mgTitleGradient {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+
+    /* ====== POPUP DE VÍDEO / CARROSSEL TELA CHEIA ====== */
     .ad-modal-overlay {
       position: fixed;
       top: 0;
@@ -290,7 +378,32 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
       width: 100%;
       height: 100%;
       object-fit: contain; /* Mantém a proporção exata da imagem/vídeo sem cortes */
+    }
+
+    .ad-carousel-slide video {
+      pointer-events: none; /* Impede que o clique/toque no vídeo acione a pausa nativa do navegador */
+    }
+
+    /* Esconder ícones nativos de play em espera do navegador */
+    .ad-carousel-slide video::-webkit-media-controls,
+    .ad-carousel-slide video::-webkit-media-controls-start-playback-button,
+    .ad-carousel-slide video::-webkit-media-controls-overlay-play-button,
+    .ad-carousel-slide video::-webkit-media-controls-play-button {
+      display: none !important;
+      -webkit-appearance: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+
+    .ad-click-catcher {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .ad-patrocinado {
@@ -383,55 +496,40 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
       transition: width 0.1s linear;
     }
 
-    /* Invisible Tap/Navigation Overlays */
-    .ad-nav-area-left {
+    /* Botões de navegação sutil nas laterais para não interceptar o toque central de áudio */
+    .ad-nav-btn {
       position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 35%;
-      z-index: 90;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .ad-nav-area-right {
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 35%;
-      z-index: 90;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* Floating Mute/Unmute Audio Button */
-    .ad-audio-toggle {
-      position: absolute;
-      bottom: max(30px, env(safe-area-inset-bottom));
-      left: 20px;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      width: 44px;
-      height: 44px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      display: none; /* Exibido apenas quando há vídeos rodando */
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 95;
       cursor: pointer;
-      font-size: 18px;
-      z-index: 99999 !important;
-      transition: background 0.2s, transform 0.2s;
+      backdrop-filter: blur(4px);
+      user-select: none;
       -webkit-tap-highlight-color: transparent;
+      opacity: 0.7;
+      transition: opacity 0.2s, background 0.2s;
     }
-    .ad-audio-toggle:hover {
-      background: rgba(0, 0, 0, 0.85);
+    .ad-nav-btn:hover {
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.75);
     }
-    .ad-audio-toggle:active {
-      transform: scale(0.95);
+    .ad-nav-btn-prev { left: 8px; }
+    .ad-nav-btn-next { right: 8px; }
+
+    /* Invisible Audio Trigger: a tela toda desbloqueia o áudio no toque sem botões visíveis piscando */
+    .ad-audio-toggle {
+      display: none !important;
     }
 
     .ad-video-progress-bar {
@@ -468,12 +566,14 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
       src = `${baseUrl}${cleanPath}`;
     }
     
-    const clickHandler = item.targetUrl ? `onclick="window.open('${item.targetUrl}', '_blank')"` : '';
+    const targetUrlArg = item.targetUrl ? `'${item.targetUrl.replace(/'/g, "\\'")}'` : "''";
     
-    if (item.type === 'video') {
-      slidesHTML += `<div class="ad-carousel-slide"><video id="adVideo" src="${src}" autoplay muted loop playsinline ${clickHandler}></video><div class="ad-video-progress-bar"><div class="ad-video-progress-fill"></div></div></div>\n`;
+    const isVideo = item.type === 'video' || /\.(mp4|webm|mov)(\?.*)?$/i.test(item.url || '');
+    if (isVideo) {
+      const loopAttr = items.length <= 1 ? 'loop' : '';
+      slidesHTML += `<div class="ad-carousel-slide"><video id="adVideo-${idx}" class="ad-video-element" src="${src}" autoplay muted ${loopAttr} playsinline webkit-playsinline x5-playsinline preload="auto" onloadeddata="if(typeof currentAdIndex !== 'undefined' && currentAdIndex === ${idx}){ this.play().catch(function(){}); }"></video><div class="ad-click-catcher" onclick="handleAdClick(event, ${idx}, ${targetUrlArg})"></div><div class="ad-video-progress-bar"><div class="ad-video-progress-fill"></div></div></div>\n`;
     } else {
-      slidesHTML += `<div class="ad-carousel-slide"><img src="${src}" ${clickHandler} /></div>\n`;
+      slidesHTML += `<div class="ad-carousel-slide"><img src="${src}" loading="eager" decoding="async" /><div class="ad-click-catcher" onclick="handleAdClick(event, ${idx}, ${targetUrlArg})"></div></div>\n`;
     }
   });
 
@@ -486,9 +586,9 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
     });
     progressHTML += '</div>\n';
 
-    navHTML += '      <!-- Touch Navigation Areas -->\n';
-    navHTML += '      <div class="ad-nav-area-left" onclick="navigateAdCarousel(-1)"></div>\n';
-    navHTML += '      <div class="ad-nav-area-right" onclick="navigateAdCarousel(1)"></div>\n';
+    navHTML += '      <!-- Botoes de Navegacao Discretos (Nao cobrem a tela) -->\n';
+    navHTML += '      <button type="button" class="ad-nav-btn ad-nav-btn-prev" onclick="navigateAdCarousel(-1); event.stopPropagation();" aria-label="Anterior">‹</button>\n';
+    navHTML += '      <button type="button" class="ad-nav-btn ad-nav-btn-next" onclick="navigateAdCarousel(1); event.stopPropagation();" aria-label="Próximo">›</button>\n';
   }
 
   const timerBadgeDisplay = ad.timerEnabled ? 'block' : 'none';
@@ -498,6 +598,24 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
   <!-- Publicidade Overlay Modal -->
   <div id="adModal" class="ad-modal-overlay">
     <div class="ad-modal-content-wrapper">
+      <!-- Preloader Discreto com Identidade da Marca -->
+      <div id="adPreloader" class="ad-preloader-overlay">
+        <div class="ad-preloader-content">
+          <div class="ad-preloader-icon-wrap">
+            <svg class="ad-preloader-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+              <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+              <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+          </div>
+          <div class="ad-preloader-title">${providerTitle}</div>
+          <div class="ad-preloader-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+
       <div class="ad-carousel-container" id="adCarousel">
         ${slidesHTML}
       </div>
@@ -521,8 +639,10 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
     window.closeAdModal = function() {
       const modal = document.getElementById('adModal');
       if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
         modal.style.display = 'none';
         document.body.style.overflow = ''; // Unlock scroll
+        document.body.style.removeProperty('overflow');
       }
       const videos = document.querySelectorAll('#adModal video');
       videos.forEach(v => {
@@ -530,15 +650,94 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
       });
     };
 
-    window.toggleAdAudio = function() {
-      const videos = document.querySelectorAll('#adModal video');
-      const audioBtn = document.getElementById('adAudioBtn');
-      if (videos.length > 0 && audioBtn) {
-        const isMuted = videos[0].muted;
-        videos.forEach(v => { v.muted = !isMuted; });
-        audioBtn.innerHTML = !isMuted ? '🔇' : '🔊';
+    window._mgAudioPermanentlyUnlocked = false;
+
+    window.handleAdClick = function(e, slideIdx, targetUrl) {
+      if (e) e.stopPropagation();
+      window._mgAudioPermanentlyUnlocked = true;
+      
+      // Apenas aciona o vídeo se o slide clicado for o slide visível no momento E tiver um elemento de vídeo nele
+      var carouselEl = document.getElementById('adCarousel');
+      var isCurrentSlide = true;
+      if (carouselEl && carouselEl.children.length > 1 && typeof currentAdIndex !== 'undefined') {
+        isCurrentSlide = (currentAdIndex === slideIdx);
+      }
+      
+      if (isCurrentSlide) {
+        var vid = document.getElementById('adVideo-' + slideIdx);
+        if (vid) {
+          vid.muted = false;
+          vid.defaultMuted = false;
+          vid.removeAttribute('muted');
+          var p = vid.play();
+          if (p && typeof p.then === 'function') {
+            p.catch(function() {
+              vid.muted = true;
+              vid.play().catch(function() {});
+            });
+          }
+        }
+      }
+      
+      if (targetUrl && targetUrl.trim() !== '') {
+        window.open(targetUrl, '_blank');
       }
     };
+
+    window.toggleAdAudio = function() {
+      if (window._mgAudioPermanentlyUnlocked) return;
+      window._mgAudioPermanentlyUnlocked = true;
+      const videos = document.querySelectorAll('#adModal video');
+      videos.forEach(v => {
+        try {
+          v.muted = false;
+          v.defaultMuted = false;
+          v.removeAttribute('muted');
+          var p = v.play();
+          if (p && typeof p.then === 'function') p.catch(function() {});
+        } catch(e) {}
+      });
+    };
+
+    // Disparar no primeiro clique/toque na tela: libera o áudio do vídeo ATIVO sem mudar de slide ou disparar vídeos ocultos
+    (function setupGlobalAudioUnlock() {
+      function unlockAllAudio() {
+        window._mgAudioPermanentlyUnlocked = true;
+
+        // Desmuta e dá play APENAS no vídeo do slide atualmente visível
+        var activeVid = null;
+        var carouselEl = document.getElementById('adCarousel');
+        if (carouselEl && carouselEl.children.length > 1 && typeof currentAdIndex !== 'undefined') {
+          var curSlide = carouselEl.children[currentAdIndex];
+          if (curSlide) activeVid = curSlide.querySelector('video');
+        } else if (!carouselEl || carouselEl.children.length <= 1) {
+          activeVid = document.querySelector('#adModal video');
+        }
+
+        if (activeVid) {
+          try {
+            activeVid.muted = false;
+            activeVid.defaultMuted = false;
+            activeVid.removeAttribute('muted');
+            var p = activeVid.play();
+            if (p && typeof p.then === 'function') p.catch(function() {});
+          } catch(e) {}
+        }
+
+        // Remover os ouvintes após o primeiro gesto
+        window.removeEventListener('click', unlockAllAudio, true);
+        window.removeEventListener('touchstart', unlockAllAudio, true);
+        window.removeEventListener('pointerdown', unlockAllAudio, true);
+        window.removeEventListener('keydown', unlockAllAudio, true);
+        window.removeEventListener('focusin', unlockAllAudio, true);
+      }
+
+      window.addEventListener('click', unlockAllAudio, true);
+      window.addEventListener('touchstart', unlockAllAudio, true);
+      window.addEventListener('pointerdown', unlockAllAudio, true);
+      window.addEventListener('keydown', unlockAllAudio, true);
+      window.addEventListener('focusin', unlockAllAudio, true);
+    })();
     
     function initAdModalSetup() {
       const adModal = document.getElementById('adModal');
@@ -557,6 +756,59 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
         }
       }
 
+      // Inicia imediatamente o vídeo ativo de forma ultrarrápida e silenciosa para autoplay 100% garantido sem tela de espera
+      var activeVideo = document.querySelector('#adModal video');
+      if (activeVideo) {
+        activeVideo.muted = true;
+        activeVideo.defaultMuted = true;
+        activeVideo.playsInline = true;
+        activeVideo.setAttribute('muted', '');
+        activeVideo.setAttribute('playsinline', '');
+        activeVideo.setAttribute('webkit-playsinline', '');
+        activeVideo.setAttribute('x5-playsinline', '');
+        var p = activeVideo.play();
+        if (p && typeof p.then === 'function') {
+          p.catch(function() {
+            activeVideo.muted = true;
+            activeVideo.play().catch(function() {});
+          });
+        }
+      }
+
+      var preloaderDismissed = false;
+      function dismissAdPreloader() {
+        if (preloaderDismissed) return;
+        preloaderDismissed = true;
+        var pre = document.getElementById('adPreloader');
+        if (pre) {
+          pre.classList.add('fade-out');
+          setTimeout(function() { pre.style.display = 'none'; }, 300);
+        }
+      }
+
+      // 1. Escuta eventos do primeiro vídeo ou imagens
+      videos.forEach(function(video) {
+        video.addEventListener('playing', dismissAdPreloader, { once: true });
+        video.addEventListener('loadeddata', dismissAdPreloader, { once: true });
+        video.addEventListener('canplay', dismissAdPreloader, { once: true });
+        video.addEventListener('timeupdate', function() {
+          if (video.currentTime > 0.02) dismissAdPreloader();
+        });
+      });
+
+      const images = document.querySelectorAll('#adModal img');
+      images.forEach(function(img) {
+        if (img.complete && img.naturalHeight !== 0) {
+          dismissAdPreloader();
+        } else {
+          img.addEventListener('load', dismissAdPreloader, { once: true });
+          img.addEventListener('error', dismissAdPreloader, { once: true });
+        }
+      });
+
+      // 2. Timeout de segurança ultra-rápido para nunca travar tela preta ou cinza
+      setTimeout(dismissAdPreloader, 600);
+
       // Vincular barra de progresso estilo Facebook
       videos.forEach(function(video) {
         video.addEventListener('timeupdate', function() {
@@ -565,6 +817,21 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
           if (fill) fill.style.width = percent + '%';
         });
       });
+
+      // No banner único (vídeo único), assegura que o vídeo continue reproduzindo sem travar ao tocar na tela
+      if (${items.length} <= 1) {
+        var singleVid = document.querySelector('#adModal video');
+        if (singleVid) {
+          singleVid.onpause = function() {
+            var modal = document.getElementById('adModal');
+            if (modal && modal.style.display !== 'none') {
+              setTimeout(function() {
+                singleVid.play().catch(function() {});
+              }, 50);
+            }
+          };
+        }
+      }
     }
 
     if (document.readyState === 'loading') {
@@ -596,6 +863,13 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
         }
       }
 
+      function getCurrentSlideVideo() {
+        const carouselEl = document.getElementById('adCarousel');
+        if (!carouselEl) return null;
+        const currentSlide = carouselEl.children[currentAdIndex];
+        return currentSlide ? currentSlide.querySelector('video') : null;
+      }
+
       function updateAdVideos() {
         const carouselEl = document.getElementById('adCarousel');
         if (!carouselEl) return;
@@ -605,12 +879,49 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
           if (video) {
             if (i === currentAdIndex) {
               try {
-                video.play().catch(function() {});
+                if (window._mgAudioPermanentlyUnlocked) {
+                  video.muted = false;
+                  video.defaultMuted = false;
+                  video.removeAttribute('muted');
+                } else {
+                  video.muted = true;
+                  video.defaultMuted = true;
+                  video.setAttribute('muted', '');
+                }
+                video.playsInline = true;
+                video.setAttribute('playsinline', '');
+                video.setAttribute('webkit-playsinline', '');
+                video.setAttribute('x5-playsinline', '');
+                
+                // Reinicia suavemente apenas se já tiver buffer
+                if (video.readyState >= 1 && video.currentTime > 0.1) {
+                  video.currentTime = 0;
+                }
+                
+                const playPromise = video.play();
+                if (playPromise && typeof playPromise.then === 'function') {
+                  playPromise.catch(function() {
+                    video.muted = true;
+                    video.setAttribute('muted', '');
+                    video.play().catch(function() {});
+                  });
+                }
+                // Garante reprodução apenas se continuar sendo o slide ativo
+                video.oncanplay = function() {
+                  if (typeof currentAdIndex !== 'undefined' && currentAdIndex === i) {
+                    video.play().catch(function() {});
+                  }
+                };
               } catch(e) {}
             } else {
               try {
+                video.oncanplay = null;
                 video.pause();
-                video.currentTime = 0;
+                video.muted = true;
+                video.setAttribute('muted', '');
+                if (video.readyState >= 1) {
+                  video.currentTime = 0;
+                }
               } catch(e) {}
             }
           }
@@ -633,7 +944,18 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
         clearInterval(progressInterval);
         progressMs = 0;
         const activeFill = fills[currentAdIndex];
-        if (activeFill) {
+        const currentVideo = getCurrentSlideVideo();
+
+        if (currentVideo) {
+          // Barra de progresso do slide atual acompanha o tempo do vídeo
+          currentVideo.ontimeupdate = function() {
+            if (activeFill && currentVideo.duration) {
+              const pct = (currentVideo.currentTime / currentVideo.duration) * 100;
+              activeFill.style.width = pct + '%';
+            }
+          };
+        } else if (activeFill) {
+          // Barra de progresso de imagem avança suavemente durante 4s
           progressInterval = setInterval(() => {
             progressMs += 100;
             const pct = Math.min(100, (progressMs / slideDuration) * 100);
@@ -652,35 +974,53 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
           const width = carousel.offsetWidth;
           carousel.scrollTo({ left: currentAdIndex * width, behavior: 'smooth' });
         }
-        updateAdProgress();
         updateAdVideos();
         updateAdAudioButton();
+        updateAdProgress();
+        setupAdAutoplay();
       }
       
       function navigateAdCarousel(direction) {
-        resetAdAutoplay();
         showAdSlide(currentAdIndex + direction);
       }
       
-      function startAdAutoplay() {
-        updateAdProgress();
-        adAutoplayTimer = setInterval(() => {
-          showAdSlide(currentAdIndex + 1);
-        }, slideDuration);
+      function setupAdAutoplay() {
+        if (adAutoplayTimer) {
+          clearTimeout(adAutoplayTimer);
+          adAutoplayTimer = null;
+        }
+
+        const video = getCurrentSlideVideo();
+        if (video) {
+          // Regra principal: avança assim que o vídeo terminar
+          video.onended = function() {
+            showAdSlide(currentAdIndex + 1);
+          };
+          // Se o vídeo falhar ao carregar, avança para o próximo slide
+          video.onerror = function() {
+            setTimeout(function() {
+              showAdSlide(currentAdIndex + 1);
+            }, 1000);
+          };
+
+          // Salvaguarda dinâmica: nunca deixar o carrossel estático caso onended não dispare
+          var videoDur = (video.duration && !isNaN(video.duration) && video.duration > 0) ? video.duration : 10;
+          var safeTimeoutMs = Math.min(30000, Math.max(6000, Math.ceil(videoDur * 1000) + 800));
+          adAutoplayTimer = setTimeout(function() {
+            showAdSlide(currentAdIndex + 1);
+          }, safeTimeoutMs);
+        } else {
+          // Slide com imagem: avança após 4 segundos
+          adAutoplayTimer = setTimeout(function() {
+            showAdSlide(currentAdIndex + 1);
+          }, slideDuration);
+        }
       }
-      
-      function resetAdAutoplay() {
-        clearInterval(adAutoplayTimer);
-        clearInterval(progressInterval);
-        startAdAutoplay();
-      }
-      
+
       function initAdCarouselFeatures() {
         const carousel = document.getElementById('adCarousel');
         if (carousel && adCount > 1) {
-          startAdAutoplay();
-          updateAdVideos();
-          updateAdAudioButton();
+          showAdSlide(0);
           
           carousel.addEventListener('scroll', () => {
             const scrollPos = carousel.scrollLeft;
@@ -688,9 +1028,10 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
             const newIdx = Math.round(scrollPos / width);
             if (newIdx !== currentAdIndex && newIdx < adCount) {
               currentAdIndex = newIdx;
-              updateAdProgress();
               updateAdVideos();
               updateAdAudioButton();
+              updateAdProgress();
+              setupAdAutoplay();
             }
           });
 
@@ -714,26 +1055,7 @@ function generateAdMarkup(ad: any, systemUrl?: string) {
     js += `
       let _adTimerStarted = false;
       function initAdTimerSetup() {
-        const video = document.querySelector('#adModal video');
-        if (video) {
-          if (video.duration) {
-            _adTimerStarted = true;
-            startAdTimer(Math.ceil(video.duration));
-          } else {
-            video.addEventListener('loadedmetadata', function() {
-              if (!_adTimerStarted) {
-                _adTimerStarted = true;
-                startAdTimer(Math.ceil(video.duration));
-              }
-            });
-            setTimeout(function() {
-              if (!_adTimerStarted) {
-                _adTimerStarted = true;
-                startAdTimer(${duration});
-              }
-            }, 3000);
-          }
-        } else {
+        if (!_adTimerStarted) {
           _adTimerStarted = true;
           startAdTimer(${duration});
         }
@@ -808,8 +1130,14 @@ function generateEffectsMarkup(effects: any = {}, colors: any = {}, social: any 
     bgHtml = fx.html;
     cssEffects += fx.css;
     jsEffects += fx.js;
-    // Adicionar transparência apenas para o body e overlays para que o efeito do nicho seja visível por trás do card
-    cssEffects += `\nhtml body, html body[class], body.theme-default, body[class*="theme-"], html, body, .theme-layout, #wrapper, .bg-overlay, .background-overlay { background: transparent !important; background-color: transparent !important; background-image: none !important; }\n#mg-app-root, form, .container, main, .main, .content { position: relative !important; z-index: 1 !important; }\n`;
+    const effectiveBg = colors.bg || '#090a0f';
+    cssEffects += `
+html, body { background: ${effectiveBg} !important; background-color: ${effectiveBg} !important; }
+.theme-layout, #wrapper, .bg-overlay, .background-overlay { background: transparent !important; background-color: transparent !important; background-image: none !important; }
+#mg-app-root, form, .container, main, .main, .content { position: relative !important; z-index: 2 !important; }
+#box, .login-card, .login-box, .card { position: relative !important; z-index: 10 !important; }
+canvas#mg-fx-niche, canvas#mg-fx-canvas-matrix, canvas#mg-live-canvas, .mg-fx-canvas { position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; height: 100% !important; z-index: 1 !important; pointer-events: none !important; }
+`;
     if (bg && bg.url) {
       cssEffects += `\n#mg-fx-niche, #mg-fx-canvas-particles, #mg-fx-canvas-matrix, #mg-fx-canvas-warp, #mg-fx-canvas-waves, #mg-fx-cybergrid, #mg-fx-orbs, #mg-fx-fireflies, #mg-fx-aurora { background: transparent !important; }\n`;
     }
@@ -999,22 +1327,22 @@ ${jsEffects}
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const template = searchParams.get('template');
+    const template = searchParams.get('template') || 'default';
     const { CONFIG_PATH } = getPaths(template);
 
-    const lanIp = getLocalLanIp();
+    const defaultPortalUrl = getMaskedPortalUrl();
     let config = {
       ...DEFAULT_CONFIG,
-      systemUrl: `http://${lanIp}`
+      systemUrl: defaultPortalUrl
     };
 
     if (fs.existsSync(CONFIG_PATH)) {
       const fileContent = fs.readFileSync(CONFIG_PATH, 'utf8');
       const savedConfig = JSON.parse(fileContent);
       
-      // If the saved URL is empty, contains localhost or default fallback, update it dynamically
-      if (!savedConfig.systemUrl || savedConfig.systemUrl.includes('192.168.88.254') || savedConfig.systemUrl.includes('localhost')) {
-        savedConfig.systemUrl = `http://${lanIp}`;
+      // If the saved URL is empty, contains raw IP or localhost, update to masked domain
+      if (!savedConfig.systemUrl || /^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?/i.test(savedConfig.systemUrl) || savedConfig.systemUrl.includes('localhost')) {
+        savedConfig.systemUrl = defaultPortalUrl;
       }
 
       // Merge new schema fields in configuration properties
@@ -1047,7 +1375,29 @@ export async function GET(request: Request) {
       // Create default config file if it does not exist
       fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
     }
-    return NextResponse.json({ success: true, config });
+
+    // Carregar estado soberano de free_wifi_mode do sistema
+    let systemFreeWifiMode = true;
+    try {
+      const freeWifiRecord = await prisma.systemConfig.findUnique({
+        where: { key: 'free_wifi_mode' }
+      });
+      if (freeWifiRecord) {
+        systemFreeWifiMode = freeWifiRecord.value === 'true';
+      }
+    } catch (e) {
+      console.warn('Erro ao ler free_wifi_mode em GET /api/portal/config:', e);
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      config: {
+        ...config,
+        systemFreeWifiMode,
+        // Garante que o saleMode reflita coerentemente o modo do sistema se houver conflito
+        saleMode: !systemFreeWifiMode && Boolean(config.saleMode)
+      }
+    });
   } catch (error: any) {
     console.error('Error fetching portal config:', error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
@@ -1057,14 +1407,37 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const template = searchParams.get('template');
-    const { HOTSPOT_DIR, CONFIG_PATH, LOGIN_HTML_PATH } = getPaths(template);
-
     const newConfig = await request.json();
-    const safeName = (template || 'default').replace(/[^a-zA-Z0-9_-]/g, '');
+    const template = searchParams.get('template') || newConfig.template || 'default';
+    const { HOTSPOT_DIR, CONFIG_PATH, LOGIN_HTML_PATH } = getPaths(template);
+    const safeName = template;
     
     // Save configuration
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(newConfig, null, 2), 'utf8');
+
+    if (newConfig.systemUrl) {
+      await prisma.systemConfig.upsert({
+        where: { key: 'SYSTEM_URL' },
+        update: { value: newConfig.systemUrl },
+        create: { key: 'SYSTEM_URL', value: newConfig.systemUrl }
+      }).catch(() => null);
+    }
+
+    if (newConfig.saleMode !== undefined) {
+      const modeValue = newConfig.saleMode ? 'paid' : 'free';
+      await Promise.all([
+        prisma.systemConfig.upsert({
+          where: { key: 'PORTAL_SALES_MODE' },
+          update: { value: modeValue },
+          create: { key: 'PORTAL_SALES_MODE', value: modeValue }
+        }),
+        prisma.systemConfig.upsert({
+          where: { key: 'free_wifi_mode' },
+          update: { value: newConfig.saleMode ? 'false' : 'true' },
+          create: { key: 'free_wifi_mode', value: newConfig.saleMode ? 'false' : 'true' }
+        })
+      ]).catch(() => null);
+    }
 
     // Clean unused ad uploads dynamically to prevent file pollution
     try {
@@ -1154,6 +1527,7 @@ export async function POST(request: Request) {
     // If login.html exists, update its CSS variables and redirect URL
     if (fs.existsSync(LOGIN_HTML_PATH)) {
       let html = fs.readFileSync(LOGIN_HTML_PATH, 'utf8');
+      html = normalizeHtmlStructure(html, template || 'default');
       html = html.replace(/onerror\s*=\s*["'][^"']*["']/gi, 'onerror="this.onerror=null;"');
 
       // Strip any stale debug overlay scripts injected by older compiled versions
@@ -1161,6 +1535,15 @@ export async function POST(request: Request) {
       html = html.replace(/var debugOverlay[\s\S]*?debugOverlay\.innerText\s*=\s*[^;]+;/g, '');
       // Strip any accidentally compiled livePreviewScript blocks
       html = html.replace(/<!-- MG_LIVE_PREVIEW_SCRIPT -->[\s\S]*?<!-- END_MG_LIVE_PREVIEW_SCRIPT -->/gi, '');
+
+      // ═══════════════════════════════════════════════════════════════
+      // TEXT & CONTENT REPLACEMENT
+      // ═══════════════════════════════════════════════════════════════
+      const loginBtnLabel = newConfig.loginButtonLabel || 'Entrar';
+      html = html.replace(/(<button[^>]*id=["']btnLogin["'][^>]*>)(.*?)(<\/button>)/i, `$1${loginBtnLabel}$3`);
+      
+      const msgText = newConfig.message || 'Bem-vindo à nossa rede gratuita. Insira o seu voucher para navegar.';
+      html = html.replace(/(<div[^>]*class=["'][^"']*mg-message[^"']*["'][^>]*>)(.*?)(<\/div>)/i, `$1${msgText}$3`);
 
       // ═══════════════════════════════════════════════════════════════
       // THEME CSS COMPILATION (MIKROGESTOR_THEME_LINK)
@@ -1178,12 +1561,58 @@ export async function POST(request: Request) {
       const greenColor = c.green || '#e5c158';
       const fontFamily = studio.fontFamily || 'Outfit';
       const rawGlass = c.glassOpacity !== undefined ? c.glassOpacity : 90;
-      let opVal = (rawGlass <= 1 && rawGlass > 0) ? Math.round(rawGlass * 100) : rawGlass;
-      if (opVal < 30) opVal = 85;
+      let opVal = (rawGlass <= 1 && rawGlass > 0) ? Math.round(rawGlass * 100) : Number(rawGlass);
+      if (isNaN(opVal) || opVal < 0) opVal = 0;
+      if (opVal > 100) opVal = 100;
       const glassOpacity = (opVal / 100).toFixed(2);
       const glassBlur = c.glassBlur !== undefined ? `${c.glassBlur}px` : '12px';
-      const borderRadius = studio.cardRadiusTL !== undefined ? `${studio.cardRadiusTL}px` : '16px';
       
+      // Card Setup
+      const cardRadiusTL = studio.cardRadiusTL !== undefined ? `${studio.cardRadiusTL}px` : '20px';
+      const cardRadiusTR = studio.cardRadiusTR !== undefined ? `${studio.cardRadiusTR}px` : '20px';
+      const cardRadiusBR = studio.cardRadiusBR !== undefined ? `${studio.cardRadiusBR}px` : '20px';
+      const cardRadiusBL = studio.cardRadiusBL !== undefined ? `${studio.cardRadiusBL}px` : '20px';
+      const cardPaddingTop = studio.cardPaddingTop !== undefined ? `${studio.cardPaddingTop}px` : '24px';
+      const cardPaddingRight = studio.cardPaddingRight !== undefined ? `${studio.cardPaddingRight}px` : '24px';
+      const cardPaddingBottom = studio.cardPaddingBottom !== undefined ? `${studio.cardPaddingBottom}px` : '24px';
+      const cardPaddingLeft = studio.cardPaddingLeft !== undefined ? `${studio.cardPaddingLeft}px` : '24px';
+      const cardBorderWidth = studio.cardBorderWidth !== undefined ? `${studio.cardBorderWidth}px` : '1px';
+      const cardGap = studio.cardGap !== undefined ? `${studio.cardGap}px` : '16px';
+      
+      // Button Setup
+      const btnHeight = studio.btnHeight !== undefined ? `${studio.btnHeight}px` : '46px';
+      const btnRadiusTL = studio.btnRadiusTL !== undefined ? `${studio.btnRadiusTL}px` : '12px';
+      const btnRadiusTR = studio.btnRadiusTR !== undefined ? `${studio.btnRadiusTR}px` : '12px';
+      const btnRadiusBR = studio.btnRadiusBR !== undefined ? `${studio.btnRadiusBR}px` : '12px';
+      const btnRadiusBL = studio.btnRadiusBL !== undefined ? `${studio.btnRadiusBL}px` : '12px';
+      const btnFontSize = studio.btnFontSize !== undefined ? `${studio.btnFontSize}px` : '14px';
+      const btnFontWeight = studio.btnFontWeight || '600';
+      const btnLetterSpacing = studio.btnLetterSpacing !== undefined ? `${studio.btnLetterSpacing}px` : '0.5px';
+      const btnBorderWidth = studio.btnBorderWidth !== undefined ? `${studio.btnBorderWidth}px` : '0px';
+      
+      // Input Setup
+      const inputHeight = studio.inputHeight !== undefined ? `${studio.inputHeight}px` : '44px';
+      const inputRadius = studio.inputRadius !== undefined ? `${studio.inputRadius}px` : '10px';
+      const inputBorderWidth = studio.inputBorderWidth !== undefined ? `${studio.inputBorderWidth}px` : '1px';
+
+      // Typography Setup
+      const titleFontSize = studio.titleFontSize !== undefined ? `${studio.titleFontSize}px` : '24px';
+      const titleFontWeight = studio.titleFontWeight || '700';
+      const titleLineHeight = studio.titleLineHeight !== undefined ? studio.titleLineHeight : '1.2';
+      const titleLetterSpacing = studio.titleLetterSpacing !== undefined ? `${studio.titleLetterSpacing}px` : '0px';
+      const titleAlign = studio.titleAlign || 'center';
+
+      // Advanced Colors
+      const trialBtnBg = c.trialButtonBg || '#1e90ff';
+      const trialBtnText = c.trialButtonText || '#ffffff';
+      const cardBorderColor = c.cardBorder || 'rgba(0,0,0,0.08)';
+      const inputBgColor = c.inputBg || '#ffffff';
+      const inputTextColor = c.inputText || '#0f172a';
+      const inputBorderColor = c.inputBorder || '#e2e8f0';
+      const inputPlaceholderColor = c.inputPlaceholder || '#94a3b8';
+      const loginBtnText = c.loginButtonText || '#ffffff';
+      const regBtnText = c.registerButtonText || '#ffffff';
+
       function hexToRgb(hex: string) {
         if (!hex) return '255, 255, 255';
         hex = hex.replace('#', '');
@@ -1208,11 +1637,58 @@ export async function POST(request: Request) {
   --muted: ${mutedColor};
   --blue: ${blueColor};
   --green: ${greenColor};
+  
+  --trial-btn-bg: ${trialBtnBg};
+  --trial-btn-text: ${trialBtnText};
+  --card-border-color: ${cardBorderColor};
+  --input-bg: ${inputBgColor};
+  --input-text: ${inputTextColor};
+  --input-border: ${inputBorderColor};
+  --input-placeholder: ${inputPlaceholderColor};
+  --login-btn-text: ${loginBtnText};
+  --reg-btn-text: ${regBtnText};
+
   --font-family: '${fontFamily}', 'Outfit', 'Segoe UI', Roboto, Arial, sans-serif;
   --glass-opacity: ${glassOpacity};
   --glass-blur: ${glassBlur};
-  --border-radius: ${borderRadius};
   --card-bg-rgb: ${cardBgRgb};
+  
+  /* Layout */
+  --card-radius-tl: ${cardRadiusTL};
+  --card-radius-tr: ${cardRadiusTR};
+  --card-radius-br: ${cardRadiusBR};
+  --card-radius-bl: ${cardRadiusBL};
+  --card-padding-t: ${cardPaddingTop};
+  --card-padding-r: ${cardPaddingRight};
+  --card-padding-b: ${cardPaddingBottom};
+  --card-padding-l: ${cardPaddingLeft};
+  --card-border-width: ${cardBorderWidth};
+  --card-gap: ${cardGap};
+  
+  /* Buttons */
+  --btn-height: ${btnHeight};
+  --btn-radius-tl: ${btnRadiusTL};
+  --btn-radius-tr: ${btnRadiusTR};
+  --btn-radius-br: ${btnRadiusBR};
+  --btn-radius-bl: ${btnRadiusBL};
+  --btn-font-size: ${btnFontSize};
+  --btn-font-weight: ${btnFontWeight};
+  --btn-letter-spacing: ${btnLetterSpacing};
+  --btn-border-width: ${btnBorderWidth};
+  
+  /* Inputs */
+  --input-height: ${inputHeight};
+  --input-radius: ${inputRadius};
+  --input-border-width: ${inputBorderWidth};
+
+  /* Typography */
+  --title-font-size: ${titleFontSize};
+  --title-font-weight: ${titleFontWeight};
+  --title-line-height: ${titleLineHeight};
+  --title-letter-spacing: ${titleLetterSpacing};
+  --title-align: ${titleAlign};
+
+  --border-radius: ${cardRadiusTL}; /* Fallback for legacy */
   --glow-color: transparent;
 }
 
@@ -1277,29 +1753,52 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06) !important;
   padding: 20px; margin: 40px auto 24px; max-width: 420px; width: calc(100% - 32px); padding-bottom: 24px;
 }
-.mg-message { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+.mg-wifi-icon { display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); }
+.mg-wifi-icon svg { width: 26px; height: 26px; fill: var(--blue); }
+.mg-message { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+.mg-input-wrap { position: relative; margin: 0 0 calc(var(--card-gap, 14px) * 0.75) 0 !important; }
+.mg-input-wrap .mg-input-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; opacity: 0.45; pointer-events: none; }
+.mg-input-wrap input { padding-left: 36px !important; }
+.mg-eye-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 4px; color: #9ca3af; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+.mg-eye-btn:focus { outline: none; }
+.mg-eye-btn svg { width: 18px; height: 18px; }
 #user, #pass {
-  border: 1px solid #e2e8f0; color: #111827; background: rgba(248,250,252,0.9); height: 40px; font-size: 14px;
-  font-family: var(--font-family); display: block; width: 100%; border-radius: 8px; padding: 0 12px; margin: 12px 0;
-  -webkit-appearance: none; appearance: none; outline: none; transition: border-color 0.2s;
+  border: 1px solid rgba(226,232,240,0.7); color: #111827; background: rgba(248,250,252,0.92); height: var(--input-height, 44px); min-height: var(--input-height, 44px); font-size: 14px;
+  font-family: var(--font-family); display: block; width: 100%; border-radius: var(--input-radius, 10px); padding: 0 40px 0 36px; margin: 0 0 calc(var(--card-gap, 14px) * 0.75) 0;
+  -webkit-appearance: none; appearance: none; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
 }
-#user:focus, #pass:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
-#user::placeholder, #pass::placeholder { color: var(--muted); }
-.actions { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px !important; margin-top: 16px !important; }
+#user { padding-right: 12px; }
+#user:focus, #pass:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent); }
+#user::placeholder, #pass::placeholder { color: #9ca3af; }
+${newConfig.enabled !== false ? `.actions { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: var(--card-gap, 12px) !important; margin-top: var(--card-gap, 14px) !important; width: 100% !important; }` : `.actions { display: flex !important; flex-direction: column !important; gap: 0 !important; margin-top: var(--card-gap, 14px) !important; width: 100% !important; }
+.actions .btn, .actions .btn-login, .actions #btnLogin { width: 100% !important; display: flex !important; }
+#btnSignup, .btn-cad, .btn-register, a[href*="register"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+}`}
 .btn {
-  -webkit-appearance: none; appearance: none; border: 0; height: 40px; border-radius: 8px; cursor: pointer; font-weight: 700;
-  font-size: 13px; font-family: var(--font-family); width: 100%; display: flex !important; align-items: center; justify-content: center;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.08); transition: filter 0.2s ease, transform 0.1s; touch-action: manipulation; text-decoration: none; opacity: 0.95;
+  -webkit-appearance: none; appearance: none; border: 0; height: var(--btn-height, 44px); min-height: var(--btn-height, 44px); border-radius: var(--btn-radius-tl, 10px); cursor: pointer; font-weight: var(--btn-font-weight, 600);
+  font-size: var(--btn-font-size, 13px); letter-spacing: 0.3px; font-family: var(--font-family); width: 100%; display: flex !important; align-items: center; justify-content: center; gap: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08); transition: filter 0.15s ease, transform 0.1s, box-shadow 0.15s; touch-action: manipulation; text-decoration: none;
 }
-.btn:active { transform: translateY(1px); }
+.btn:hover { filter: brightness(0.94); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.btn:active { transform: translateY(1px); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .btn-login { background: var(--blue) !important; color: #fff !important; }
-.btn-login:hover { filter: brightness(0.92); }
 .btn-cad { background: var(--green) !important; color: #fff !important; }
-.btn-cad:hover { filter: brightness(0.92); }
-.footer { text-align: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.07); font-size: 9px; color: var(--muted); }
+#trial-container { margin-top: calc(var(--card-gap, 14px) * 0.85) !important; width: 100% !important; display: flex; flex-direction: column; align-items: center; }
+.footer { text-align: center; margin-top: var(--card-gap, 16px); padding-top: 12px; border-top: 1px solid rgba(128,128,128,0.15); font-size: 9px; color: var(--muted); opacity: 0.7; }
 .footer a { text-decoration: none; color: var(--blue); }
 .err {
-  background: #1f2937; border: 1px solid #7f1d1d; color: #fecaca; padding: 8px 12px; border-radius: 10px; margin: 16px auto 0;
+  background: rgba(127,29,29,0.15); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; padding: 8px 12px; border-radius: 10px; margin: 12px auto 0;
   max-width: 420px; width: calc(100% - 32px); text-align: center; font-size: 13px;
 }
 @media (max-width: 480px) {
@@ -1330,13 +1829,25 @@ body {
       // BACKGROUND INJECTION (MIKROGESTOR_BG_SCRIPT)
       // ═══════════════════════════════════════════════════════════════
       const dbSystemUrl = await prisma.systemConfig.findUnique({ where: { key: 'SYSTEM_URL' } });
-      const systemUrl = newConfig.systemUrl || dbSystemUrl?.value || `http://${getLocalLanIp()}`;
+      const fallbackUrl = getMaskedPortalUrl();
+      let systemUrl = newConfig.systemUrl || dbSystemUrl?.value || fallbackUrl;
+      if (/^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?/i.test(systemUrl) || systemUrl.includes('localhost')) {
+        systemUrl = fallbackUrl;
+      }
       const MG_SERVER_BASE = systemUrl.replace(/\/$/, '');
 
       const bgBlockRegex = /(<!--\s*MIKROGESTOR_BG_SCRIPT\s*-->|<!--\s*MIKROGESTOR BG\s*-->)[\s\S]*?(<!--\s*END_MIKROGESTOR_BG_SCRIPT\s*-->|<!--\s*END MIKROGESTOR BG\s*-->)/i;
       let bgHtml = '<!-- MIKROGESTOR_BG_SCRIPT -->\n';
 
-      if (newConfig.bg && newConfig.bg.url && String(newConfig.bg.url).trim() !== '') {
+      const hasBgMedia = Boolean(
+        newConfig.bg &&
+        newConfig.bg.url &&
+        String(newConfig.bg.url).trim() !== '' &&
+        newConfig.bg.type !== 'default' &&
+        newConfig.bg.type !== 'none'
+      );
+
+      if (hasBgMedia) {
         const cleanBgUrl = newConfig.bg.url.split('?')[0];
         const isVideo = newConfig.bg.type === 'video' || cleanBgUrl.match(/\.(mp4|webm|ogg)$/i);
         const directAssetUrl = cleanBgUrl.startsWith('http') ? cleanBgUrl : (cleanBgUrl.startsWith('/') ? `${MG_SERVER_BASE}${cleanBgUrl}` : `${MG_SERVER_BASE}/${cleanBgUrl}`);
@@ -1385,12 +1896,18 @@ body {
           bgHtml += `<div id="mg-bg-image" style="position:fixed;right:0;bottom:0;min-width:100%;min-height:100%;width:100vw;height:100vh;z-index:-2;background-image:url('${directAssetUrl}');background-size:cover;background-position:center;background-repeat:no-repeat;pointer-events:none;"></div>
 `;
         }
+      } else {
+        newConfig.bg = { type: 'default', url: '' };
+        // Aggressively clean any lingering video or background image elements
+        html = html.replace(/<video[^>]*id=["']mg-bg-video["'][^>]*>[\s\S]*?<\/video>/gi, '');
+        html = html.replace(/<div[^>]*id=["']mg-bg-image["'][^>]*><\/div>/gi, '');
+        html = html.replace(/<script[^>]*>[\s\S]*?mgInitVideo[\s\S]*?<\/script>/gi, '');
       }
       bgHtml += '<!-- END_MIKROGESTOR_BG_SCRIPT -->';
 
       if (bgBlockRegex.test(html)) {
         html = html.replace(bgBlockRegex, bgHtml);
-      } else {
+      } else if (hasBgMedia) {
         html = html.replace(/(<body[^>]*>)/i, `$1\n  ${bgHtml}\n`);
       }
 
@@ -1417,9 +1934,12 @@ body {
       // REGISTER BUTTON INJECTION (MIKROGESTOR_REGISTER_BTN)
       // ═══════════════════════════════════════════════════════════════
       const btnRegex = /(<!--\s*MIKROGESTOR_REGISTER_BTN\s*-->)[\s\S]*?(<!--\s*END_MIKROGESTOR_REGISTER_BTN\s*-->)/i;
-      const displayStyle = newConfig.enabled !== false ? 'flex' : 'none';
+      const isRegEnabled = newConfig.enabled !== false;
+      const displayStyle = isRegEnabled
+        ? 'display: flex !important;'
+        : 'display: none !important; visibility: hidden !important; height: 0 !important; margin: 0 !important; padding: 0 !important; pointer-events: none !important;';
       const btnText = newConfig.registerButtonText || 'ACESSAR REDE VIP';
-      const registerButtonHTML = `<!-- MIKROGESTOR_REGISTER_BTN -->\n<a id="btnSignup" class="btn btn-cad" href="${MG_SERVER_BASE}/portal/register?link-login-only=$$(link-login-only-esc)&link-orig=$$(link-orig-esc)" style="display: ${displayStyle};">${btnText}</a>\n<!-- END_MIKROGESTOR_REGISTER_BTN -->`;
+      const registerButtonHTML = `<!-- MIKROGESTOR_REGISTER_BTN -->\n<a id="btnSignup" class="btn btn-cad" href="${MG_SERVER_BASE}/portal/register?link-login-only=$$(link-login-only-esc)&link-orig=$$(link-orig-esc)" style="${displayStyle}">${btnText}</a>\n<!-- END_MIKROGESTOR_REGISTER_BTN -->`;
 
       if (btnRegex.test(html)) {
          html = html.replace(btnRegex, registerButtonHTML);
@@ -1428,6 +1948,9 @@ body {
          if (oldBtnRegex.test(html)) {
             html = html.replace(oldBtnRegex, registerButtonHTML);
          }
+      }
+      if (!isRegEnabled) {
+        html = html.replace(/grid-template-columns:\s*1fr\s+1fr/gi, 'grid-template-columns: 1fr');
       }
 
       // ═══════════════════════════════════════════════════════════════
@@ -1488,7 +2011,7 @@ body {
 
 
       // Compile and inject Ad Carousel & Timer dynamic elements
-      const { css: adCSS, html: adHTML, js: adJS } = generateAdMarkup(newConfig.ad, newConfig.systemUrl);
+      const { css: adCSS, html: adHTML, js: adJS } = generateAdMarkup(newConfig.ad, newConfig.systemUrl, bName);
       
       const cssRegex = /(\/\*\s*AdCarouselStyles\s*\*\/)[\s\S]*?(\/\*\s*EndAdCarouselStyles\s*\*\/)/i;
       if (cssRegex.test(html)) {

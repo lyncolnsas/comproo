@@ -1,0 +1,19 @@
+[Unit]
+Description=MikroGestor Voucher - Sistema de Gestao de Vouchers e Hotspot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/mikrogestor-voucher
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=80
+LimitNOFILE=65536
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

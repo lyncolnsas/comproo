@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Wi-Fi | Faculdade Adventista do Paraná</title>
+    <style>
+        :root {
+            --fap-blue: #002B49;
+            --fap-blue-dark: #001726;
+            --fap-gold: #F39200;
+            --fap-gold-hover: #d98000;
+            --text-dark: #1f2937;
+            --text-muted: #6b7280;
+            --card-bg: #ffffff;
+            --danger-bg: #fee2e2;
+            --danger-text: #b91c1c;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--fap-blue) 0%, var(--fap-blue-dark) 100%);
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 15px;
+        }
+
+        .login-card {
+            background: var(--card-bg); 
+            width: 100%; 
+            max-width: 420px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            overflow: hidden;
+        }
+
+        .header-brand {
+            background-color: var(--fap-blue); 
+            position: relative; 
+            color: #ffffff; 
+            text-align: center; 
+            padding: 35px 20px 25px; 
+            border-bottom: 5px solid var(--fap-gold);
+        }
+
+        /* ----- Início: Controle e Animação do Logotipo SVG ----- */
+        .edu-logo {
+            width: 90px; 
+            height: auto; 
+            margin: 0 auto 15px; 
+            display: block;
+            filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.15)); 
+        }
+
+        .anim-path {
+            fill: transparent;
+            stroke: #ffffff;
+            stroke-width: 60; 
+            stroke-miterlimit: 22.9256;
+            
+            /* A variável --length será preenchida pelo JavaScript no final da página */
+            stroke-dasharray: var(--length);
+            stroke-dashoffset: var(--length);
+            
+            animation: 
+                draw 2.5s ease-in-out forwards,
+                fillIn 1.5s ease-in-out 2.5s forwards;
+        }
+
+        @keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes fillIn {
+            from {
+                fill: transparent;
+                stroke-width: 60;
+            }
+            to {
+                fill: #ffffff;
+                stroke-width: 18.11; 
+            }
+        }
+        /* ----- Fim: Controle e Animação do Logotipo SVG ----- */
+
+        .logo-text { 
+            font-size: 26px; 
+            font-weight: 800; 
+            letter-spacing: 2px; 
+            color: #ffffff; 
+            margin-bottom: 5px; 
+        }
+        
+        .logo-text span { 
+            color: var(--fap-gold); 
+        }
+
+        .brand-subtitle { 
+            font-size: 13px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: #e5e7eb; 
+            font-weight: 500;
+            /* Altura mínima para evitar pulos quando a barra pisca sozinha */
+            min-height: 18px; 
+        }
+
+        /* Animação do Cursor (Barra Piscando) */
+        .cursor {
+            display: inline-block;
+            font-weight: bold;
+            color: var(--fap-gold); /* Destaque leve em dourado para combinar */
+            animation: blink 0.8s step-end infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .campus-tag { 
+            display: inline-block; 
+            margin-top: 15px; 
+            font-size: 11px; 
+            font-weight: 700; 
+            color: var(--fap-blue-dark); 
+            background: var(--fap-gold); 
+            padding: 5px 14px; 
+            border-radius: 20px; 
+            letter-spacing: 0.5px; 
+            text-transform: uppercase; 
+        }
+
+        .card-body { 
+            padding: 30px 25px; 
+        }
+
+        .welcome-text { 
+            text-align: center; 
+            margin-bottom: 25px; 
+            border-left: 4px solid var(--fap-gold); 
+            background: #f9fafb; 
+            padding: 12px; 
+            border-radius: 0 8px 8px 0; 
+        }
+
+        .welcome-text h2 { 
+            font-size: 18px; 
+            color: var(--fap-blue); 
+            margin-bottom: 4px; 
+        }
+
+        .welcome-text p { 
+            font-size: 13px; 
+            color: var(--text-muted); 
+        }
+
+        .alert-box { 
+            background-color: var(--danger-bg); 
+            color: var(--danger-text); 
+            padding: 12px; 
+            border-radius: 6px; 
+            font-size: 14px; 
+            margin-bottom: 20px; 
+            text-align: center; 
+            border: 1px solid #fca5a5; 
+        }
+
+        .input-group { 
+            margin-bottom: 20px; 
+        }
+
+        .input-group label { 
+            display: block; 
+            font-size: 14px; 
+            font-weight: 600; 
+            color: var(--fap-blue); 
+            margin-bottom: 8px; 
+        }
+
+        .input-group input { 
+            width: 100%; 
+            padding: 14px 16px; 
+            border: 2px solid #e5e7eb; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            outline: none; 
+            transition: all 0.3s ease; 
+            background-color: #fafafa; 
+        }
+
+        .input-group input:focus { 
+            border-color: var(--fap-gold); 
+            background-color: #ffffff; 
+            box-shadow: 0 0 0 3px rgba(243, 146, 0, 0.15); 
+        }
+
+        .btn-submit { 
+            width: 100%; 
+            background-color: var(--fap-gold); 
+            color: var(--fap-blue-dark); 
+            border: none; 
+            padding: 16px; 
+            font-size: 16px; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            margin-top: 10px; 
+            box-shadow: 0 4px 6px rgba(243, 146, 0, 0.2); 
+        }
+
+        .btn-submit:hover { 
+            background-color: var(--fap-gold-hover); 
+            transform: translateY(-1px); 
+        }
+
+        .help-info { 
+            margin-top: 25px; 
+            padding-top: 20px; 
+            border-top: 1px solid #e5e7eb; 
+            font-size: 13px; 
+            color: var(--text-muted); 
+            text-align: center; 
+            line-height: 1.6; 
+        }
+
+        .help-info strong { 
+            color: var(--fap-blue); 
+        }
+
+        .footer { 
+            background-color: #f9fafb; 
+            padding: 16px; 
+            text-align: center; 
+            font-size: 12px; 
+            color: #9ca3af; 
+            border-top: 1px solid #edf2f7; 
+        }
+
+        .mikrotik-hidden { 
+            display: none !important; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <!-- Cabeçalho com o Logótipo Animado -->
+        <div class="header-brand">
+            
+            <svg class="edu-logo" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 8630.33 7900.02" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd">
+                <g id="Camada_x0020_1">
+                    <g id="_2433694493040">
+                        <path class="anim-path" d="M1200.75 4269.16l291.33 -185.17c680.24,-374.63 2195.5,-620.36 2950.01,-815.23 576.9,-149 1943.36,-450.15 2383.52,-816.63 256.49,-213.56 348.01,-348.88 291.88,-779.31 -98.16,91.18 -273.76,448.26 -630.06,547.84 -64.49,-74.19 -90.42,-171.61 -127.27,-267.34 -37.87,-98.39 -68.87,-177.21 -107.73,-276.01 -74.02,-188.26 -135.66,-372.86 -208.65,-560.04 -143.82,-368.83 -325.98,-764.88 -423.71,-1108.2l-1128.95 0c19.05,307.41 593.55,2288.42 654.63,2689.74l-1746.56 399.77 751.59 -3089.51 -1128.95 0 -1379.05 3584.94c-56.55,102.94 12.49,21.69 -91.08,101.52 -49.15,37.89 -60.68,39.98 -107.86,80.87 -110.5,95.76 -291.52,261.42 -243.09,492.77z"/>
+                        <path class="anim-path" d="M5734.65 5050.76c67.34,285.5 561.26,2368.17 632.7,2444.39 89.19,88.35 888.41,145.14 1127.81,183.48 199.6,31.98 380.62,56.53 581.16,90 126.14,21.04 428.57,71.74 543.79,117.5 -17.04,-205.94 -530.44,-1424.96 -640.5,-1706.94l-661.72 -1709.23 -1180.22 447.73c-139.29,45.93 -267.23,61.57 -403.02,133.08z"/>
+                        <path class="anim-path" d="M300.35 6766.97c564.99,-641.76 893.97,-794.1 1771.48,-1080.4 777.69,-253.73 1501.33,-389.34 2279.44,-607.44 837.44,-234.73 1374.09,-367.68 2223.06,-648.18 499.87,-165.17 1043.82,-352.98 1240.37,-896.12 66.08,-182.59 97,-468.51 3.34,-647.13 -55.16,73.94 -69.2,131.68 -122.03,210.24 -50.26,74.75 -99.66,109.21 -168.99,181.68l-388.68 316.06c-544.27,358.64 -2676.01,852.64 -3305.9,1000.5 -1287.44,302.21 -3708.62,696.76 -3532.09,2170.8z"/>
+                        <path class="anim-path" d="M715.26 5430.6c336.81,-406.74 1079.92,-645.01 1700.72,-817.04l1503.57 -368.74c676.97,-155.46 1938.08,-453.51 2499.66,-663.34 629.55,-235.23 1270.71,-611.11 1042.92,-1421.86 -233.77,618.64 -867.5,846.25 -1468.01,1031.45 -1069.53,329.84 -4123.43,899.49 -4711.52,1283.76 -300.59,196.41 -718,465.81 -567.33,955.77z"/>
+                        <path class="anim-path" d="M10.41 7886.51c250.71,-92.8 795.9,-158.54 1098.35,-203.04 255.67,-37.62 1002.94,-101.54 1164.06,-168.56 50.83,-92.49 406.35,-1505.35 417.55,-1675.44 -713.76,245.8 -1801.47,427.71 -2348.94,1210.85 -88.49,126.59 -317.67,699.57 -331.01,836.18z"/>
+                    </g>
+                </g>
+            </svg>
+
+            <div class="logo-text">FAP</div>
+            
+            <!-- Div modificada para receber a animação de texto + barra cursor -->
+            <div class="brand-subtitle">
+                <span id="typed-text"></span><span class="cursor">|</span>
+            </div>
+            
+            <div class="campus-tag">Educação Adventista</div>
+        </div>
+
+        <div class="card-body">
+            <div class="welcome-text">
+                <h2>Portal Wi-Fi</h2>
+                <p>Insira as suas credenciais de acesso</p>
+            </div>
+
+            <!-- $(if error) -->
+            <div class="alert-box">
+                $(error)
+            </div>
+            <!-- $(endif) -->
+
+            <form name="sendin" action="$(link-login-only)" method="post" class="mikrotik-hidden">
+                <input type="hidden" name="username" />
+                <input type="hidden" name="password" />
+                <input type="hidden" name="dst" value="$(link-orig)" />
+                <input type="hidden" name="popup" value="true" />
+            </form>
+
+            <form name="login" action="$(link-login-only)" method="post" onSubmit="return doLogin()" autocomplete="off">
+                <input type="hidden" name="dst" value="$(link-orig)" />
+                <input type="hidden" name="popup" value="true" />
+
+                <div class="input-group">
+                    <label for="username">Usuário</label>
+                    <input type="text" id="username" name="username" placeholder="Ex: 202610123" value="$(username)" required />
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required />
+                </div>
+
+                <button type="submit" class="btn-submit">Conectar à Rede</button>
+            </form>
+
+            <div class="help-info">
+                <strong>Utilizem o mesmo login do cadastro</strong> 
+            </div>
+        </div>
+
+        <div class="footer">
+            &copy; Faculdade Adventista do Paraná | Tecnologia da Informação
+        </div>
+    </div>
+
+    <!-- Scripts do MikroTik ocultados visualmente -->
+    <div class="mikrotik-hidden">
+        <!-- $(if chap-id) -->
+        <script type="text/javascript" src="md5.js"></script>
+        <script type="text/javascript">
+            function hexMD5(str) { return hex_md5(str); }
+            function doLogin() {
+                document.sendin.username.value = document.login.username.value;
+                document.sendin.password.value = hexMD5('$(chap-id)' + document.login.password.value + '$(chap-challenge)');
+                document.sendin.submit();
+                return false;
+            }
+        </script>
+        <!-- $(endif) -->
+
+        <!-- $(if !chap-id) -->
+        <script type="text/javascript">
+            function doLogin() {
+                return true;
+            }
+        </script>
+        <!-- $(endif) -->
+    </div>
+
+    <!-- Script de cálculo para a animação do vetor e do texto digitado -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Animação original do SVG
+            const paths = document.querySelectorAll('.anim-path');
+            paths.forEach(path => {
+                const length = path.getTotalLength();
+                path.style.setProperty('--length', length);
+            });
+
+            // Efeito de digitação da Faculdade
+            const textToType = "Faculdade Adventista do Paraná";
+            const typedTextElement = document.getElementById('typed-text');
+            let charIndex = 0;
+
+            // Espera de 2 segundos antes de começar
+            setTimeout(() => {
+                const typeInterval = setInterval(() => {
+                    if (charIndex < textToType.length) {
+                        typedTextElement.textContent += textToType.charAt(charIndex);
+                        charIndex++;
+                    } else {
+                        // Ao finalizar, para o intervalo e mantém a barra piscando (gerida pelo CSS)
+                        clearInterval(typeInterval);
+                    }
+                }, 80); // Velocidade de 80ms por letra para um efeito fluido
+            }, 2000); // 2000ms = 2 segundos
+        });
+    </script>
+</body>
+</html>

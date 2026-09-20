@@ -5,6 +5,7 @@ import fs from 'fs';
 import * as ftp from 'basic-ftp';
 import { prisma } from '@/lib/prisma';
 import { resolveTemplateDir } from '@/lib/portal-template-utils';
+import { getMaskedPortalUrl } from '@/lib/domain';
 
 export async function POST(request: Request) {
   const client = new ftp.Client();
@@ -46,10 +47,10 @@ export async function POST(request: Request) {
     // Auto-detect server base URL and update media paths in login.html before deploy
     try {
       const dbSystemUrl = await prisma.systemConfig.findUnique({ where: { key: 'SYSTEM_URL' } });
-      let serverBaseUrl = dbSystemUrl?.value;
-      if (!serverBaseUrl) {
-        const lanIp = credentials.ip.startsWith('192.168.') || credentials.ip.startsWith('10.') ? credentials.ip : '192.168.88.254';
-        serverBaseUrl = `http://${lanIp}`;
+      const defaultUrl = getMaskedPortalUrl();
+      let serverBaseUrl = dbSystemUrl?.value || defaultUrl;
+      if (/^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?/i.test(serverBaseUrl) || serverBaseUrl.includes('localhost')) {
+        serverBaseUrl = defaultUrl;
       }
       
       const loginHtmlPath = path.join(localHotspotDir, 'login.html');

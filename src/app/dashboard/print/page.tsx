@@ -27,26 +27,26 @@ export default function PrintVouchers() {
         <div key={idx} className="voucher-card border-2 border-slate-800 rounded-lg p-3 relative flex flex-col bg-white text-slate-900">
           <div className="flex justify-between items-start border-b border-slate-300 pb-2 mb-2">
             <div>
-              <h2 className="font-bold text-xs tracking-tight uppercase leading-none text-slate-950">Wi-Fi Acesso</h2>
-              <p className="text-[10px] text-slate-500 font-bold mt-1">{data.profile}</p>
+              <h2 className="font-black text-xs tracking-tight uppercase leading-none text-slate-950">Wi-Fi Acesso</h2>
+              <p className="text-[10px] text-slate-800 font-black mt-1">{data.profile}</p>
             </div>
-            <div className="bg-white p-1 rounded border border-slate-200 shrink-0">
+            <div className="bg-white p-1 rounded border border-slate-300 shrink-0">
               <QRCodeSVG value={getQrUrl(user.name, user.pass)} size={36} />
             </div>
           </div>
           <div className="flex-1 flex flex-col justify-center space-y-1.5 mb-2">
-            <div className="bg-slate-100 p-1.5 rounded text-center">
-              <span className="block text-[8px] uppercase text-slate-500 font-black tracking-wider">Usuário</span>
-              <span className="block font-mono font-bold text-sm leading-none text-slate-900 mt-0.5">{user.name}</span>
+            <div className="bg-slate-100 p-1.5 rounded text-center border border-slate-200">
+              <span className="block text-[8px] uppercase text-slate-700 font-black tracking-wider">Usuário</span>
+              <span className="block font-mono font-black text-sm leading-none text-slate-950 mt-0.5">{user.name}</span>
             </div>
             {user.name !== user.pass && (
-              <div className="bg-slate-100 p-1.5 rounded text-center">
-                <span className="block text-[8px] uppercase text-slate-500 font-black tracking-wider">Senha</span>
-                <span className="block font-mono font-bold text-sm leading-none text-slate-900 mt-0.5">{user.pass}</span>
+              <div className="bg-slate-100 p-1.5 rounded text-center border border-slate-200">
+                <span className="block text-[8px] uppercase text-slate-700 font-black tracking-wider">Senha</span>
+                <span className="block font-mono font-black text-sm leading-none text-slate-950 mt-0.5">{user.pass}</span>
               </div>
             )}
           </div>
-          <div className="text-center mt-auto flex justify-between items-center text-[8px] text-slate-400 font-bold">
+          <div className="text-center mt-auto flex justify-between items-center text-[8px] text-slate-700 font-bold">
             <span>Escaneie para conectar</span>
             <span>Lote: {data.comment}</span>
           </div>
@@ -56,17 +56,17 @@ export default function PrintVouchers() {
 
     if (theme === 'minimalist') {
       return (
-        <div key={idx} className="voucher-card border-b border-slate-200 p-3 relative flex items-center justify-between bg-white text-slate-850">
+        <div key={idx} className="voucher-card border-b border-slate-300 p-3 relative flex items-center justify-between bg-white text-slate-900">
           <div>
-            <h2 className="font-black text-sm tracking-tight uppercase text-slate-900 leading-none">WIFI {data.profile}</h2>
+            <h2 className="font-black text-sm tracking-tight uppercase text-slate-950 leading-none">WIFI {data.profile}</h2>
             <div className="mt-2 flex items-center gap-1.5">
-              <span className="text-[9px] uppercase font-extrabold tracking-wider text-slate-400">Login:</span>
-              <span className="font-mono font-bold text-base text-slate-900">{user.name}</span>
+              <span className="text-[9px] uppercase font-black tracking-wider text-slate-700">Login:</span>
+              <span className="font-mono font-black text-base text-slate-950">{user.name}</span>
             </div>
             {user.name !== user.pass && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[9px] uppercase font-extrabold tracking-wider text-slate-400">Senha:</span>
-                <span className="font-mono font-bold text-base text-slate-900">{user.pass}</span>
+                <span className="text-[9px] uppercase font-black tracking-wider text-slate-700">Senha:</span>
+                <span className="font-mono font-black text-base text-slate-950">{user.pass}</span>
               </div>
             )}
           </div>
@@ -83,25 +83,25 @@ export default function PrintVouchers() {
           <div className="flex justify-between items-start border-b border-slate-800 pb-2 mb-2">
             <div>
               <h2 className="font-black text-xs tracking-tight uppercase leading-none text-blue-400">PREMIUM WI-FI</h2>
-              <p className="text-[10px] text-slate-400 font-bold mt-1">{data.profile}</p>
+              <p className="text-[10px] text-slate-200 font-black mt-1">{data.profile}</p>
             </div>
             <div className="bg-white p-1 rounded shrink-0 shadow-sm">
               <QRCodeSVG value={getQrUrl(user.name, user.pass)} size={36} />
             </div>
           </div>
           <div className="flex-1 flex flex-col justify-center space-y-1.5 mb-2">
-            <div className="bg-slate-905 p-1.5 rounded text-center border border-slate-800">
-              <span className="block text-[8px] uppercase text-slate-500 font-black tracking-wider">Usuário</span>
-              <span className="block font-mono font-bold text-sm leading-none text-slate-200 mt-0.5">{user.name}</span>
+            <div className="bg-slate-900 p-1.5 rounded text-center border border-slate-800">
+              <span className="block text-[8px] uppercase text-slate-300 font-black tracking-wider">Usuário</span>
+              <span className="block font-mono font-black text-sm leading-none text-white mt-0.5">{user.name}</span>
             </div>
             {user.name !== user.pass && (
-              <div className="bg-slate-905 p-1.5 rounded text-center border border-slate-800">
-                <span className="block text-[8px] uppercase text-slate-500 font-black tracking-wider">Senha</span>
-                <span className="block font-mono font-bold text-sm leading-none text-slate-200 mt-0.5">{user.pass}</span>
+              <div className="bg-slate-900 p-1.5 rounded text-center border border-slate-800">
+                <span className="block text-[8px] uppercase text-slate-300 font-black tracking-wider">Senha</span>
+                <span className="block font-mono font-black text-sm leading-none text-white mt-0.5">{user.pass}</span>
               </div>
             )}
           </div>
-          <div className="text-center mt-auto flex justify-between items-center text-[8px] text-slate-500 font-bold">
+          <div className="text-center mt-auto flex justify-between items-center text-[8px] text-slate-300 font-bold">
             <span>Escaneie para conectar</span>
             <span>Lote: {data.comment}</span>
           </div>
@@ -203,24 +203,24 @@ export default function PrintVouchers() {
       `}} />
 
       {/* Hide controls when printing */}
-      <div className="print:hidden p-4 bg-slate-900 text-white flex flex-col md:flex-row justify-between items-center mb-8 shadow-xl sticky top-0 z-50">
+      <div className="print:hidden p-4 bg-white border-b border-slate-200 text-slate-900 flex flex-col md:flex-row justify-between items-center mb-8 shadow-sm sticky top-0 z-50">
         <div className="mb-4 md:mb-0">
-          <h1 className="font-extrabold text-lg">Visualização de Impressão</h1>
-          <p className="text-xs text-slate-400 mt-1">Selecione o modelo do voucher e clique em imprimir.</p>
+          <h1 className="font-extrabold text-base text-slate-900">Visualização de Impressão</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Selecione o modelo do voucher e clique em imprimir.</p>
         </div>
         
-        <div className="flex flex-wrap gap-4 items-center justify-center">
-          <div className="flex bg-slate-800 rounded-xl p-1 border border-slate-700">
-            <button onClick={() => setTheme('classic')} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${theme === 'classic' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>Clássico</button>
-            <button onClick={() => setTheme('minimalist')} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${theme === 'minimalist' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>Minimalista</button>
-            <button onClick={() => setTheme('dark')} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${theme === 'dark' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>Escuro</button>
-            <button onClick={() => setTheme('gamer')} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${theme === 'gamer' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}>Gamer</button>
+        <div className="flex flex-wrap gap-3 items-center justify-center">
+          <div className="flex bg-slate-100 rounded-xl p-1 border border-slate-200">
+            <button onClick={() => setTheme('classic')} className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${theme === 'classic' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>Clássico</button>
+            <button onClick={() => setTheme('minimalist')} className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${theme === 'minimalist' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>Minimalista</button>
+            <button onClick={() => setTheme('dark')} className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${theme === 'dark' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>Escuro</button>
+            <button onClick={() => setTheme('gamer')} className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${theme === 'gamer' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>Gamer</button>
           </div>
           
-          <div className="w-px h-6 bg-slate-700 hidden sm:block"></div>
+          <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
 
-          <button onClick={() => window.close()} className="px-4 py-2 border border-slate-750 hover:bg-slate-850 font-bold rounded-xl text-xs transition-all uppercase tracking-wider active:scale-95">Fechar</button>
-          <button onClick={() => window.print()} className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] active:scale-[0.99] flex items-center gap-1.5">
+          <button onClick={() => window.close()} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs transition-all shadow-xs cursor-pointer">Fechar</button>
+          <button onClick={() => window.print()} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
             <span>🖨️</span>
             <span>Imprimir ({data.users.length})</span>
           </button>

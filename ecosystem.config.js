@@ -8,14 +8,17 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '1G',
+      max_memory_restart: '750M',
+      exp_backoff_restart_delay: 200,
+      restart_delay: 2000,
+      kill_timeout: 5000,
       env: {
         NODE_ENV: 'production',
-        PORT: 80,
+        PORT: process.env.PORT || 80,
       },
       env_development: {
         NODE_ENV: 'development',
-        PORT: 80,
+        PORT: process.env.PORT || 80,
       }
     }
   ]

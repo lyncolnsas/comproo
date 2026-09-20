@@ -54,10 +54,47 @@ export default async function RegisterPage({ searchParams }: PageProps) {
     console.error('Erro ao ler config.json no servidor:', error);
   }
 
+  const isPreview = resolvedSearchParams?.preview === '1';
+
+  let isFreeWifiMode = false;
+  try {
+    const freeWifiRecord = await prisma.systemConfig.findUnique({
+      where: { key: 'free_wifi_mode' }
+    });
+    isFreeWifiMode = freeWifiRecord?.value === 'true';
+  } catch (e) {
+    console.warn('Erro ao checar free_wifi_mode:', e);
+  }
+
+  // Se o Modo Evento / Wi-Fi Gratuito estiver ativo ou se o modo de venda estiver desligado na configuração
+  const isSaleModeEnabled = !isFreeWifiMode && Boolean(initialConfig?.saleMode === true);
+
+  let activePlans: any[] = [];
+  if (isSaleModeEnabled) {
+    try {
+      activePlans = await (prisma.whatsappPlan as any).findMany({
+        where: { active: true },
+        orderBy: { price: 'asc' }
+      });
+    } catch (plansErr) {
+      console.warn('Erro ao carregar planos para o portal:', plansErr);
+    }
+  }
+
   if (initialConfig) {
     initialConfig.template = template;
+    initialConfig.isPreview = isPreview;
+    initialConfig.freeWifiMode = isFreeWifiMode;
+    initialConfig.saleMode = isSaleModeEnabled;
+    initialConfig.plans = isSaleModeEnabled ? activePlans : [];
   } else {
-    initialConfig = { template };
+    initialConfig = { 
+      template, 
+      isPreview, 
+      freeWifiMode: isFreeWifiMode, 
+      saleMode: isSaleModeEnabled, 
+      plans: isSaleModeEnabled ? activePlans : [] 
+    };
   }
 
   return <ClientPage initialConfig={initialConfig} />;

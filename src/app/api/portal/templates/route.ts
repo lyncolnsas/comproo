@@ -12,7 +12,7 @@ export async function GET() {
     }
     const items = fs.readdirSync(rootDir, { withFileTypes: true });
     let templates = items
-      .filter(item => item.isDirectory())
+      .filter(item => item.isDirectory() && fs.existsSync(path.join(rootDir, item.name, 'login.html')))
       .map(item => item.name);
     
     // Sort so 'default' is always first

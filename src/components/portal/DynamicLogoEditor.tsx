@@ -202,19 +202,19 @@ export default function DynamicLogoEditor({
       </div>
 
       {/* 2. CONTROLES DE CONFIGURAÇÃO */}
-      <div className="bg-[#12141d] border border-[#232738] rounded-2xl p-5 shadow-lg space-y-5">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-5">
         
         {/* Habilitar / Desabilitar Switch */}
-        <div className="flex items-center justify-between p-4 rounded-xl bg-[#181b26] border border-[#2a2f42]">
+        <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200/80">
           <div className="space-y-0.5">
-            <label className="text-xs font-bold text-slate-200 uppercase tracking-wider block">Exibir Logotipo no Hotspot</label>
-            <p className="text-[10px] text-slate-400">Ative ou remova completamente a logo da tela de login do seu hotspot.</p>
+            <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block">Exibir Logotipo no Hotspot</label>
+            <p className="text-xs text-slate-500">Ative ou remova completamente a logo da tela de login do seu hotspot.</p>
           </div>
           <button
             type="button"
             onClick={handleToggleLogo}
-            className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none ${
-              isLogoEnabled ? 'bg-blue-600' : 'bg-slate-700'
+            className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none cursor-pointer ${
+              isLogoEnabled ? 'bg-blue-600' : 'bg-slate-300'
             }`}
           >
             <div
@@ -228,9 +228,9 @@ export default function DynamicLogoEditor({
         {isLogoEnabled && (
           <div className="space-y-5 animate-fade-in">
             {/* Upload do Logo */}
-            <div className="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-xl bg-[#181b26] border border-[#2a2f42]">
+            <div className="flex flex-col sm:flex-row items-center gap-5 p-5 rounded-xl bg-slate-50 border border-slate-200/80">
               <div 
-                className="w-20 h-20 rounded-xl bg-black/20 border border-[#2a2f42] flex items-center justify-center relative shrink-0 overflow-hidden"
+                className="w-20 h-20 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-center relative shrink-0 overflow-hidden"
                 style={{ padding: `${brand.logoPadding || 0}px` }}
               >
                 {logoUploadLoading ? (
@@ -241,14 +241,14 @@ export default function DynamicLogoEditor({
               </div>
 
               <div className="flex-1 text-center sm:text-left space-y-2">
-                <span className="block font-bold text-slate-200 text-xs uppercase tracking-wider">Enviar Logotipo (PNG)</span>
-                <p className="text-xs text-slate-400">Envie um arquivo PNG com fundo transparente para melhor adaptação visual.</p>
+                <span className="block font-bold text-slate-900 text-xs uppercase tracking-wider">Enviar Logotipo (PNG)</span>
+                <p className="text-xs text-slate-500">Envie um arquivo PNG com fundo transparente para melhor adaptação visual.</p>
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={logoUploadLoading}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md transition-all flex items-center gap-1.5"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     {logoUploadLoading ? 'Enviando...' : 'Selecionar Arquivo PNG'}
@@ -265,9 +265,9 @@ export default function DynamicLogoEditor({
             </div>
 
             {/* Ajustes de Tamanho, Espaçamento e Posição */}
-            <div className="bg-[#181b26] border border-[#2a2f42] rounded-xl p-5 space-y-5">
-              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5 border-b border-[#232738] pb-2.5">
-                <Sliders className="w-4 h-4 text-blue-400" />
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-5 space-y-5">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-200/80 pb-3">
+                <Sliders className="w-4 h-4 text-blue-600" />
                 Ajustes de Layout
               </h4>
 
@@ -275,8 +275,8 @@ export default function DynamicLogoEditor({
                 {/* Tamanho */}
                 <div>
                   <div className="flex justify-between text-xs mb-1.5">
-                    <span className="font-medium text-slate-300">Tamanho da Logo</span>
-                    <span className="text-blue-400 font-mono font-bold">{brand.logoSize || 120}px</span>
+                    <span className="font-bold text-slate-700">Tamanho da Logo</span>
+                    <span className="text-blue-600 font-mono font-bold">{brand.logoSize || 120}px</span>
                   </div>
                   <input
                     type="range"
@@ -284,15 +284,15 @@ export default function DynamicLogoEditor({
                     max="320"
                     value={brand.logoSize || 120}
                     onChange={(e) => setBrand(prev => ({ ...prev, logoSize: Number(e.target.value) }))}
-                    className="w-full accent-blue-500 bg-[#0d0f17] h-1.5 rounded-lg appearance-none cursor-pointer"
+                    className="w-full accent-blue-600 bg-slate-200 h-1.5 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
                 {/* Espaçamento / Padding */}
                 <div>
                   <div className="flex justify-between text-xs mb-1.5">
-                    <span className="font-medium text-slate-300">Espaçamento Interno</span>
-                    <span className="text-blue-400 font-mono font-bold">{brand.logoPadding || 0}px</span>
+                    <span className="font-bold text-slate-700">Espaçamento Interno</span>
+                    <span className="text-blue-600 font-mono font-bold">{brand.logoPadding || 0}px</span>
                   </div>
                   <input
                     type="range"
@@ -300,14 +300,14 @@ export default function DynamicLogoEditor({
                     max="40"
                     value={brand.logoPadding || 0}
                     onChange={(e) => setBrand(prev => ({ ...prev, logoPadding: Number(e.target.value) }))}
-                    className="w-full accent-blue-500 bg-[#0d0f17] h-1.5 rounded-lg appearance-none cursor-pointer"
+                    className="w-full accent-blue-600 bg-slate-200 h-1.5 rounded-lg appearance-none cursor-pointer"
                   />
                 </div>
 
                 {/* Posicionamento / Alinhamento */}
                 <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1.5">Posição Horizontal</label>
-                  <div className="grid grid-cols-3 gap-1 bg-[#0d0f17] p-1 rounded-xl border border-[#2a2f42]">
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Posição Horizontal</label>
+                  <div className="grid grid-cols-3 gap-1 bg-slate-200/80 p-1 rounded-xl border border-slate-300">
                     {[
                       { id: 'left', label: 'Esquerda', icon: AlignLeft },
                       { id: 'center', label: 'Centro', icon: AlignCenter },
@@ -320,10 +320,10 @@ export default function DynamicLogoEditor({
                           key={align.id}
                           type="button"
                           onClick={() => setBrand(prev => ({ ...prev, textAlign: align.id as any }))}
-                          className={`py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-all ${
+                          className={`py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-blue-600 text-white shadow-sm'
-                              : 'text-slate-400 hover:text-slate-200'
+                              ? 'bg-white text-blue-600 shadow-xs'
+                              : 'text-slate-600 hover:text-slate-900'
                           }`}
                         >
                           <Icon className="w-3.5 h-3.5" />

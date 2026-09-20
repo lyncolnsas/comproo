@@ -6,7 +6,7 @@ function logBypassEvent(type: string, data: any) {
   try {
     const logPath = path.join(process.cwd(), 'hotspot', 'error.log');
     const logMessage = `[${new Date().toISOString()}] [BYPASS_${type}] ${typeof data === 'string' ? data : JSON.stringify(data)}\n`;
-    fs.appendFileSync(logPath, logMessage, 'utf8');
+    fs.promises.appendFile(logPath, logMessage, 'utf8').catch(err => console.error('Failed to write to error.log', err));
   } catch (err) {
     console.error('Failed to log bypass event', err);
   }

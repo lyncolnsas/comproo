@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
 }
 
 datasource db {
@@ -56,6 +57,7 @@ model HotspotLead {
   customFieldValue String?
   hotspotUser      String    @unique // The generated username in MikroTik
   whatsappNumber   String?   // Used for Baileys messaging
+  avatarUrl        String?   // WhatsApp profile picture downloaded locally
   optInCourses     Boolean   @default(true) // Consent to receive course info
   drawnInRaffle    Boolean   @default(false) // Flag to prevent duplicate drawing
   createdAt        DateTime  @default(now())
@@ -66,7 +68,7 @@ model Payment {
   id               String      @id @default(uuid())
   leadId           String
   lead             HotspotLead @relation(fields: [leadId], references: [id])
-  pixId            String?     @unique // Mercado Pago Payment ID
+  pixId            String?     // Mercado Pago Payment ID
   pixPayload       String?     // PIX Copy Paste
   pixQrCodeBase64  String?     // QR Code Image
   status           String      @default("pending") // pending, approved, rejected
@@ -74,17 +76,22 @@ model Payment {
   voucherCode      String?     // The generated voucher after payment
   profile          String?     // The selected profile/plan for WhatsApp flows
   macAddress       String?     // The MAC address used to drop IP Binding after payment
+  isVoucher        Boolean     @default(false) // True = stand-alone voucher (not hotspot session)
+  giftTo           String?     // Name of the friend if bought as a gift
+  voucherActivatedAt DateTime? // Set on first use; drives continuous countdown
+  uptimeLimit      String?     // e.g. "01:00:00" or "1d 00:00:00"
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 }
 
 model WhatsappPlan {
-  id        String   @id @default(uuid())
-  title     String   // e.g. "1 Hora", "1 Dia"
-  profile   String   // MikroTik Profile exactly as typed
-  price     Float
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  title       String   // e.g. "1 Hora", "1 Dia"
+  profile     String   // MikroTik Profile exactly as typed
+  price       Float
+  uptimeLimit String?  @default("none") // MikroTik limit-uptime format, e.g. "01:00:00", "1d 00:00:00"
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
 }
 
 model SystemConfig {
@@ -93,10 +100,56 @@ model SystemConfig {
 }
 
 model WhatsappInstance {
-  id        String   @id @default(uuid())
-  name      String   @default("WhatsApp")
-  number        String?  // O número em si após conectar
-  status        String   @default("disconnected")
+  id            String        @id @default(uuid())
+  name          String        @default("WhatsApp")
+  number        String?       // O número em si após conectar
+  engine        String        @default("baileys") // 'baileys' | 'meta'
+  phoneId       String?       // Meta Graph Phone ID
+  token         String?       // Meta Permanent Token
+  status        String        @default("disconnected") // connected, disconnected, waiting_qr, suspended, reconnecting
+  active        Boolean       @default(true) // Controle de ativação independente
+  authFolder    String?       // Diretório isolado da sessão Baileys
+  qrCode        String?       // QR Code individual em base64/texto
+  lastSeen      DateTime?     // Último batimento de heartbeat/conexão
+  dailyCount    Int           @default(0) // Contador de mensagens do dia
   profilePicUrl String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime      @default(now())
+  routings      LeadRouting[]
 }
+
+model LeadRouting {
+  id                 String   @id @default(uuid())
+  customerPhone      String   @unique
+  whatsappInstanceId String
+  whatsappInstance   WhatsappInstance @relation(fields: [whatsappInstanceId], references: [id])
+  lastInteraction    DateTime @default(now())
+}
+
+model DailyConversation {
+  id                 String   @id @default(uuid())
+  whatsappInstanceId String
+  date               String   // YYYY-MM-DD
+  count              Int      @default(0)
+
+  @@unique([whatsappInstanceId, date])
+}
+
+model WaitingList {
+  id        String    @id @default(uuid())
+  whatsapp  String
+  status    String    @default("pending") // pending, notified, expired, connected
+  createdAt DateTime  @default(now())
+  notifiedAt DateTime?
+}
+
+model BaileysAuth {
+  id         String   @id
+  instanceId String
+  key        String
+  value      String
+  updatedAt  DateTime @updatedAt
+
+  @@unique([instanceId, key])
+  @@index([instanceId])
+}
+

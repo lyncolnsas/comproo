@@ -14,9 +14,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { title, profile, price, active } = await request.json();
-    const plan = await prisma.whatsappPlan.create({
-      data: { title, profile, price: Number(price), active }
+    const { title, profile, price, active, uptimeLimit } = await request.json();
+    const plan = await (prisma.whatsappPlan as any).create({
+      data: { 
+        title, 
+        profile, 
+        price: Number(price), 
+        active: active !== undefined ? Boolean(active) : true,
+        uptimeLimit: uptimeLimit || 'none'
+      }
     });
     return NextResponse.json(plan);
   } catch (error) {

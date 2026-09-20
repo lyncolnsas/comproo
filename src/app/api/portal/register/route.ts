@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MikrotikAPI } from '@/lib/routeros';
 import { whatsappService } from '@/services/whatsapp';
+import { MercadoPagoService } from '@/services/mercadopago';
 import fs from 'fs';
 import path from 'path';
 import { resolveTemplateDir } from '@/lib/portal-template-utils';
+import { getMaskedPortalDomain } from '@/lib/domain';
+import { getCustomTemplate, applyTemplateTags, getFlowConfig } from '@/services/whatsapp-custom-messages';
 
 interface PortalConfig {
   enabled?: boolean;
@@ -17,7 +20,7 @@ function logEvent(type: string, data: any) {
   try {
     const logPath = path.join(process.cwd(), 'hotspot', 'error.log');
     const logMessage = `[${new Date().toISOString()}] [${type}] ${typeof data === 'string' ? data : JSON.stringify(data)}\n`;
-    fs.appendFileSync(logPath, logMessage, 'utf8');
+    fs.promises.appendFile(logPath, logMessage, 'utf8').catch(err => console.error('Failed to write to error.log', err));
   } catch (err) {
     console.error('Failed to log event', err);
   }
@@ -124,11 +127,12 @@ function createResponse(
         </form>
         
         <script>
-          window.addEventListener('load', function() {
-            setTimeout(function() {
-              document.login.submit();
-            }, 800);
-          });
+          // Submit immediately — no need to wait for load or arbitrary delay
+          (function() {
+            try { document.login.submit(); } catch(e) {
+              window.addEventListener('DOMContentLoaded', function() { document.login.submit(); });
+            }
+          })();
         </script>
       </body>
       </html>
@@ -266,19 +270,14 @@ export async function POST(request: Request) {
       ...config?.fields
     };
 
-    let { name, phone, username, birthDate, email, cpf, gender, password, customFieldValue, optInCourses } = body;
+    const { name, username, email, cpf, gender, password, customFieldValue, optInCourses } = body;
+    let { phone, birthDate } = body;
     
-    // Parse optInCourses to boolean
-    const isOptedIn = typeof optInCourses === 'boolean' ? optInCourses : (optInCourses === 'true' || optInCourses === 'on' || optInCourses === '1' || optInCourses === true);
-
-    // Captive portal metadata parameters from hidden inputs or URL parameters
-    const linkLoginOnly = body['link-login-only'] || '';
-    const linkOrig = body['link-orig'] || '';
-
     // Reconstruct fields if they were posted separately via native HTML form
+    // Do this FIRST before any validation so ddd+celular is always merged into phone
     const ddd = body['ddd'] || '';
     const celular = body['celular'] || '';
-    if (!phone && ddd && celular) {
+    if (ddd && celular) {
       phone = `${ddd.trim()}${celular.replace(/\D/g, '').trim()}`;
     }
 
@@ -290,6 +289,19 @@ export async function POST(request: Request) {
       const ddVal = birthDay.length < 2 ? `0${birthDay}` : birthDay;
       birthDate = `${birthYear}-${mm}-${ddVal}`;
     }
+
+    // Early exit: ignore empty/ghost form submissions (e.g. duplicate POST from captive portal)
+    if (!username && !name && !phone && !password) {
+      logEvent('IGNORED_EMPTY_SUBMISSION', 'Empty form body received, skipping.');
+      return createResponse({ success: false, message: 'Submissão inválida.' }, isForm, 400);
+    }
+    
+    // Parse optInCourses to boolean
+    const isOptedIn = typeof optInCourses === 'boolean' ? optInCourses : (optInCourses === 'true' || optInCourses === 'on' || optInCourses === '1' || optInCourses === true);
+
+    // Captive portal metadata parameters from hidden inputs or URL parameters
+    const linkLoginOnly = body['link-login-only'] || '';
+    const linkOrig = body['link-orig'] || '';
 
     // 2. Validate fields dynamically
     if (fields.nameEnabled && fields.nameRequired && !name) {
@@ -316,21 +328,16 @@ export async function POST(request: Request) {
       logEvent('VALIDATION_FAILED', 'Gênero é obrigatório.');
       return createResponse({ success: false, message: 'Gênero é obrigatório.' }, isForm, 400);
     }
-    if (!password || !password.trim()) {
-      logEvent('VALIDATION_FAILED', 'Senha é obrigatória.');
-      return createResponse({ success: false, message: 'Senha é obrigatória.' }, isForm, 400);
+    if (fields.passwordEnabled !== false && fields.passwordRequired) {
+      if (!password || !password.trim()) {
+        logEvent('VALIDATION_FAILED', 'Senha é obrigatória.');
+        return createResponse({ success: false, message: 'Senha é obrigatória.' }, isForm, 400);
+      }
     }
     if (fields.customFieldEnabled && fields.customFieldRequired && !customFieldValue) {
       logEvent('VALIDATION_FAILED', `${fields.customFieldLabel} é obrigatório.`);
       return createResponse({ success: false, message: `${fields.customFieldLabel} é obrigatório.` }, isForm, 400);
     }
-
-    // 3. Format/Validate inputs
-    if (!username || !username.trim()) {
-      logEvent('VALIDATION_FAILED', 'Nome de usuário é obrigatório.');
-      return createResponse({ success: false, message: 'Nome de usuário é obrigatório.' }, isForm, 400);
-    }
-    const hotspotUser = username.trim().toLowerCase();
 
     let rawPhone = '';
     if (fields.phoneEnabled) {
@@ -340,6 +347,26 @@ export async function POST(request: Request) {
         return createResponse({ success: false, message: 'Telefone/WhatsApp inválido (com DDD).' }, isForm, 400);
       }
     }
+
+    // 3. Format/Validate inputs — dynamically resolve username if not provided
+    let resolvedUser = (username || '').trim();
+    if (!resolvedUser) {
+      if (rawPhone) {
+        resolvedUser = rawPhone;
+      } else if (name && name.trim()) {
+        resolvedUser = name.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+      } else if (cpf) {
+        resolvedUser = cpf.replace(/\D/g, '');
+      } else if (email && email.trim()) {
+        resolvedUser = email.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '');
+      }
+    }
+
+    if (!resolvedUser) {
+      logEvent('VALIDATION_FAILED', 'Nome de usuário é obrigatório.');
+      return createResponse({ success: false, message: 'É obrigatório informar pelo menos o Usuário e Senha ou o WhatsApp para conexão.' }, isForm, 400);
+    }
+    const hotspotUser = resolvedUser.trim().toLowerCase();
 
     let rawCpf = null;
     if (fields.cpfEnabled && cpf) {
@@ -363,9 +390,13 @@ export async function POST(request: Request) {
       return createResponse({ success: false, message: 'Data de nascimento inválida ou não preenchida.' }, isForm, 400);
     }
 
-    const finalName = name || 'Auto-Cadastrado';
+    const finalName = name || (rawPhone ? `Cliente ${rawPhone}` : hotspotUser);
 
-    const passwordStr = password.trim();
+    // Se senha não for informada, gera senha padrão (WhatsApp ou o próprio usuário)
+    let passwordStr = (password || '').trim();
+    if (!passwordStr) {
+      passwordStr = rawPhone || hotspotUser || '123456';
+    }
 
     // 4. Save lead in Database
     let lead;
@@ -375,6 +406,7 @@ export async function POST(request: Request) {
         update: {
           name: finalName,
           phone: rawPhone || null,
+          whatsappNumber: rawPhone || null,
           birthDate: parsedBirthDate,
           email: email || null,
           cpf: rawCpf,
@@ -386,6 +418,7 @@ export async function POST(request: Request) {
         create: {
           name: finalName,
           phone: rawPhone || null,
+          whatsappNumber: rawPhone || null,
           birthDate: parsedBirthDate,
           email: email || null,
           cpf: rawCpf,
@@ -397,10 +430,131 @@ export async function POST(request: Request) {
         }
       });
       logEvent('DB_SAVE_SUCCESS', { leadId: lead.id, hotspotUser });
+
+      // Sincroniza foto de perfil do contato via WhatsApp de forma assíncrona (não bloqueia resposta do captive portal)
+      const contactPhone = rawPhone || lead.phone || lead.whatsappNumber;
+      if (contactPhone) {
+        whatsappService.downloadAndSaveContactAvatar(lead.id, contactPhone).catch((err) => {
+          console.warn('[AvatarSync] Erro ao sincronizar foto de perfil no cadastro:', err);
+        });
+      }
     } catch (dbErr: any) {
       logEvent('DATABASE_ERROR', { error: dbErr?.message || dbErr });
       console.error('Database Error:', dbErr);
       return createResponse({ success: false, message: 'Erro ao salvar o cadastro localmente.' }, isForm, 500);
+    }
+
+    // 4.5. Processar compra de plano Pix (se selecionado e se NÃO for modo Wi-Fi Gratuito)
+    let isFreeWifi = false;
+    try {
+      const freeWifiRec = await prisma.systemConfig.findUnique({ where: { key: 'free_wifi_mode' } });
+      isFreeWifi = freeWifiRec?.value === 'true';
+    } catch (fwErr) {
+      console.warn('Erro ao checar free_wifi_mode:', fwErr);
+    }
+
+    const planId = body.planId || searchParams.get('planId');
+    let selectedPlan: any = null;
+    let pixData: any = null;
+
+    if (planId && !isFreeWifi) {
+      try {
+        selectedPlan = await (prisma.whatsappPlan as any).findUnique({
+          where: { id: String(planId) }
+        });
+      } catch (planErr) {
+        console.error('Erro ao buscar plano selecionado:', planErr);
+      }
+    }
+
+    if (selectedPlan && selectedPlan.price > 0) {
+      if (isPreview) {
+        pixData = {
+          pixId: `preview-pix-${Date.now()}`,
+          pixPayload: `00020126580014br.gov.bcb.pix0136123e4567-e89b-12d3-a456-426614174000520400005303986540${Number(selectedPlan.price).toFixed(2)}5802BR5913MIKROGESTOR6009SAO PAULO62070503***6304ABCD`,
+          pixQrCodeBase64: '',
+          amount: selectedPlan.price,
+          planTitle: selectedPlan.title,
+          gracePeriodMinutes: 15
+        };
+        logEvent('PREVIEW_PIX_SIMULATED', { amount: selectedPlan.price, planTitle: selectedPlan.title });
+      } else {
+        try {
+          const mpConfig = await prisma.systemConfig.findUnique({ where: { key: 'MERCADOPAGO_TOKEN' } });
+          if (mpConfig?.value) {
+            const mpService = new MercadoPagoService(mpConfig.value);
+            const payerEmail = email || `${hotspotUser}@wifi.local`;
+            const payerName = finalName;
+            const payerCpf = rawCpf ? rawCpf.replace(/\D/g, '') : undefined;
+            
+            const mpResult: any = await mpService.createPixPayment({
+              transaction_amount: selectedPlan.price,
+              description: `Wi-Fi Hotspot - ${selectedPlan.title}`,
+              payer: {
+                email: payerEmail,
+                first_name: payerName,
+                identification: payerCpf ? { type: 'CPF', number: payerCpf } : undefined
+              }
+            });
+            
+            if (mpResult?.id) {
+              const pixPayload = mpResult.point_of_interaction?.transaction_data?.qr_code || '';
+              const pixQrCodeBase64 = mpResult.point_of_interaction?.transaction_data?.qr_code_base64 || '';
+              const pixId = String(mpResult.id);
+              
+              await prisma.payment.create({
+                data: {
+                  leadId: lead.id,
+                  pixId,
+                  pixPayload,
+                  pixQrCodeBase64,
+                  amount: selectedPlan.price,
+                  profile: selectedPlan.profile,
+                  status: 'pending'
+                }
+              });
+              
+              pixData = {
+                pixId,
+                pixPayload,
+                pixQrCodeBase64,
+                amount: selectedPlan.price,
+                planTitle: selectedPlan.title,
+                gracePeriodMinutes: 15
+              };
+              logEvent('MP_PIX_CREATED', { pixId, amount: selectedPlan.price, planTitle: selectedPlan.title });
+            }
+          } else {
+            // Fallback: Check manual PIX key if Mercado Pago is not configured
+            const manualKeyConfig = await prisma.systemConfig.findUnique({ where: { key: 'PIX_MANUAL_KEY' } });
+            if (manualKeyConfig?.value) {
+              const pixId = `manual-pix-${Date.now()}`;
+              pixData = {
+                pixId,
+                pixPayload: manualKeyConfig.value,
+                pixQrCodeBase64: '',
+                amount: selectedPlan.price,
+                planTitle: selectedPlan.title,
+                gracePeriodMinutes: 15
+              };
+              await prisma.payment.create({
+                data: {
+                  leadId: lead.id,
+                  pixId,
+                  pixPayload: manualKeyConfig.value,
+                  pixQrCodeBase64: '',
+                  amount: selectedPlan.price,
+                  profile: selectedPlan.profile,
+                  status: 'pending'
+                }
+              });
+            }
+          }
+        } catch (mpErr: any) {
+          console.error('[MercadoPago] Erro ao gerar cobrança PIX no cadastro:', mpErr);
+          logEvent('MP_PIX_ERROR', mpErr?.message || mpErr);
+        }
+      }
     }
 
     // 5. Connect to MikroTik and create the user
@@ -425,22 +579,22 @@ export async function POST(request: Request) {
           throw new Error(`Falha ao conectar no MikroTik em ${activeRouter.host}:${activeRouter.port || 8728}`);
         }
         
-        // Try to remove user if they already exist to avoid MikroTik errors
+        // FIX: Remove user directly by name — skip full listing (getHotspotUsers is slow on large networks)
         try {
-          const existingUsers = (await mk.getHotspotUsers()) as Record<string, unknown>[];
-          const found = existingUsers.find(u => String(u['name']) === String(hotspotUser));
-          const foundId = (found?.['id'] || found?.['.id']) as string | undefined;
-          if (foundId) {
-            logEvent('MIKROTIK_USER_EXISTS', { username: hotspotUser, id: foundId });
-            await mk.removeHotspotUser(foundId);
-            logEvent('MIKROTIK_USER_REMOVED', { username: hotspotUser });
-          }
-        } catch (e: any) {
-          logEvent('MIKROTIK_CLEANUP_WARN', e?.message || e);
+          await mk.removeHotspotUserByName(hotspotUser);
+          logEvent('MIKROTIK_USER_REMOVED', { username: hotspotUser });
+        } catch {
+          // User doesn't exist yet — that's fine, continue
         }
 
         // Build a rich comment with all user information
         const commentParts = ['AutoCadastro'];
+        if (isFreeWifi) {
+          commentParts.push('Wi-Fi Gratuito');
+        } else if (selectedPlan) {
+          commentParts.push(`Plano: ${selectedPlan.title}`);
+        }
+        if (pixData?.pixId) commentParts.push(`PIX: ${pixData.pixId}`);
         if (name) commentParts.push(`Nome: ${name}`);
         if (email) commentParts.push(`Email: ${email}`);
         if (birthDate) commentParts.push(`Nasc: ${birthDate}`);
@@ -450,16 +604,20 @@ export async function POST(request: Request) {
         
         const finalComment = commentParts.join(' | ').substring(0, 250);
 
-        // Add user to MikroTik Hotspot with 15m limit-uptime
-        const profileName = config?.profile || 'default';
-        const addResult = await mk.addHotspotUser({
+        // Add user to MikroTik Hotspot (aplica 15m de carência apenas se houver plano pago aguardando Pix)
+        const profileName = selectedPlan?.profile || (config as any)?.profile || 'default';
+        const userPayload: any = {
           name: hotspotUser,
           password: passwordStr,
           profile: profileName,
           comment: finalComment,
-          server: 'all',
-          'limit-uptime': '00:15:00'
-        });
+          server: 'all'
+        };
+        if (selectedPlan && !isFreeWifi) {
+          userPayload['limit-uptime'] = '00:15:00';
+        }
+
+        const addResult = await mk.addHotspotUser(userPayload);
 
         logEvent('MIKROTIK_USER_CREATED', { username: hotspotUser, result: addResult });
 
@@ -478,21 +636,100 @@ export async function POST(request: Request) {
 
     logEvent('SUCCESS', { username: hotspotUser });
 
-    // Send WhatsApp Welcome Message (only if opted in)
-    if (lead?.phone && lead.optInCourses !== false) {
-       const hostHeader = request.headers.get('host') || '192.168.88.254';
-       const welcomeMsg = `Olá, ${finalName}! Seu cadastro na nossa rede Wi-Fi foi concluído.\n\nVocê ganhou *15 minutos de acesso gratuito*! 🥳\n\nPara escolher seu plano e continuar conectado após esse período, acesse: http://${hostHeader}/portal/planos`;
-       
-       // Fire and forget so we don't block the HTTP response
-       whatsappService.sendWhatsAppMessage('admin', lead.phone, welcomeMsg).catch(e => console.error('Erro ao enviar WA', e));
+    // FIX: Send WhatsApp welcome message as fire-and-forget — never block the HTTP response
+    const targetPhone = lead?.phone || rawPhone;
+    if (targetPhone) {
+      const portalDomain = getMaskedPortalDomain(request.headers.get('host'));
+      const wifiName = process.env.HOTSPOT_WIFI_NAME || 'nossa rede Wi-Fi';
+
+      // Executa de forma assíncrona respeitando o Fluxograma e Régua de Sequências configurada
+      (async () => {
+        try {
+          const [salesModeConfig, officialNumbers, flowMap] = await Promise.all([
+            prisma.systemConfig.findUnique({ where: { key: 'PORTAL_SALES_MODE' } }),
+            whatsappService.getOnlineOfficialNumbers(),
+            getFlowConfig()
+          ]);
+
+          const isPaidMode = salesModeConfig?.value !== 'free';
+          const activeFlow = isPaidMode ? flowMap.welcome_paid : flowMap.welcome_free;
+
+          // Se o fluxo estiver globalmente desativado pelo administrador, aborta o disparo
+          if (!activeFlow?.enabled) {
+            logEvent('WA_FLOW_DISABLED', { isPaidMode, targetPhone });
+            return;
+          }
+
+          let dispatchedInstanceId: string | undefined;
+
+          // Processa os passos configurados na régua de boas-vindas
+          const steps = activeFlow.steps || [];
+
+          for (let i = 0; i < steps.length; i++) {
+            const step = steps[i];
+            if (!step.enabled) continue;
+
+            const delayMs = (step.delaySeconds || 0) * 1000;
+
+            const sendStepMessage = async () => {
+              try {
+                let officialNumbersSection = '';
+                if (officialNumbers.length > 0 && isPaidMode) {
+                  const formattedList = officialNumbers.map(n => `• ${n}`).join('\n');
+                  officialNumbersSection = `\n\n🛡️ *Aviso de Segurança & Canais Oficiais:*\nNossa rede opera com múltiplos números autorizados de atendimento e recarga:\n${formattedList}\nAo renovar seu acesso, solicitar vouchers ou receber chaves PIX, as mensagens poderão ser enviadas por qualquer um destes canais oficiais acima.`;
+                }
+
+                const rawTemplate = await getCustomTemplate(step.key);
+                const msgBody = applyTemplateTags(rawTemplate, {
+                  cliente: finalName,
+                  usuario: hotspotUser,
+                  senha: passwordStr,
+                  cortesia: '15 minutos',
+                  rede_wifi: wifiName,
+                  canais_oficiais: officialNumbersSection,
+                  link_portal: `http://${portalDomain}/portal/planos`,
+                });
+
+                const res = await whatsappService.sendWhatsAppMessage('admin', targetPhone, msgBody, {
+                  skipStandby: true,
+                  pinnedInstanceId: dispatchedInstanceId
+                });
+
+                if (res.success && !dispatchedInstanceId && res.instanceId) {
+                  dispatchedInstanceId = res.instanceId;
+                }
+
+                logEvent(res.success ? 'WA_STEP_SENT' : 'WA_STEP_FAILED', {
+                  stepId: step.id,
+                  stepKey: step.key,
+                  targetPhone,
+                  dispatchedInstanceId
+                });
+              } catch (err: any) {
+                logEvent('WA_STEP_ERROR', { stepId: step.id, error: err?.message || err });
+              }
+            };
+
+            if (delayMs > 0) {
+              setTimeout(sendStepMessage, delayMs);
+            } else {
+              await sendStepMessage();
+            }
+          }
+        } catch (e: any) {
+          logEvent('WA_WELCOME_ERROR', e?.message || e);
+        }
+      })();
+
+      logEvent('WA_WELCOME_DISPATCHED', { targetPhone });
     }
 
     const finalDst = config?.redirectUrl || linkOrig || 'https://www.google.com';
     
-    // Obter host dinamicamente para construir a URL absoluta do safari-bypass
-    const hostHeader = request.headers.get('host') || '192.168.88.254';
+    // Obter domínio mascarado MikroTik DNS para construir a URL do safari-bypass
+    const portalDomain = getMaskedPortalDomain(request.headers.get('host'));
     const protocol = 'http'; // Forçar HTTP para evitar erros de HTTPS não configurado no roteador
-    const bypassUrl = `${protocol}://${hostHeader}/api/portal/safari-bypass?url=${encodeURIComponent(finalDst)}`;
+    const bypassUrl = `${protocol}://${portalDomain}/api/portal/safari-bypass?url=${encodeURIComponent(finalDst)}`;
 
     const userAgent = request.headers.get('user-agent') || '';
     return createResponse({ 
@@ -502,7 +739,8 @@ export async function POST(request: Request) {
         username: hotspotUser,
         password: passwordStr,
         linkLoginOnly,
-        redirectUrl: bypassUrl
+        redirectUrl: bypassUrl,
+        pix: pixData
       },
       config
     }, isForm, 200, userAgent, linkOrig);
@@ -511,9 +749,9 @@ export async function POST(request: Request) {
     console.error('Unhandled Registration Error:', error);
     try {
       const logMessage = `[${new Date().toISOString()}] Unhandled Registration Error: ${error?.message || error}\nStack: ${error?.stack || ''}\n\n`;
-      fs.appendFileSync(path.join(process.cwd(), 'hotspot', 'error.log'), logMessage, 'utf8');
+      fs.promises.appendFile(path.join(process.cwd(), 'hotspot', 'error.log'), logMessage, 'utf8').catch(logErr => console.error('Failed to write to error.log', logErr));
     } catch (logErr) {
-      console.error('Failed to write to error.log', logErr);
+      console.error('Failed to format error log', logErr);
     }
     return createResponse({ success: false, message: 'Erro interno no servidor.' }, isForm, 500);
   }

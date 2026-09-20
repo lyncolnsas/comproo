@@ -46,6 +46,13 @@ next-env.d.ts
 # local database & auth
 *.db
 *.db-journal
+*.db-wal
+*.db-shm
 /baileys_auth_info/
+/baileys_session/
+/baileys_sessions/
 /scratch/
 
+
+# WhatsApp runtime state
+whatsapp_states.json

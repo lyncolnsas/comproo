@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { getMikrotikClient, getSessionCredentials, MikrotikSessionError } from '@/lib/session';
 import { MikrotikAPI } from '@/lib/routeros';
 import { routerErrorResponse } from '@/lib/api-error';
+import { getMaskedPortalUrl } from '@/lib/domain';
 
 // ── Helper: detect admin IP ───────────────────────────────────────────────────
 function getAdminIp(req: Request): string | null {
@@ -709,10 +710,9 @@ export async function POST(request: Request) {
       skip('nat', 'NAT Masquerade e regras de WAN são gerenciados manualmente.');
     } catch (e) { fail('nat', e); }
 
-    // Passo 11: Atualizar IP do Servidor para Mídias nos Templates
+    // Passo 11: Atualizar URL do Servidor com Mascaramento DNS MikroTik nos Templates
     try {
-      const detectedServerIp = adminIp || '192.168.88.254';
-      const serverBaseUrl = `http://${detectedServerIp}`;
+      const serverBaseUrl = getMaskedPortalUrl();
       await prisma.systemConfig.upsert({
         where: { key: 'SYSTEM_URL' },
         update: { value: serverBaseUrl },

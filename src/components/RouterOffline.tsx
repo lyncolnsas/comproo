@@ -10,66 +10,70 @@ export default function RouterOffline({ title, description, errorMessage }: Rout
   return (
     <main className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Module Header */}
-      <header className="retro-card p-4 flex items-center gap-3">
-        <div className="rack-screw" />
-        <span className="led led-red animate-led-blink" />
+      <header className="bg-white border border-slate-200/80 rounded-2xl p-5 flex items-center gap-3.5 shadow-sm">
+        <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
+          <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+        </div>
         <div>
-          <div style={{ color: 'var(--led-red)', fontFamily: 'Share Tech Mono, monospace', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-            ▶ ALERTA // LINK DE DADOS INDISPONÍVEL
+          <div className="text-[10px] font-bold text-rose-600 tracking-wider uppercase">
+            Alerta de Conectividade
           </div>
-          <h1 style={{ fontFamily: 'Orbitron, sans-serif', color: 'white', fontSize: '1.25rem', fontWeight: 900 }}>
+          <h1 className="text-xl font-black text-slate-900 tracking-tight">
             {title}
           </h1>
         </div>
-        <div className="ml-auto rack-screw" />
       </header>
 
       {/* Main warning cabinet */}
-      <div className="retro-card overflow-hidden">
-        {/* Module metal bar */}
-        <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '2px solid #0a0a18', background: 'linear-gradient(180deg, #22223c 0%, #1a1a35 100%)', boxShadow: 'inset 0 -3px 6px rgba(0,0,0,0.4)' }}>
-          <div className="rack-screw" />
-          <span className="font-mono text-xs uppercase tracking-wider text-slate-400 font-bold">ERROR DIAGNOSTICS</span>
-          <div className="ml-auto flex gap-1">
-            <span className="led led-red animate-led-pulse" />
-            <span className="led led-off" />
-          </div>
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+        {/* Module bar */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Diagnóstico do Roteador</span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+            <span className="w-2 h-2 rounded-full bg-rose-500" />
+            Desconectado
+          </span>
         </div>
 
         <div className="p-6 md:p-8 space-y-6">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             {/* Warning indicator badge */}
-            <div className="w-16 h-16 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(180deg, #2c1a1a 0%, #1a0c0c 100%)', border: '2px solid #7f1d1d', boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.6)' }}>
-              <span style={{ fontSize: '2rem', filter: 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.6))' }}>⚠️</span>
+            <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0 shadow-xs">
+              <span className="text-3xl">⚠️</span>
             </div>
 
             <div className="flex-1 text-center md:text-left space-y-3">
-              <h3 className="text-lg font-bold text-red-400" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+              <h3 className="text-lg font-extrabold text-slate-900">
                 Roteador MikroTik Não Conectado
               </h3>
-              <p className="text-slate-400 text-sm leading-relaxed" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+              <p className="text-slate-600 text-sm leading-relaxed font-medium">
                 {description || "Não foi possível estabelecer comunicação com o seu MikroTik. Verifique se o roteador está acessível na rede ou conecte-se novamente."}
               </p>
 
               {errorMessage && (
-                <div className="retro-display p-4 text-xs text-red-500 font-bold space-y-1">
-                  <div style={{ color: 'var(--display-dim)', fontSize: '9px', letterSpacing: '0.05em' }}>SYSTEM_LOG_ERROR //</div>
-                  <pre className="whitespace-pre-wrap break-all leading-normal" style={{ fontFamily: 'Share Tech Mono, monospace' }}>
+                <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-xs font-mono space-y-1 text-left">
+                  <div className="text-[10px] font-bold uppercase text-rose-700 tracking-wider">Log do Sistema:</div>
+                  <pre className="whitespace-pre-wrap break-all leading-normal text-rose-800 font-semibold">
                     {errorMessage}
                   </pre>
                 </div>
               )}
 
-              {/* Physical button panel */}
-              <div className="pt-4 flex flex-wrap items-center justify-center md:justify-start gap-4">
-                <Link href="/dashboard/admin" className="retro-btn retro-btn-danger">
-                  🔌 Gerenciar Roteadores
+              {/* Action buttons */}
+              <div className="pt-3 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                <Link
+                  href="/dashboard/admin"
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-xs transition-all flex items-center gap-1.5"
+                >
+                  <span>🔌</span>
+                  <span>Gerenciar Roteadores</span>
                 </Link>
                 <button
                   onClick={() => window.location.reload()}
-                  className="retro-btn retro-btn-dark"
+                  className="px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs border border-slate-200 shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
                 >
-                  🔄 Tentar Novamente
+                  <span>🔄</span>
+                  <span>Tentar Novamente</span>
                 </button>
               </div>
             </div>

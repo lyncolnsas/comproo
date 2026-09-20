@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps, @next/next/no-img-element */
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface AdItem {
   url: string;
@@ -19,6 +20,8 @@ interface AdConfig {
 }
 
 interface FieldsConfig {
+  usernameEnabled?: boolean;
+  usernameRequired?: boolean;
   nameEnabled: boolean;
   nameRequired: boolean;
   phoneEnabled: boolean;
@@ -70,22 +73,37 @@ const performAutoLogin = (username: string, passwordStr: string, loginUrl: strin
   form.submit();
 };
 
+function getPosterUrl(mediaUrl: string): string {
+  if (!mediaUrl) return '';
+  const cleanUrl = mediaUrl.split('?')[0];
+  if (cleanUrl.match(/\.(mp4|webm|mov|ogg)$/i)) {
+    return cleanUrl.replace(/\.[^.]+$/, '_poster.jpg');
+  }
+  return '';
+}
+
 interface CarouselVideoProps {
   src: string;
   isCurrent: boolean;
   isMuted: boolean;
   onClick?: () => void;
+  poster?: string;
+  portalTitle?: string;
+  loop?: boolean;
+  onEnded?: () => void;
 }
 
-function CarouselVideo({ src, isCurrent, isMuted, onClick }: CarouselVideoProps) {
+function CarouselVideo({ src, isCurrent, isMuted, onClick, portalTitle, loop = false, onEnded }: CarouselVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fillRef = useRef<HTMLDivElement>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     if (isCurrent) {
+      video.currentTime = 0;
       video.play().catch(() => {});
     } else {
       video.pause();
@@ -99,20 +117,110 @@ function CarouselVideo({ src, isCurrent, isMuted, onClick }: CarouselVideoProps)
     if (video && fill) {
       const pct = (video.currentTime / (video.duration || 1)) * 100;
       fill.style.width = `${pct}%`;
+      if (video.currentTime > 0.05 && !isLoaded) {
+        setIsLoaded(true);
+      }
     }
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full flex items-center justify-center overflow-hidden" style={{ width: '100%', height: '100%', maxWidth: '100%', maxHeight: '100%', background: '#020617' }}>
+      {/* Preloader discreto com nome animado da marca: sem telas pretas nem botões de play gigantes */}
+      {!isLoaded && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 4,
+            background: '#020617',
+            padding: '16px',
+            textAlign: 'center',
+            pointerEvents: 'none',
+            transition: 'opacity 0.4s ease-out'
+          }}
+        >
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '14px',
+              background: 'rgba(6, 182, 212, 0.12)',
+              border: '1px solid rgba(6, 182, 212, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '10px',
+              boxShadow: '0 0 18px rgba(6, 182, 212, 0.25)',
+              animation: 'pulse 2s ease-in-out infinite'
+            }}
+          >
+            <svg style={{ width: '22px', height: '22px', color: '#06b6d4' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+              <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+              <line x1="12" y1="20" x2="12.01" y2="20" />
+            </svg>
+          </div>
+          <div
+            style={{
+              fontSize: '15px',
+              fontWeight: 700,
+              letterSpacing: '0.5px',
+              background: 'linear-gradient(135deg, #06b6d4, #3b82f6, #06b6d4, #06b6d4)',
+              backgroundSize: '300% 300%',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              animation: 'mgTitleGradient 4s ease infinite alternate'
+            }}
+          >
+            {portalTitle || 'Wi-Fi Shield Security'}
+          </div>
+          <div style={{ display: 'flex', gap: '5px', marginTop: '10px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#06b6d4', opacity: 0.35, animation: 'ping 1.2s infinite' }} />
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#06b6d4', opacity: 0.7, animation: 'ping 1.2s infinite 0.2s' }} />
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#06b6d4', opacity: 0.35, animation: 'ping 1.2s infinite 0.4s' }} />
+          </div>
+        </div>
+      )}
+
       <video
         ref={videoRef}
         src={src}
+        poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
+        autoPlay
         muted={isMuted}
-        loop
+        loop={loop}
         playsInline
-        className="w-full h-full object-cover cursor-pointer"
+        preload="auto"
+        className="w-full h-full object-contain cursor-pointer max-w-full max-h-full"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain',
+          display: 'block',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          position: 'relative',
+          zIndex: 3,
+          opacity: isLoaded ? 1 : 0,
+          transition: 'opacity 0.35s ease'
+        }}
         onClick={onClick}
         onTimeUpdate={handleTimeUpdate}
+        onEnded={() => {
+          if (onEnded) onEnded();
+        }}
+        onError={() => {
+          if (onEnded) onEnded();
+        }}
+        onLoadedData={() => setIsLoaded(true)}
+        onPlaying={() => setIsLoaded(true)}
       />
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-white/20 z-10 pointer-events-none">
         <div ref={fillRef} className="h-full bg-white transition-[width] duration-75 ease-linear" style={{ width: '0%' }} />
@@ -1440,8 +1548,90 @@ function LiveCanvasEffect({ effect, speed, brand, green, blue, brandDark }: { ef
     };
   }, [effect, speed, brand, green, blue, brandDark]);
 
-  return <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none', background: 'transparent' }} />;
+  return <canvas ref={canvasRef} suppressHydrationWarning style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none', background: 'transparent' }} />;
 }
+
+// Algoritmo oficial de validação de CPF (Receita Federal)
+function validateCpf(cpf: string): boolean {
+  const clean = cpf.replace(/\D/g, '');
+  if (clean.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(clean)) return false;
+  
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(clean.charAt(i), 10) * (10 - i);
+  let rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(clean.charAt(9), 10)) return false;
+  
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(clean.charAt(i), 10) * (11 - i);
+  rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(clean.charAt(10), 10)) return false;
+  
+  return true;
+}
+
+function validateEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
+function validateDate(day: string, month: string, year: string): boolean {
+  if (!day || !month || !year || year.length < 4) return false;
+  const d = parseInt(day, 10);
+  const m = parseInt(month, 10);
+  const y = parseInt(year, 10);
+  const currYear = new Date().getFullYear();
+  if (isNaN(d) || isNaN(m) || isNaN(y) || y < 1920 || y > currYear || m < 1 || m > 12 || d < 1 || d > 31) {
+    return false;
+  }
+  const dt = new Date(y, m - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+}
+
+const FieldFeedback = ({ status, message }: { status: 'error' | 'valid' | 'neutral'; message?: string }) => {
+  if (status === 'neutral' || !message) return null;
+  const isError = status === 'error';
+  return (
+    <div className={`mg-field-feedback ${isError ? 'error' : 'success'}`}>
+      {isError ? (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+      ) : (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
+      <span>{message}</span>
+    </div>
+  );
+};
+
+const PasswordToggleBtn = ({ show, onToggle, title }: { show: boolean; onToggle: () => void; title: string }) => (
+  <button 
+    type="button" 
+    className="mg-password-toggle"
+    onClick={onToggle}
+    tabIndex={-1}
+    aria-label={title}
+    title={title}
+  >
+    {show ? (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+      </svg>
+    ) : (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    )}
+  </button>
+);
 
 export default function AutoCadastro({ initialConfig }: { initialConfig: any }) {
   const [name, setName] = useState('');
@@ -1460,9 +1650,26 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [redirectUrl] = useState(initialConfig?.redirectUrl || '');
-  const [portalEnabled] = useState(initialConfig?.enabled !== false);
+  const [portalEnabled, setPortalEnabled] = useState(initialConfig?.enabled !== false);
   const [usernameField, setUsernameField] = useState('');
   const [optInCourses, setOptInCourses] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isClientIframe, setIsClientIframe] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (typeof window !== 'undefined') {
+      setIsClientIframe(window.self !== window.top);
+    }
+  }, []);
+
+  const markTouched = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  };
 
   // Refs for Autofocus transition
   const celularRef = useRef<HTMLInputElement>(null);
@@ -1501,12 +1708,12 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
   });
 
   const [studio, setStudio] = useState<any>(initialConfig?.studio || {});
-  const [ad] = useState<AdConfig | null>(initialConfig?.ad || null);
+  const [ad, setAd] = useState<AdConfig | null>(initialConfig?.ad || null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const [timeLeft, setTimeLeft] = useState(() => 
     initialConfig?.ad?.timerEnabled && initialConfig?.ad?.type !== 'none' 
-      ? initialConfig?.ad?.timerDuration || 15 
+      ? (typeof initialConfig?.ad?.timerDuration === 'number' ? initialConfig.ad.timerDuration : 5)
       : 0
   );
   const [timerActive, setTimerActive] = useState(() => 
@@ -1522,6 +1729,8 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
   
   // Fields Configuration
   const [fields, setFields] = useState<FieldsConfig>({
+    usernameEnabled: false,
+    usernameRequired: true,
     nameEnabled: true,
     nameRequired: true,
     phoneEnabled: true,
@@ -1544,6 +1753,195 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
     ...(initialConfig?.fields || {})
   });
 
+  // Configuração de Planos & Venda Pix com Grace Period de 15 Minutos (Desativado se Modo Evento / Wi-Fi Gratuito)
+  const isFreeWifi = Boolean(initialConfig?.freeWifiMode);
+  const [plans, setPlans] = useState<any[]>(() => (isFreeWifi ? [] : (initialConfig?.plans || [])));
+  const [saleMode, setSaleMode] = useState<boolean>(() => {
+    if (isFreeWifi) return false;
+    if (initialConfig?.saleMode !== undefined) return Boolean(initialConfig.saleMode);
+    return false;
+  });
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(() => (initialConfig?.plans?.[0]?.id || ''));
+
+  // Regra de modos dinâmicos de cadastro:
+  // Se nenhum identificador estiver marcado (nem telefone, nem nome, nem usuário), obrigatoriamente exige Usuário e Senha
+  const isNoIdentifierActive = !fields.phoneEnabled && !fields.nameEnabled && !fields.usernameEnabled;
+  const showUsernameInput = Boolean(fields.usernameEnabled || isNoIdentifierActive);
+  const showPasswordInput = Boolean(fields.passwordEnabled || isNoIdentifierActive);
+  const showPhoneInput = Boolean(fields.phoneEnabled);
+  const showNameInput = Boolean(fields.nameEnabled);
+
+  // Estado do Modal de Pagamento Pix com Tolerância
+  const [activePix, setActivePix] = useState<{
+    pixId: string;
+    pixPayload: string;
+    pixQrCodeBase64?: string;
+    amount: number;
+    planTitle: string;
+    gracePeriodMinutes: number;
+  } | null>(null);
+
+  const [pixCopied, setPixCopied] = useState(false);
+  const [pixTimeRemaining, setPixTimeRemaining] = useState(15 * 60);
+  const [isPixApproved, setIsPixApproved] = useState(false);
+
+  useEffect(() => {
+    if (!activePix || isPixApproved) return;
+
+    const timer = setInterval(() => {
+      setPixTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/portal/payment-status?pixId=${activePix.pixId}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data?.isApproved) {
+            setIsPixApproved(true);
+            clearInterval(pollInterval);
+          }
+        }
+      } catch (e) {
+        console.warn('Erro no polling de status pix:', e);
+      }
+    }, 4000);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(pollInterval);
+    };
+  }, [activePix, isPixApproved]);
+
+  // Validações em tempo real com status visual (verde = válido, vermelho = erro)
+  const nameVal = (() => {
+    if (!showNameInput) return { status: 'valid' as const, message: '' };
+    const trimmed = name.trim();
+    if (!trimmed) {
+      if (fields.nameRequired && (touched.name || submitted)) return { status: 'error' as const, message: 'Nome completo é obrigatório' };
+      return { status: 'neutral' as const, message: '' };
+    }
+    const parts = trimmed.split(/\s+/).filter(Boolean);
+    if (parts.length < 2 || trimmed.length < 3) {
+      return { status: 'error' as const, message: 'Informe seu nome e sobrenome' };
+    }
+    return { status: 'valid' as const, message: 'Nome completo válido' };
+  })();
+
+  const emailVal = (() => {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      if (fields.emailRequired && (touched.email || submitted)) return { status: 'error' as const, message: 'E-mail é obrigatório' };
+      return { status: 'neutral' as const, message: '' };
+    }
+    if (!validateEmail(trimmed)) {
+      return { status: 'error' as const, message: 'Formato de e-mail inválido (ex: nome@dominio.com)' };
+    }
+    return { status: 'valid' as const, message: 'E-mail válido' };
+  })();
+
+  const phoneVal = (() => {
+    if (!showPhoneInput) return { status: 'valid' as const, message: '' };
+    const cleanCel = celular.replace(/\D/g, '');
+    const cleanDdd = ddd.replace(/\D/g, '');
+    if (!cleanDdd && !cleanCel) {
+      if (fields.phoneRequired && (touched.phone || submitted)) return { status: 'error' as const, message: 'DDD e Celular são obrigatórios' };
+      return { status: 'neutral' as const, message: '' };
+    }
+    if (cleanDdd.length < 2) {
+      return { status: 'error' as const, message: 'Informe o DDD com 2 dígitos' };
+    }
+    const dddNum = parseInt(cleanDdd, 10);
+    if (isNaN(dddNum) || dddNum < 11 || dddNum > 99) {
+      return { status: 'error' as const, message: 'DDD inválido' };
+    }
+    if (cleanCel.length < 8) {
+      return { status: 'error' as const, message: `Celular incompleto (${cleanCel.length}/9 dígitos)` };
+    }
+    return { status: 'valid' as const, message: 'DDD e Celular válidos' };
+  })();
+
+  const usernameVal = (() => {
+    if (!showUsernameInput) return { status: 'valid' as const, message: '' };
+    const trimmed = usernameField.trim();
+    if (!trimmed) {
+      if (touched.username || submitted) return { status: 'error' as const, message: 'Nome de usuário é obrigatório' };
+      return { status: 'neutral' as const, message: '' };
+    }
+    if (trimmed.length < 3) {
+      return { status: 'error' as const, message: 'Mínimo de 3 caracteres alfanuméricos' };
+    }
+    return { status: 'valid' as const, message: 'Usuário válido para acesso' };
+  })();
+
+  const birthDateVal = (() => {
+    const hasAny = birthDay || birthMonth || birthYear;
+    if (!hasAny) {
+      if (fields.birthDateRequired && (touched.birthDate || submitted)) return { status: 'error' as const, message: 'Data de nascimento é obrigatória' };
+      return { status: 'neutral' as const, message: '' };
+    }
+    if (!birthDay || !birthMonth || !birthYear || birthYear.length < 4) {
+      return { status: 'error' as const, message: 'Preencha dia, mês e ano completo' };
+    }
+    if (!validateDate(birthDay, birthMonth, birthYear)) {
+      return { status: 'error' as const, message: 'Data de nascimento inválida' };
+    }
+    return { status: 'valid' as const, message: 'Data de nascimento válida' };
+  })();
+
+  const cpfVal = (() => {
+    const clean = cpf.replace(/\D/g, '');
+    if (!clean) {
+      if (fields.cpfRequired && (touched.cpf || submitted)) return { status: 'error' as const, message: 'CPF é obrigatório' };
+      return { status: 'neutral' as const, message: '' };
+    }
+    if (clean.length < 11) {
+      return { status: 'error' as const, message: `CPF incompleto (${clean.length}/11 dígitos)` };
+    }
+    if (!validateCpf(clean)) {
+      return { status: 'error' as const, message: 'CPF inválido (dígitos incorretos)' };
+    }
+    return { status: 'valid' as const, message: 'CPF válido' };
+  })();
+
+  const genderVal = (() => {
+    if (!gender) {
+      if (fields.genderRequired && (touched.gender || submitted)) return { status: 'error' as const, message: 'Selecione seu gênero' };
+      return { status: 'neutral' as const, message: '' };
+    }
+    return { status: 'valid' as const, message: 'Gênero selecionado' };
+  })();
+
+  const passwordVal = (() => {
+    if (!showPasswordInput) return { status: 'valid' as const, message: '' };
+    if (!password) {
+      if (touched.password || submitted) return { status: 'error' as const, message: 'Crie uma senha' };
+      return { status: 'neutral' as const, message: '' };
+    }
+    if (password.length < 4) {
+      return { status: 'error' as const, message: 'Mínimo de 4 caracteres' };
+    }
+    return { status: 'valid' as const, message: 'Senha válida' };
+  })();
+
+  const confirmPasswordVal = (() => {
+    if (!showPasswordInput) return { status: 'valid' as const, message: '' };
+    if (!confirmPassword) {
+      if (touched.confirmPassword || submitted) return { status: 'error' as const, message: 'Confirme sua senha' };
+      return { status: 'neutral' as const, message: '' };
+    }
+    if (confirmPassword !== password) {
+      return { status: 'error' as const, message: 'As senhas não coincidem' };
+    }
+    return { status: 'valid' as const, message: 'As senhas coincidem' };
+  })();
+
   // Live Preview Message Listener
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -1557,6 +1955,9 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
         if (config.effects) setEffects(config.effects);
         if (config.studio) setStudio(config.studio);
         if (config.fields) setFields(config.fields);
+        if (config.ad) setAd(config.ad);
+        if (config.enabled !== undefined) setPortalEnabled(config.enabled !== false);
+        if (config.saleMode !== undefined) setSaleMode(Boolean(config.saleMode));
         if (config.registerTitle !== undefined) setRegisterTitle(config.registerTitle);
         if (config.registerSubtitle !== undefined) setRegisterSubtitle(config.registerSubtitle);
         if (config.registerSubmitText !== undefined) setRegisterSubmitText(config.registerSubmitText);
@@ -1683,14 +2084,97 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
     ? ad.items.filter(item => item && item.url)
     : [];
 
-  useEffect(() => {
-    if (carouselItems.length > 1) {
-      const interval = setInterval(() => {
-        setActiveSlide(prev => (prev + 1) % carouselItems.length);
-      }, 4000);
-      return () => clearInterval(interval);
-    }
+  const handleNextSlide = useCallback(() => {
+    if (carouselItems.length <= 1) return;
+    setActiveSlide(prev => (prev + 1) % carouselItems.length);
   }, [carouselItems.length]);
+
+  useEffect(() => {
+    if (carouselItems.length <= 1) return;
+
+    const currentItem = carouselItems[activeSlide];
+    
+    // Regra Obrigatória: Se o slide atual for VÍDEO, ele NÃO passa por timer fixo.
+    // O carrossel só avançará quando o vídeo acabar (evento onEnded).
+    if (currentItem?.type === 'video') {
+      return;
+    }
+
+    // Se o slide atual for IMAGEM: passa após 4 segundos
+    const timer = setTimeout(() => {
+      handleNextSlide();
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [activeSlide, carouselItems, handleNextSlide]);
+
+  // Disparar áudio no primeiro clique/toque em qualquer parte da tela (inputs, botões, tela, carrossel)
+  useEffect(() => {
+    let unlocked = false;
+    const handleFirstUserGesture = () => {
+      if (unlocked) return;
+      unlocked = true;
+      setIsMuted(false);
+      
+      // Desmuta elementos de vídeo HTML existentes
+      if (typeof document !== 'undefined') {
+        const videos = document.querySelectorAll('video');
+        videos.forEach((v) => {
+          try {
+            v.muted = false;
+            v.removeAttribute('muted');
+            const p = v.play();
+            if (p && typeof p.then === 'function') p.catch(() => {});
+          } catch {}
+        });
+      }
+
+      window.removeEventListener('click', handleFirstUserGesture, true);
+      window.removeEventListener('touchstart', handleFirstUserGesture, true);
+      window.removeEventListener('pointerdown', handleFirstUserGesture, true);
+      window.removeEventListener('keydown', handleFirstUserGesture, true);
+      window.removeEventListener('focusin', handleFirstUserGesture, true);
+    };
+
+    window.addEventListener('click', handleFirstUserGesture, true);
+    window.addEventListener('touchstart', handleFirstUserGesture, true);
+    window.addEventListener('pointerdown', handleFirstUserGesture, true);
+    window.addEventListener('keydown', handleFirstUserGesture, true);
+    window.addEventListener('focusin', handleFirstUserGesture, true);
+
+    return () => {
+      window.removeEventListener('click', handleFirstUserGesture, true);
+      window.removeEventListener('touchstart', handleFirstUserGesture, true);
+      window.removeEventListener('pointerdown', handleFirstUserGesture, true);
+      window.removeEventListener('keydown', handleFirstUserGesture, true);
+      window.removeEventListener('focusin', handleFirstUserGesture, true);
+    };
+  }, []);
+
+  // Helper to safely resolve relative media URLs in captive portal contexts
+  const resolveMediaUrl = (url: string) => {
+    if (!url) return '';
+    const trimmed = String(url).trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
+      return trimmed;
+    }
+    if (!trimmed.startsWith('/')) {
+      return '/' + trimmed;
+    }
+    return trimmed;
+  };
+
+  // Keep ad timer and countdown in sync with ad configuration
+  useEffect(() => {
+    if (ad && ad.type !== 'none' && ad.timerEnabled) {
+      const duration = typeof ad.timerDuration === 'number' && ad.timerDuration > 0 ? ad.timerDuration : 5;
+      setTimeLeft(duration);
+      setTimerActive(true);
+    } else {
+      setTimeLeft(0);
+      setTimerActive(false);
+    }
+  }, [ad?.type, ad?.timerEnabled, ad?.timerDuration, ad?.mediaUrl]);
 
   // Countdown Timer Effect for Advertisement
   useEffect(() => {
@@ -1780,30 +2264,78 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitted(true);
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      if (!usernameField || !usernameField.trim()) {
-        setError('Nome de usuário é obrigatório.');
+      if (fields.nameEnabled && fields.nameRequired && nameVal.status === 'error') {
+        setError(nameVal.message || 'Nome completo é obrigatório.');
         setLoading(false);
         return;
       }
 
-      if (!password || !password.trim()) {
-        setError('Senha é obrigatória.');
+      if (fields.emailEnabled && fields.emailRequired && emailVal.status === 'error') {
+        setError(emailVal.message || 'E-mail inválido.');
         setLoading(false);
         return;
       }
 
-      if (password !== confirmPassword) {
-        setError('As senhas não coincidem.');
+      if (fields.phoneEnabled && fields.phoneRequired && phoneVal.status === 'error') {
+        setError(phoneVal.message || 'DDD e Celular são obrigatórios.');
         setLoading(false);
         return;
       }
 
       const combinedPhone = fields.phoneEnabled && (ddd || celular) ? `${ddd.trim()}${celular.replace(/\D/g, '').trim()}` : '';
+
+      if (showUsernameInput) {
+        if (!usernameField.trim() || usernameVal.status === 'error') {
+          setError(usernameVal.message || 'Nome de usuário inválido (mínimo 3 caracteres).');
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (fields.birthDateEnabled && fields.birthDateRequired && birthDateVal.status === 'error') {
+        setError(birthDateVal.message || 'Data de nascimento inválida.');
+        setLoading(false);
+        return;
+      }
+
+      if (fields.cpfEnabled && fields.cpfRequired && cpfVal.status === 'error') {
+        setError(cpfVal.message || 'CPF inválido.');
+        setLoading(false);
+        return;
+      }
+
+      if (fields.genderEnabled && fields.genderRequired && genderVal.status === 'error') {
+        setError(genderVal.message || 'Gênero é obrigatório.');
+        setLoading(false);
+        return;
+      }
+
+      if (showPasswordInput) {
+        if (!password || !password.trim()) {
+          setError('Senha é obrigatória.');
+          setLoading(false);
+          return;
+        }
+
+        if (password.length < 4) {
+          setError('A senha deve ter no mínimo 4 caracteres.');
+          setLoading(false);
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          setError('As senhas não coincidem. Verifique a confirmação de senha.');
+          setLoading(false);
+          return;
+        }
+      }
+
       let combinedBirthDate = null;
       if (fields.birthDateEnabled && birthYear && birthMonth && birthDay) {
         const mm = birthMonth.length < 2 ? `0${birthMonth}` : birthMonth;
@@ -1811,17 +2343,45 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
         combinedBirthDate = `${birthYear}-${mm}-${ddVal}`;
       }
 
+      // Resolução inteligente de usuário e senha segundo as regras:
+      // 1. Somente WhatsApp: username e senha = whatsapp
+      // 2. Nome e WhatsApp: username e senha = whatsapp
+      // 3. Usuário / Senha explícitos ou modo mínimo: usa os valores digitados
+      let resolvedUsername = '';
+      let resolvedPassword = '';
+
+      if (showUsernameInput && usernameField.trim()) {
+        resolvedUsername = usernameField.trim().toLowerCase();
+      } else if (combinedPhone) {
+        resolvedUsername = combinedPhone;
+      } else if (name.trim()) {
+        resolvedUsername = name.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+      } else if (cpf) {
+        resolvedUsername = cpf.replace(/\D/g, '');
+      } else {
+        resolvedUsername = 'user_' + Date.now().toString().slice(-4);
+      }
+
+      if (showPasswordInput && password.trim()) {
+        resolvedPassword = password.trim();
+      } else if (combinedPhone) {
+        resolvedPassword = combinedPhone;
+      } else {
+        resolvedPassword = '123456';
+      }
+
       const payload = { 
-        name, 
+        name: showNameInput ? name : (combinedPhone ? `Cliente ${combinedPhone}` : resolvedUsername), 
         email, 
         phone: combinedPhone, 
-        username: usernameField.trim(),
+        username: resolvedUsername,
         birthDate: combinedBirthDate, 
         cpf, 
         gender, 
-        password: password.trim(), 
+        password: resolvedPassword, 
         customFieldValue,
         optInCourses,
+        planId: (!isFreeWifi && saleMode && selectedPlanId) ? selectedPlanId : undefined,
         template: initialConfig?.template || 'default'
       };
 
@@ -1844,14 +2404,28 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
       }
 
       if (data.success) {
-        setSuccess('Cadastro concluído! Conectando ao Wi-Fi...');
-        const { username, password: createdPassword } = data.data;
+        const { username, password: createdPassword, pix } = data.data;
         const finalDst = data.data?.redirectUrl || data.config?.redirectUrl || redirectUrl || linkOrig;
         const targetLoginUrl = linkLoginOnly || 'http://192.168.88.1/login';
         
-        setTimeout(() => {
-          performAutoLogin(username, createdPassword, targetLoginUrl, finalDst);
-        }, 600);
+        if (pix) {
+          setActivePix(pix);
+          setPixTimeRemaining(15 * 60);
+          setSuccess('Conectado com 15 minutos de cortesia! Efetue o pagamento do seu Pix.');
+        } else {
+          setSuccess(isSimulator ? `🎉 [Modo Preview] Cadastro simulado com sucesso! Usuário: ${username}` : 'Cadastro concluído! Conectando ao Wi-Fi...');
+        }
+        
+        if (!isSimulator) {
+          setTimeout(() => {
+            performAutoLogin(username, createdPassword, targetLoginUrl, finalDst);
+          }, 600);
+        } else {
+          // No preview, mantém a mensagem visível por alguns segundos para validação do usuário
+          setTimeout(() => {
+            setSuccess('');
+          }, 5000);
+        }
 
       } else {
         setError(data.message || 'Erro ao cadastrar.');
@@ -1864,9 +2438,9 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
     }
   };
 
-  const isSimulator = typeof window !== 'undefined' && (
-    new URLSearchParams(window.location.search).get('preview') === '1' ||
-    window.self !== window.top
+  const isSimulator = Boolean(
+    initialConfig?.isPreview ||
+    (isMounted && (isClientIframe || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === '1')))
   );
 
   const speedSec = effects.bgEffectSpeed === 'slow' ? 24 : effects.bgEffectSpeed === 'fast' ? 7 : 14;
@@ -2046,6 +2620,75 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
         box-shadow: 0 0 0 3px color-mix(in srgb, var(--mg-brand) 25%, transparent);
       }
 
+      .mg-reg-input.mg-input-error, .mg-reg-select.mg-input-error {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+      }
+
+      .mg-reg-input.mg-input-success, .mg-reg-select.mg-input-success {
+        border-color: #10b981 !important;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+      }
+
+      .mg-field-feedback {
+        font-size: 0.73rem;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        line-height: 1.3;
+        animation: mgFadeIn 0.2s ease;
+      }
+
+      .mg-field-feedback.error {
+        color: #ef4444;
+      }
+
+      .mg-field-feedback.success {
+        color: #10b981;
+      }
+
+      .mg-password-wrap {
+        position: relative;
+        width: 100%;
+        display: flex;
+        align-items: center;
+      }
+
+      .mg-password-wrap input {
+        padding-right: 44px !important;
+      }
+
+      .mg-password-toggle {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: var(--mg-muted, #94a3b8);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px;
+        border-radius: 6px;
+        transition: all 0.15s ease;
+        z-index: 5;
+      }
+
+      .mg-password-toggle:hover {
+        color: var(--mg-ink, #f8fafc);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      @keyframes mgFadeIn {
+        from { opacity: 0; transform: translateY(-2px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
       .mg-reg-input::placeholder, .mg-reg-textarea::placeholder {
         color: var(--mg-input-placeholder, #64748b);
         opacity: 0.8;
@@ -2217,25 +2860,46 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
 
       {/* Dynamic Background Layer (Video / Image / Effects) */}
       {isVideoBg && bg.url && (
-        <video 
-          key={bg.url}
-          autoPlay 
-          muted 
-          loop 
-          playsInline 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            zIndex: 0,
-            pointerEvents: 'none'
-          }}
-        >
-          <source src={bg.url} />
-        </video>
+        <>
+          {getPosterUrl(bg.url) && (
+            <div 
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundImage: `url(${getPosterUrl(bg.url)})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                zIndex: 0,
+                pointerEvents: 'none'
+              }}
+            />
+          )}
+          <video 
+            key={bg.url}
+            autoPlay 
+            muted 
+            loop 
+            playsInline 
+            preload="auto"
+            poster={getPosterUrl(bg.url)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: 0,
+              pointerEvents: 'none'
+            }}
+          >
+            <source src={bg.url} />
+          </video>
+        </>
       )}
 
       {isImageBg && bg.url && (
@@ -2258,7 +2922,7 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
       )}
 
       {/* Animated Visual Effects Layers — all rendered via LiveCanvasEffect canvas */}
-      {effects.bgEffect === 'aurora' && (
+      {isMounted && effects.bgEffect === 'aurora' && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, overflow: 'hidden', pointerEvents: 'none', background: '#05050d' }}>
           <div style={{ position: 'absolute', width: '70vw', height: '70vw', top: '-20%', left: '-10%', borderRadius: '50%', background: `radial-gradient(circle, ${colors.brand} 0%, transparent 70%)`, filter: 'blur(60px)', opacity: 0.6, animation: `mgAuroraFloat ${speedSec}s ease-in-out infinite alternate` }} />
           <div style={{ position: 'absolute', width: '65vw', height: '65vw', bottom: '-10%', right: '-10%', borderRadius: '50%', background: `radial-gradient(circle, ${colors.green} 0%, transparent 70%)`, filter: 'blur(60px)', opacity: 0.5, animation: `mgAuroraFloat ${speedSec * 1.3}s ease-in-out infinite alternate-reverse` }} />
@@ -2266,21 +2930,21 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
         </div>
       )}
 
-      {effects.bgEffect === 'cyber-grid' && (
+      {isMounted && effects.bgEffect === 'cyber-grid' && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, overflow: 'hidden', pointerEvents: 'none', background: `radial-gradient(circle at 50% 30%, ${colors.brandDark} 0%, #05050f 70%)` }}>
           <div style={{ position: 'absolute', width: '200%', height: '100%', left: '-50%', bottom: 0, background: `linear-gradient(rgba(0,0,0,0) 0%, #05050f 85%), linear-gradient(90deg, ${colors.brand}33 1px, transparent 1px), linear-gradient(0deg, ${colors.brand}33 1px, transparent 1px)`, backgroundSize: '100% 100%, 40px 40px, 40px 40px', transform: 'perspective(300px) rotateX(60deg)', transformOrigin: 'center bottom', animation: `mgGridMove ${speedSec * 0.4}s linear infinite` }} />
         </div>
 
       )}
 
-      {effects.bgEffect === 'floating-orbs' && (
+      {isMounted && effects.bgEffect === 'floating-orbs' && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, overflow: 'hidden', pointerEvents: 'none', background: '#0a0c18' }}>
           <div style={{ position: 'absolute', width: '220px', height: '220px', borderRadius: '50%', background: colors.brand, filter: 'blur(45px)', opacity: 0.5, animation: `mgOrbFloat1 ${speedSec}s ease-in-out infinite` }} />
           <div style={{ position: 'absolute', width: '180px', height: '180px', borderRadius: '50%', background: colors.green, filter: 'blur(40px)', opacity: 0.45, animation: `mgOrbFloat2 ${speedSec * 1.2}s ease-in-out infinite` }} />
         </div>
       )}
 
-      {effects.bgEffect === 'fireflies' && (
+      {isMounted && effects.bgEffect === 'fireflies' && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, overflow: 'hidden', pointerEvents: 'none', background: '#030712' }}>
           <div style={{ position: 'absolute', width: '10px', height: '10px', borderRadius: '50%', background: colors.brand, boxShadow: `0 0 15px ${colors.brand}`, animation: 'mgOrbFloat1 5s infinite' }} />
           <div style={{ position: 'absolute', width: '8px', height: '8px', borderRadius: '50%', background: colors.green, boxShadow: `0 0 12px ${colors.green}`, animation: 'mgOrbFloat2 7s infinite' }} />
@@ -2288,7 +2952,7 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
         </div>
       )}
 
-      {effects.bgEffect && effects.bgEffect !== 'none' && (
+      {isMounted && effects.bgEffect && effects.bgEffect !== 'none' && (
         <LiveCanvasEffect
           effect={effects.bgEffect}
           speed={effects.bgEffectSpeed || 'normal'}
@@ -2325,44 +2989,70 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
 
           {/* Advertisement Banner / Media */}
           {ad && ad.type !== 'none' && (ad.mediaUrl || (ad.type === 'carousel' && carouselItems.length > 0)) && (
-            <div style={{ marginBottom: '20px', borderRadius: '12px', overflow: 'hidden', position: 'relative', border: '1px solid var(--mg-card-border)', background: '#000' }}>
+            <div style={{ marginBottom: '20px', borderRadius: '12px', overflow: 'hidden', position: 'relative', border: '1px solid var(--mg-card-border)', background: '#0a0f1d', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
               <span style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '9px', padding: '2px 6px', borderRadius: '4px', zIndex: 10, textTransform: 'uppercase' }}>
                 Patrocinado
               </span>
               
               {ad.type === 'image' && ad.mediaUrl && (
                 ad.targetUrl ? (
-                  <a href={ad.targetUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
-                    <img src={ad.mediaUrl} alt="Publicidade" style={{ width: '100%', height: 'auto', maxHeight: '160px', objectFit: 'cover' }} />
+                  <a href={ad.targetUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', maxWidth: '100%' }}>
+                    <img 
+                      src={resolveMediaUrl(ad.mediaUrl)} 
+                      alt="Publicidade" 
+                      loading="eager"
+                      decoding="async"
+                      style={{ width: '100%', maxWidth: '100%', height: 'auto', maxHeight: '240px', objectFit: 'contain', display: 'block', margin: '0 auto' }} 
+                    />
                   </a>
                 ) : (
-                  <img src={ad.mediaUrl} alt="Publicidade" style={{ width: '100%', height: 'auto', maxHeight: '160px', objectFit: 'cover' }} />
+                  <img 
+                    src={resolveMediaUrl(ad.mediaUrl)} 
+                    alt="Publicidade" 
+                    loading="eager"
+                    decoding="async"
+                    style={{ width: '100%', maxWidth: '100%', height: 'auto', maxHeight: '240px', objectFit: 'contain', display: 'block', margin: '0 auto' }} 
+                  />
                 )
               )}
 
               {ad.type === 'video' && ad.mediaUrl && (
-                <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', background: '#000' }}>
+                <div style={{ width: '100%', maxWidth: '100%', aspectRatio: '16/9', maxHeight: '260px', position: 'relative', background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {ad.mediaUrl.includes('youtube.com') || ad.mediaUrl.includes('youtu.be') ? (
                     <iframe
                       src={getYouTubeEmbedUrl(ad.mediaUrl)}
-                      style={{ width: '100%', height: '100%', border: 'none' }}
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
                   ) : (
                     <>
                       <CarouselVideo
-                        src={ad.mediaUrl}
+                        src={resolveMediaUrl(ad.mediaUrl)}
                         isCurrent={true}
                         isMuted={isMuted}
+                        loop={true}
+                        portalTitle={initialConfig?.businessName || 'Wi-Fi Shield Security'}
                         onClick={() => ad.targetUrl && window.open(ad.targetUrl, '_blank')}
                       />
                       <button
                         type="button"
-                        onClick={() => setIsMuted(prev => !prev)}
+                        onClick={() => {
+                          setIsMuted(false);
+                          if (typeof document !== 'undefined') {
+                            const vids = document.querySelectorAll('video');
+                            vids.forEach(v => {
+                              try {
+                                v.muted = false;
+                                v.removeAttribute('muted');
+                                v.play().catch(() => {});
+                              } catch {}
+                            });
+                          }
+                        }}
                         style={{ position: 'absolute', bottom: '8px', left: '8px', width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', zIndex: 20 }}
                       >
-                        {isMuted ? '🔇' : '🔊'}
+                        🔊
                       </button>
                     </>
                   )}
@@ -2370,26 +3060,31 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
               )}
 
               {ad.type === 'carousel' && carouselItems.length > 0 && (
-                <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: '#000' }}>
+                <div style={{ position: 'relative', width: '100%', maxWidth: '100%', aspectRatio: '16/9', maxHeight: '260px', overflow: 'hidden', background: '#000' }}>
                   {carouselItems.map((item, idx) => {
                     const isCurrent = idx === activeSlide;
                     return (
                       <div 
                         key={idx}
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: isCurrent ? 1 : 0, transition: 'opacity 0.5s ease', zIndex: isCurrent ? 10 : 0 }}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: isCurrent ? 1 : 0, transition: 'opacity 0.5s ease', zIndex: isCurrent ? 10 : 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         {item.type === 'video' ? (
                           <CarouselVideo
-                            src={item.url}
+                            src={resolveMediaUrl(item.url)}
                             isCurrent={isCurrent}
                             isMuted={isMuted}
+                            loop={carouselItems.length <= 1}
+                            onEnded={handleNextSlide}
+                            portalTitle={initialConfig?.businessName || 'Wi-Fi Shield Security'}
                             onClick={() => item.targetUrl && window.open(item.targetUrl, '_blank')}
                           />
                         ) : (
                           <img 
-                            src={item.url} 
+                            src={resolveMediaUrl(item.url)} 
                             alt={`Slide ${idx + 1}`}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+                            loading={idx === 0 ? "eager" : "lazy"}
+                            decoding="async"
+                            style={{ width: '100%', maxWidth: '100%', height: '100%', objectFit: 'contain', cursor: 'pointer', display: 'block', margin: '0 auto' }}
                             onClick={() => item.targetUrl && window.open(item.targetUrl, '_blank')}
                           />
                         )}
@@ -2414,7 +3109,7 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
             <input type="hidden" name="template" value={initialConfig?.template || 'default'} />
 
             {/* Nome Completo */}
-            {fields.nameEnabled && (
+            {showNameInput && (
               <div className="mg-reg-form-group">
                 <label className="mg-reg-label">
                   Nome Completo {fields.nameRequired && <span className="mg-reg-required">*</span>}
@@ -2425,9 +3120,11 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
                   required={fields.nameRequired}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onBlur={() => markTouched('name')}
                   placeholder="Ex: João da Silva"
-                  className="mg-reg-input"
+                  className={`mg-reg-input ${nameVal.status === 'error' ? 'mg-input-error' : nameVal.status === 'valid' ? 'mg-input-success' : ''}`}
                 />
+                <FieldFeedback status={nameVal.status} message={nameVal.message} />
               </div>
             )}
 
@@ -2443,14 +3140,16 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
                   required={fields.emailRequired}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onBlur={() => markTouched('email')}
                   placeholder="Ex: joao@email.com"
-                  className="mg-reg-input"
+                  className={`mg-reg-input ${emailVal.status === 'error' ? 'mg-input-error' : emailVal.status === 'valid' ? 'mg-input-success' : ''}`}
                 />
+                <FieldFeedback status={emailVal.status} message={emailVal.message} />
               </div>
             )}
 
             {/* DDD e Celular */}
-            {fields.phoneEnabled && (
+            {showPhoneInput && (
               <div className="mg-reg-form-group">
                 <label className="mg-reg-label">
                   DDD e Celular <span className="mg-reg-required">*</span>
@@ -2466,8 +3165,9 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
                     placeholder="DDD"
                     value={ddd}
                     onChange={handleDddChange}
+                    onBlur={() => markTouched('phone')}
                     style={{ textAlign: 'center' }}
-                    className="mg-reg-input"
+                    className={`mg-reg-input ${phoneVal.status === 'error' ? 'mg-input-error' : phoneVal.status === 'valid' ? 'mg-input-success' : ''}`}
                   />
                   <input 
                     type="tel" 
@@ -2478,28 +3178,34 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
                     placeholder="Celular"
                     value={celular}
                     onChange={handleCelularChange}
+                    onBlur={() => markTouched('phone')}
                     ref={celularRef}
-                    className="mg-reg-input"
+                    className={`mg-reg-input ${phoneVal.status === 'error' ? 'mg-input-error' : phoneVal.status === 'valid' ? 'mg-input-success' : ''}`}
                   />
                 </div>
+                <FieldFeedback status={phoneVal.status} message={phoneVal.message} />
               </div>
             )}
 
             {/* Usuário (Login Hotspot) */}
-            <div className="mg-reg-form-group">
-              <label className="mg-reg-label">
-                Nome de Usuário (Login) <span className="mg-reg-required">*</span>
-              </label>
-              <input 
-                type="text" 
-                name="username"
-                required
-                value={usernameField}
-                onChange={(e) => setUsernameField(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ''))}
-                placeholder="Ex: joaodasilva"
-                className="mg-reg-input"
-              />
-            </div>
+            {showUsernameInput && (
+              <div className="mg-reg-form-group">
+                <label className="mg-reg-label">
+                  Nome de Usuário (Login) <span className="mg-reg-required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  name="username"
+                  required
+                  value={usernameField}
+                  onChange={(e) => setUsernameField(e.target.value.replace(/[^a-zA-Z0-9._-]/g, ''))}
+                  onBlur={() => markTouched('username')}
+                  placeholder="Ex: joaodasilva"
+                  className={`mg-reg-input ${usernameVal.status === 'error' ? 'mg-input-error' : usernameVal.status === 'valid' ? 'mg-input-success' : ''}`}
+                />
+                <FieldFeedback status={usernameVal.status} message={usernameVal.message} />
+              </div>
+            )}
 
             {/* Data de Nascimento */}
             {fields.birthDateEnabled && (
@@ -2518,8 +3224,9 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
                     placeholder="Dia"
                     value={birthDay}
                     onChange={handleBirthDayChange}
+                    onBlur={() => markTouched('birthDate')}
                     style={{ textAlign: 'center' }}
-                    className="mg-reg-input"
+                    className={`mg-reg-input ${birthDateVal.status === 'error' ? 'mg-input-error' : birthDateVal.status === 'valid' ? 'mg-input-success' : ''}`}
                   />
                   <input 
                     type="tel" 
@@ -2531,9 +3238,10 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
                     placeholder="Mês"
                     value={birthMonth}
                     onChange={handleBirthMonthChange}
+                    onBlur={() => markTouched('birthDate')}
                     ref={birthMonthRef}
                     style={{ textAlign: 'center' }}
-                    className="mg-reg-input"
+                    className={`mg-reg-input ${birthDateVal.status === 'error' ? 'mg-input-error' : birthDateVal.status === 'valid' ? 'mg-input-success' : ''}`}
                   />
                   <input 
                     type="tel" 
@@ -2545,11 +3253,13 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
                     placeholder="Ano"
                     value={birthYear}
                     onChange={handleBirthYearChange}
+                    onBlur={() => markTouched('birthDate')}
                     ref={birthYearRef}
                     style={{ textAlign: 'center' }}
-                    className="mg-reg-input"
+                    className={`mg-reg-input ${birthDateVal.status === 'error' ? 'mg-input-error' : birthDateVal.status === 'valid' ? 'mg-input-success' : ''}`}
                   />
                 </div>
+                <FieldFeedback status={birthDateVal.status} message={birthDateVal.message} />
               </div>
             )}
 
@@ -2567,9 +3277,11 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
                   value={cpf}
                   maxLength={14}
                   onChange={handleCpfChange}
+                  onBlur={() => markTouched('cpf')}
                   placeholder="000.000.000-00"
-                  className="mg-reg-input"
+                  className={`mg-reg-input ${cpfVal.status === 'error' ? 'mg-input-error' : cpfVal.status === 'valid' ? 'mg-input-success' : ''}`}
                 />
+                <FieldFeedback status={cpfVal.status} message={cpfVal.message} />
               </div>
             )}
 
@@ -2584,46 +3296,70 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
                   required={fields.genderRequired}
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
-                  className="mg-reg-select"
+                  onBlur={() => markTouched('gender')}
+                  className={`mg-reg-select ${genderVal.status === 'error' ? 'mg-input-error' : genderVal.status === 'valid' ? 'mg-input-success' : ''}`}
                 >
                   <option value="" style={{ background: colors.inputBg, color: colors.inputText }}>Escolha seu Gênero</option>
                   <option value="Homem" style={{ background: colors.inputBg, color: colors.inputText }}>Homem</option>
                   <option value="Mulher" style={{ background: colors.inputBg, color: colors.inputText }}>Mulher</option>
                   <option value="Não informar" style={{ background: colors.inputBg, color: colors.inputText }}>Não informar</option>
                 </select>
+                <FieldFeedback status={genderVal.status} message={genderVal.message} />
               </div>
             )}
 
-            {/* Senha e Confirmação */}
-            <div className="mg-reg-form-group">
-              <label className="mg-reg-label">
-                Crie uma Senha <span className="mg-reg-required">*</span>
-              </label>
-              <input 
-                type="password" 
-                name="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="mg-reg-input"
-              />
-            </div>
+            {/* Senha e Confirmação de Senha (Visível apenas quando showPasswordInput for true) */}
+            {showPasswordInput && (
+              <>
+                <div className="mg-reg-form-group">
+                  <label className="mg-reg-label">
+                    Crie uma Senha {fields.passwordRequired && <span className="mg-reg-required">*</span>}
+                  </label>
+                  <div className="mg-password-wrap">
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      name="password"
+                      required={fields.passwordRequired}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onBlur={() => markTouched('password')}
+                      placeholder="••••••••"
+                      className={`mg-reg-input ${passwordVal.status === 'error' ? 'mg-input-error' : passwordVal.status === 'valid' ? 'mg-input-success' : ''}`}
+                    />
+                    <PasswordToggleBtn 
+                      show={showPassword} 
+                      onToggle={() => setShowPassword(!showPassword)} 
+                      title={showPassword ? "Ocultar senha" : "Ver senha"} 
+                    />
+                  </div>
+                  <FieldFeedback status={passwordVal.status} message={passwordVal.message} />
+                </div>
 
-            <div className="mg-reg-form-group">
-              <label className="mg-reg-label">
-                Confirme sua Senha <span className="mg-reg-required">*</span>
-              </label>
-              <input 
-                type="password" 
-                name="confirmPassword"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                className="mg-reg-input"
-              />
-            </div>
+                <div className="mg-reg-form-group">
+                  <label className="mg-reg-label">
+                    Confirme sua Senha {fields.passwordRequired && <span className="mg-reg-required">*</span>}
+                  </label>
+                  <div className="mg-password-wrap">
+                    <input 
+                      type={showConfirmPassword ? "text" : "password"} 
+                      name="confirmPassword"
+                      required={fields.passwordRequired}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onBlur={() => markTouched('confirmPassword')}
+                      placeholder="••••••••"
+                      className={`mg-reg-input ${confirmPasswordVal.status === 'error' ? 'mg-input-error' : confirmPasswordVal.status === 'valid' ? 'mg-input-success' : ''}`}
+                    />
+                    <PasswordToggleBtn 
+                      show={showConfirmPassword} 
+                      onToggle={() => setShowConfirmPassword(!showConfirmPassword)} 
+                      title={showConfirmPassword ? "Ocultar senha" : "Ver senha"} 
+                    />
+                  </div>
+                  <FieldFeedback status={confirmPasswordVal.status} message={confirmPasswordVal.message} />
+                </div>
+              </>
+            )}
 
             {/* Dynamic Custom Lead Input */}
             {fields.customFieldEnabled && (
@@ -2659,6 +3395,72 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
               </div>
             )}
 
+            {/* Seletor de Planos de Acesso (Modo Venda Ativo e Não Modo Gratuito) */}
+            {!isFreeWifi && saleMode && plans.length > 0 && (
+              <div className="mg-reg-form-group" style={{ margin: '18px 0 22px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <label className="mg-reg-label" style={{ margin: 0 }}>
+                    Escolha seu Plano <span className="mg-reg-required">*</span>
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: colors.green || '#10b981', fontWeight: 700, letterSpacing: '0.02em' }}>
+                    ⚡ 15m Cortesia para Pagamento
+                  </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: plans.length > 1 ? 'repeat(auto-fit, minmax(130px, 1fr))' : '1fr', gap: '8px' }}>
+                  {plans.map((p) => {
+                    const isSelected = selectedPlanId === p.id;
+                    return (
+                      <div
+                        key={p.id}
+                        onClick={() => setSelectedPlanId(p.id)}
+                        style={{
+                          padding: '12px 10px',
+                          borderRadius: '10px',
+                          cursor: 'pointer',
+                          border: isSelected 
+                            ? `2px solid ${colors.brand || '#2563eb'}` 
+                            : '1px solid var(--mg-input-border, #334155)',
+                          background: isSelected 
+                            ? 'rgba(37, 99, 235, 0.15)' 
+                            : 'var(--mg-input-bg, #1e293b)',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          boxShadow: isSelected ? '0 0 12px rgba(37, 99, 235, 0.25)' : 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#f8fafc' }}>{p.title}</span>
+                          <span style={{ 
+                            width: '14px', 
+                            height: '14px', 
+                            borderRadius: '50%', 
+                            border: `2px solid ${isSelected ? (colors.brand || '#2563eb') : '#64748b'}`,
+                            background: isSelected ? (colors.brand || '#2563eb') : 'transparent',
+                            display: 'inline-block',
+                            marginTop: '2px'
+                          }} />
+                        </div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '4px' }}>
+                          <span style={{ fontSize: '1.05rem', fontWeight: 800, color: colors.green || '#10b981' }}>
+                            R$ {Number(p.price).toFixed(2)}
+                          </span>
+                          {p.uptimeLimit && p.uptimeLimit !== 'none' && (
+                            <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'monospace' }}>
+                              ⏱ {p.uptimeLimit}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Submit Button */}
             <button 
               type="submit" 
@@ -2669,7 +3471,7 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
                 color: colors.registerButtonText || '#ffffff'
               }}
             >
-              {loading ? 'Processando...' : success ? 'Conectando...' : timerActive ? `Aguarde ${timeLeft}s...` : registerSubmitText}
+              {loading ? 'Processando...' : success ? 'Conectando...' : timerActive ? `Aguarde ${timeLeft}s...` : (!isFreeWifi && saleMode && plans.length > 0 ? 'Pagar com PIX & Conectar' : registerSubmitText)}
             </button>
           </form>
 
@@ -2678,7 +3480,178 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
             {termsText}
           </div>
 
+          {/* Link para voltar à tela de Login */}
+          <div style={{ marginTop: '16px', textAlign: 'center' }}>
+            <button
+              type="button"
+              onClick={() => {
+                if (isSimulator) {
+                  window.location.href = `/api/portal/preview?template=${encodeURIComponent(initialConfig?.template || 'default')}&screen=login`;
+                } else {
+                  window.location.href = linkLoginOnly || '/';
+                }
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: colors.brand || '#38bdf8',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                padding: '6px 12px'
+              }}
+            >
+              ← Já possui acesso? Voltar ao Login
+            </button>
+          </div>
+
         </div>
+
+        {/* Modal de Checkout Pix com Grace Period de 15 Minutos */}
+        {activePix && (
+          <div 
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(5, 7, 20, 0.88)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: '16px'
+            }}
+          >
+            <div 
+              style={{
+                background: '#0f172a',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '18px',
+                padding: '24px',
+                maxWidth: '420px',
+                width: '100%',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7)',
+                textAlign: 'center',
+                position: 'relative'
+              }}
+            >
+              {/* Badge de status */}
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '4px 12px', borderRadius: '20px', marginBottom: '14px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Internet Liberada (15 Minutos)
+                </span>
+              </div>
+
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', margin: '0 0 6px 0' }}>
+                {isPixApproved ? '🎉 Pagamento Aprovado!' : 'Efetue o Pagamento via PIX'}
+              </h3>
+              <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+                {isPixApproved 
+                  ? `Seu plano ${activePix.planTitle} foi ativado com sucesso! Sua navegação continuará ativa sem interrupções.`
+                  : `Você já está conectado! Abra o aplicativo do seu banco e efetue o pagamento de R$ ${Number(activePix.amount).toFixed(2)} para ativar seu plano completo.`
+                }
+              </p>
+
+              {/* QR Code Container */}
+              {!isPixApproved && (
+                <>
+                  <div style={{ background: '#ffffff', padding: '16px', borderRadius: '14px', display: 'inline-block', margin: '0 auto 14px auto', boxShadow: '0 8px 16px rgba(0,0,0,0.3)' }}>
+                    {activePix.pixPayload ? (
+                      <QRCodeSVG value={activePix.pixPayload} size={170} level="M" />
+                    ) : activePix.pixQrCodeBase64 ? (
+                      <img src={`data:image/png;base64,${activePix.pixQrCodeBase64}`} alt="QR Code PIX" style={{ width: '170px', height: '170px' }} />
+                    ) : null}
+                  </div>
+
+                  {/* Timer Regressivo */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '14px' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#cbd5e1' }}>Tempo de tolerância:</span>
+                    <span style={{ fontSize: '0.9rem', fontFamily: 'monospace', fontWeight: 800, color: pixTimeRemaining < 180 ? '#ef4444' : '#38bdf8' }}>
+                      ⏱ {Math.floor(pixTimeRemaining / 60).toString().padStart(2, '0')}:{(pixTimeRemaining % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+
+                  {/* Copia e Cola */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                    <input 
+                      readOnly 
+                      value={activePix.pixPayload} 
+                      style={{
+                        width: '100%',
+                        background: '#1e293b',
+                        border: '1px solid #334155',
+                        color: '#94a3b8',
+                        borderRadius: '8px',
+                        padding: '8px 10px',
+                        fontSize: '0.75rem',
+                        fontFamily: 'monospace',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator.clipboard) {
+                          navigator.clipboard.writeText(activePix.pixPayload);
+                          setPixCopied(true);
+                          setTimeout(() => setPixCopied(false), 2500);
+                        }
+                      }}
+                      style={{
+                        background: pixCopied ? '#10b981' : '#2563eb',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '10px 14px',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {pixCopied ? '✓ Chave PIX Copiada!' : '📋 Copiar Código PIX'}
+                    </button>
+                  </div>
+
+                  {/* Polling status notice */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.75rem', color: '#64748b' }}>
+                    <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#38bdf8', animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
+                    <span>Aguardando confirmação do pagamento...</span>
+                  </div>
+                </>
+              )}
+
+              {isPixApproved && (
+                <div style={{ padding: '16px 0 8px 0' }}>
+                  <button
+                    type="button"
+                    onClick={() => setActivePix(null)}
+                    style={{
+                      background: '#10b981',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '12px 24px',
+                      fontWeight: 800,
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      width: '100%',
+                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+                    }}
+                  >
+                    Continuar Navegando 🚀
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </>
   );

@@ -40,36 +40,32 @@ export default function DHCPLeases() {
   }
 
   return (
-    <main className="w-full p-4 md:p-6 space-y-6 animate-fade-in">
+    <main className="w-full p-4 md:p-6 space-y-6 animate-fade-in text-slate-800">
       {/* Page Header */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>
-          <p
-            className="text-[10px] font-bold uppercase tracking-widest mb-1"
-            style={{ color: '#f59e0b' }}
-          >
-            ▶ NETWORK // DHCP ACTIVE LEASES
-          </p>
-          <h1
-            className="text-2xl font-black tracking-tight text-white"
-            style={{ fontFamily: 'Orbitron, sans-serif' }}
-          >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded tracking-wider uppercase">
+              Rede Local // Concessões DHCP
+            </span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900">
             DHCP Leases
           </h1>
-          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            Concessões DHCP ativas e mapeamento de endereços IP na rede
+          <p className="text-xs md:text-sm text-slate-600 font-medium mt-0.5">
+            Concessões DHCP ativas e mapeamento de endereços IP na rede local
           </p>
         </div>
       </header>
 
       {/* Main Table Card */}
-      <div className="aurora-card overflow-hidden">
-        <div className="px-6 py-5 border-b border-white/5 bg-white/[0.01] flex justify-between items-center">
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-200 bg-slate-50/70 flex justify-between items-center">
           <div>
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Network Clients Identified</h2>
-            <p className="text-xs text-white/30 mt-0.5">Dispositivos conectados que receberam IPs via DHCP</p>
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">Dispositivos Conectados</h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">Clientes identificados com IPs concedidos via DHCP</p>
           </div>
-          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-amber-500/35 bg-amber-500/10 text-amber-400 tracking-wider uppercase">
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-800 tracking-wider uppercase">
             {leases.length} LEASES
           </span>
         </div>
@@ -79,36 +75,36 @@ export default function DHCPLeases() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02] text-white/40">
-                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Endereço IP</th>
-                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">MAC Address</th>
-                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Host Name</th>
-                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Servidor</th>
-                  <th className="px-6 py-4 font-semibold uppercase tracking-wider text-right">Status</th>
+                <tr className="border-b border-slate-200 bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="px-6 py-3.5">Endereço IP</th>
+                  <th className="px-6 py-3.5">MAC Address</th>
+                  <th className="px-6 py-3.5">Host Name</th>
+                  <th className="px-6 py-3.5">Servidor</th>
+                  <th className="px-6 py-3.5 text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-slate-300 font-mono">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 italic">
+                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 italic font-medium">
                       <div className="inline-block animate-pulse">Lendo leases ativas no pool DHCP do roteador...</div>
                     </td>
                   </tr>
                 ) : leases.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 italic">
+                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 italic font-medium">
                       Nenhum dispositivo com lease DHCP registrada na rede.
                     </td>
                   </tr>
                 ) : (
                   leases.map((lease, index) => (
-                    <tr key={`${lease.id || lease.address}-${index}`} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-6 py-4 font-bold text-indigo-300 text-sm tracking-wide font-sans">{lease.address}</td>
-                      <td className="px-6 py-4 text-slate-400 uppercase text-[10px]">{lease.mac}</td>
-                      <td className="px-6 py-4 font-bold text-white font-sans">{lease.hostName || <span className="text-slate-600 italic">sem hostname</span>}</td>
-                      <td className="px-6 py-4 text-slate-400 font-sans">{lease.server}</td>
+                    <tr key={`${lease.id || lease.address}-${index}`} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-6 py-4 font-bold text-blue-600 text-sm tracking-wide font-mono">{lease.address}</td>
+                      <td className="px-6 py-4 text-slate-600 font-mono uppercase text-xs">{lease.mac}</td>
+                      <td className="px-6 py-4 font-bold text-slate-900">{lease.hostName || <span className="text-slate-400 italic">sem hostname</span>}</td>
+                      <td className="px-6 py-4 text-slate-600 font-medium">{lease.server}</td>
                       <td className="px-6 py-4 text-right">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${lease.status === 'bound' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400' : 'border-amber-500/20 bg-amber-500/10 text-amber-400'}`}>
+                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${lease.status === 'bound' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
                           {lease.status.toUpperCase()}
                         </span>
                       </td>

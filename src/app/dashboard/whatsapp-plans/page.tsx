@@ -9,6 +9,7 @@ export default function WhatsappPlansPage() {
   const [title, setTitle] = useState('');
   const [profile, setProfile] = useState('');
   const [price, setPrice] = useState('0');
+  const [uptimeLimit, setUptimeLimit] = useState('1d 00:00:00');
   const [active, setActive] = useState(true);
 
   useEffect(() => {
@@ -29,11 +30,18 @@ export default function WhatsappPlansPage() {
     await fetch('/api/whatsapp-plans', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, profile, price: Number(price), active })
+      body: JSON.stringify({ 
+        title, 
+        profile, 
+        price: Number(price), 
+        uptimeLimit: uptimeLimit || 'none',
+        active 
+      })
     });
     setTitle('');
     setProfile('');
     setPrice('0');
+    setUptimeLimit('1d 00:00:00');
     fetchPlans();
   };
 
@@ -52,51 +60,96 @@ export default function WhatsappPlansPage() {
     fetchPlans();
   };
 
+  const presets = [
+    { label: '15m', val: '00:15:00' },
+    { label: '1h', val: '01:00:00' },
+    { label: '24h', val: '1d 00:00:00' },
+    { label: '7 Dias', val: '7d 00:00:00' },
+    { label: '30 Dias', val: '30d 00:00:00' },
+    { label: 'Ilimitado', val: 'none' },
+  ];
+
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white">Planos do WhatsApp (PIX)</h1>
+    <div className="p-4 md:p-6 space-y-6 text-slate-800">
+      <div className="flex justify-between items-center pb-2 border-b border-slate-200/80">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded tracking-wider uppercase">
+              Catálogo de Vendas (PIX)
+            </span>
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Catálogo de Planos Hotspot</h1>
+          <p className="text-xs md:text-sm text-slate-600 font-medium mt-1">Configure os planos e durações disponíveis para compra no portal e via WhatsApp.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form */}
-        <div className="bg-slate-800 rounded-xl p-6 border border-slate-700/50 shadow-xl h-fit">
-          <h2 className="text-lg font-semibold text-white mb-4">Adicionar Plano</h2>
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm h-fit">
+          <h2 className="text-base font-black text-slate-900 mb-4">Adicionar Novo Plano</h2>
           <form onSubmit={addPlan} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Nome de Exibição (O que o cliente vê)</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Nome de Exibição (Visível ao cliente)</label>
               <input 
                 required 
                 type="text" 
                 value={title} 
                 onChange={e => setTitle(e.target.value)} 
-                placeholder="Ex: 1 Dia de Acesso"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white" 
+                placeholder="Ex: 24 Horas Turbo, 1 Dia de Acesso"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-sm" 
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Nome do Profile (Exato do MikroTik)</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Nome do Profile (Exato no MikroTik)</label>
               <input 
                 required 
                 type="text" 
                 value={profile} 
                 onChange={e => setProfile(e.target.value)} 
-                placeholder="Ex: 1_Dia_10M"
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white" 
+                placeholder="Ex: default, 1_Dia_10M, plano_vip"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 placeholder:text-slate-400 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-sm" 
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-1">Preço R$ (Valor do PIX)</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Preço R$ (Valor cobrado no PIX)</label>
               <input 
                 required 
                 type="number" 
                 step="0.01" 
                 value={price} 
                 onChange={e => setPrice(e.target.value)} 
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white" 
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-bold focus:border-blue-600 focus:bg-white outline-none shadow-sm" 
               />
             </div>
-            <button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-lg transition-colors">
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Duração / Limite de Tempo (`limit-uptime`)</label>
+              <input 
+                type="text" 
+                value={uptimeLimit} 
+                onChange={e => setUptimeLimit(e.target.value)} 
+                placeholder="Ex: 01:00:00 ou 1d 00:00:00"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-mono focus:border-blue-600 focus:bg-white outline-none mb-2 shadow-sm" 
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {presets.map(p => (
+                  <button
+                    key={p.val}
+                    type="button"
+                    onClick={() => setUptimeLimit(p.val)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-colors ${
+                      uptimeLimit === p.val 
+                        ? 'bg-blue-600 text-white font-bold shadow-xs' 
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 font-semibold'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-colors mt-2 shadow-sm text-xs">
               Salvar Plano
             </button>
           </form>
@@ -105,30 +158,35 @@ export default function WhatsappPlansPage() {
         {/* List */}
         <div className="lg:col-span-2 space-y-4">
           {loading ? (
-            <p className="text-slate-400">Carregando planos...</p>
+            <p className="text-slate-500 text-xs font-medium">Carregando planos...</p>
           ) : plans.length === 0 ? (
-            <div className="bg-slate-800/50 rounded-xl p-8 text-center border border-slate-700/50 border-dashed">
-              <p className="text-slate-400">Nenhum plano cadastrado ainda.</p>
-              <p className="text-sm text-slate-500 mt-2">Os planos cadastrados aqui aparecerão para o cliente comprar via WhatsApp.</p>
+            <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-sm">
+              <p className="text-slate-800 font-bold">Nenhum plano cadastrado ainda.</p>
+              <p className="text-xs text-slate-500 mt-1 font-medium">Cadastre planos ao lado para que apareçam como opções de compra no portal e via WhatsApp.</p>
             </div>
           ) : (
             plans.map(plan => (
-              <div key={plan.id} className="bg-slate-800 rounded-xl p-5 border border-slate-700/50 shadow-sm flex items-center justify-between">
+              <div key={plan.id} className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between hover:border-slate-300 transition-all">
                 <div>
-                  <h3 className="text-lg font-bold text-white">{plan.title}</h3>
-                  <div className="flex gap-4 text-sm text-slate-400 mt-1">
-                    <span>Profile: <strong className="text-slate-300">{plan.profile}</strong></span>
-                    <span>Preço: <strong className="text-emerald-400">R$ {plan.price.toFixed(2)}</strong></span>
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    {plan.title}
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-mono font-bold">
+                      ⏱ {plan.uptimeLimit || 'none'}
+                    </span>
+                  </h3>
+                  <div className="flex gap-4 text-xs text-slate-600 mt-1.5 font-medium">
+                    <span>Profile: <strong className="text-slate-900 font-mono">{plan.profile}</strong></span>
+                    <span>Preço: <strong className="text-emerald-700 font-extrabold text-sm">R$ {Number(plan.price).toFixed(2)}</strong></span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => toggleActive(plan)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold ${plan.active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${plan.active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100' : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'}`}
                   >
                     {plan.active ? 'Ativo' : 'Inativo'}
                   </button>
-                  <button onClick={() => deletePlan(plan.id)} className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors">
+                  <button onClick={() => deletePlan(plan.id)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200" title="Excluir">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>

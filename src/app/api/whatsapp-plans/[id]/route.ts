@@ -7,10 +7,16 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function PUT(request: Request, { params }: RouteContext) {
   try {
     const { id } = await params;
-    const { title, profile, price, active } = await request.json();
-    const plan = await prisma.whatsappPlan.update({
+    const { title, profile, price, active, uptimeLimit } = await request.json();
+    const plan = await (prisma.whatsappPlan as any).update({
       where: { id },
-      data: { title, profile, price: Number(price), active }
+      data: { 
+        title, 
+        profile, 
+        price: Number(price), 
+        active,
+        ...(uptimeLimit !== undefined ? { uptimeLimit } : {})
+      }
     });
     return NextResponse.json(plan);
   } catch (error) {

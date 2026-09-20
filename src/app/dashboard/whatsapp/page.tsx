@@ -1,235 +1,1280 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { Plus, Phone, RefreshCcw, LogOut, Trash2 } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import {
+  Bot, Save, ShieldCheck, Link as LinkIcon,
+  RefreshCcw, Trash2, Plus, Phone, Wifi, WifiOff,
+  QrCode, CheckCircle2, AlertTriangle, Zap, LogOut, RotateCw,
+  Eye, MessageSquare, Clock, Layers, Timer, MousePointerClick, Pause,
+  ToggleLeft, ToggleRight, X, Smartphone, Activity, Server, ArrowRight,
+  Sliders, MessageCircle
+} from 'lucide-react';
+import { WhatsappMessageCustomizer } from '@/components/dashboard/whatsapp/WhatsappMessageCustomizer';
 
 interface WhatsappInstance {
   id: string;
   name: string;
-  number: string | null;
-  profilePicUrl?: string | null;
+  number?: string | null;
+  engine?: string;
+  phoneId?: string | null;
+  token?: string | null;
   status: string;
-  qr: string | null;
+  active?: boolean;
+  qrCode?: string | null;
+  lastSeen?: string | null;
+  dailyCount?: number;
+  profilePicUrl?: string | null;
 }
 
-export default function WhatsappConnection() {
-  const [instances, setInstances] = useState<WhatsappInstance[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-  const [newName, setNewName] = useState('');
+interface ModeInfo {
+  mode: 'meta' | 'baileys' | 'hybrid' | 'none';
+  metaEnabled: boolean;
+  baileysEnabled: boolean;
+  status: string;
+  qrCode: string | null;
+}
 
-  const loadInstances = async () => {
+interface MaskingConfig {
+  enabled: boolean;
+  browserFingerprint: boolean;
+  simulateTyping: boolean;
+  simulateReading: boolean;
+  simulateReceipt: boolean;
+  typingDelayBetweenChunks: boolean;
+  standbyEnabled: boolean;
+  standbyMinSeconds: number;
+  standbyMaxSeconds: number;
+  typingCancelSimulation: boolean;
+}
+
+const DEFAULT_MASKING: MaskingConfig = {
+  enabled: false,
+  browserFingerprint: true,
+  simulateTyping: true,
+  simulateReading: true,
+  simulateReceipt: true,
+  typingDelayBetweenChunks: true,
+  standbyEnabled: false,
+  standbyMinSeconds: 30,
+  standbyMaxSeconds: 180,
+  typingCancelSimulation: true,
+};
+
+// ─── Toggle Switch Component ─────────────────────────────────────────────────
+
+function ToggleSwitch({
+  enabled,
+  onChange,
+  disabled = false,
+}: {
+  enabled: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => !disabled && onChange(!enabled)}
+      disabled={disabled}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none shrink-0 ${
+        enabled ? 'bg-emerald-600' : 'bg-slate-300'
+      } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
+          enabled ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  );
+}
+
+// ─── Masking Mode Card ────────────────────────────────────────────────────────
+
+function MaskingCard({
+  icon: Icon,
+  title,
+  description,
+  enabled,
+  onToggle,
+  masterEnabled,
+  color = 'sky',
+  children,
+}: {
+  icon: any;
+  title: string;
+  description: string;
+  enabled: boolean;
+  onToggle: (v: boolean) => void;
+  masterEnabled: boolean;
+  color?: string;
+  children?: React.ReactNode;
+}) {
+  const colorMap: Record<string, string> = {
+    sky: 'border-sky-300 bg-sky-50/60',
+    amber: 'border-amber-300 bg-amber-50/60',
+    violet: 'border-indigo-300 bg-indigo-50/60',
+    emerald: 'border-emerald-300 bg-emerald-50/60',
+    rose: 'border-rose-300 bg-rose-50/60',
+  };
+  const iconColorMap: Record<string, string> = {
+    sky: 'text-sky-700 bg-sky-100 border border-sky-200',
+    amber: 'text-amber-700 bg-amber-100 border border-amber-200',
+    violet: 'text-indigo-700 bg-indigo-100 border border-indigo-200',
+    emerald: 'text-emerald-700 bg-emerald-100 border border-emerald-200',
+    rose: 'text-rose-700 bg-rose-100 border border-rose-200',
+  };
+
+  const isEffectivelyEnabled = masterEnabled && enabled;
+
+  return (
+    <div
+      className={`p-4 rounded-xl border transition-all duration-200 shadow-xs ${
+        isEffectivelyEnabled
+          ? colorMap[color] || colorMap.sky
+          : 'border-slate-200 bg-white'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className={`p-2 rounded-lg shrink-0 ${isEffectivelyEnabled ? (iconColorMap[color] || iconColorMap.sky) : 'text-slate-500 bg-slate-200 border border-slate-300'}`}>
+            <Icon className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <h4 className="text-sm font-bold text-slate-900">{title}</h4>
+            <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{description}</p>
+          </div>
+        </div>
+        <ToggleSwitch enabled={enabled} onChange={onToggle} disabled={!masterEnabled} />
+      </div>
+      {isEffectivelyEnabled && children && (
+        <div className="mt-3 pt-3 border-t border-slate-200/80">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function WhatsappConnection() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savingMask, setSavingMask] = useState(false);
+  const [feedback, setFeedback] = useState<{ success: boolean; message: string } | null>(null);
+
+  const [instances, setInstances] = useState<WhatsappInstance[]>([]);
+  const [verifyToken, setVerifyToken] = useState('');
+  const [activeTab, setActiveTab] = useState<'connections' | 'messages' | 'masking'>('connections');
+
+  // Dual-mode state
+  const [modeInfo, setModeInfo] = useState<ModeInfo>({
+    mode: 'baileys',
+    metaEnabled: false,
+    baileysEnabled: true,
+    status: 'connected',
+    qrCode: null
+  });
+  const [togglingEngine, setTogglingEngine] = useState<string | null>(null);
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+
+  // Masking config state
+  const [masking, setMasking] = useState<MaskingConfig>(DEFAULT_MASKING);
+
+  // New instance modal state (Baileys)
+  const [isPairingModalOpen, setIsPairingModalOpen] = useState(false);
+  const [pairingInstance, setPairingInstance] = useState<WhatsappInstance | null>(null);
+  const [newInstanceName, setNewInstanceName] = useState('');
+  const [creatingInstance, setCreatingInstance] = useState(false);
+
+  // New instance form (Meta)
+  const [newMetaName, setNewMetaName] = useState('');
+  const [newMetaNumber, setNewMetaNumber] = useState('');
+  const [newMetaPhoneId, setNewMetaPhoneId] = useState('');
+  const [newMetaToken, setNewMetaToken] = useState('');
+
+  const showFeedback = (success: boolean, message: string) => {
+    setFeedback({ success, message });
+    setTimeout(() => setFeedback(null), 5000);
+  };
+
+  const loadData = useCallback(async () => {
     try {
-      const res = await fetch('/api/whatsapp/status');
-      const data = await res.json();
-      if (data.success) {
-        setInstances(data.instances || []);
+      const [configRes, instancesRes, modeRes, maskRes] = await Promise.all([
+        fetch('/api/config/system'),
+        fetch('/api/whatsapp/instances'),
+        fetch('/api/admin/whatsapp-mode'),
+        fetch('/api/admin/whatsapp-masking'),
+      ]);
+
+      if (configRes.ok) {
+        const d = await configRes.json();
+        if (d.success && d.data) setVerifyToken(d.data.meta_verify_token || '');
+      }
+
+      if (instancesRes.ok) {
+        const d = await instancesRes.json();
+        if (d.success) setInstances(d.data);
+      }
+
+      if (modeRes.ok) {
+        const d = await modeRes.json();
+        setModeInfo(d);
+      }
+
+      if (maskRes.ok) {
+        const d = await maskRes.json();
+        if (d.config) setMasking(d.config);
       }
     } catch (e) {
-      console.error(e);
+      console.error('[WhatsApp Page] Erro ao carregar dados:', e);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadInstances();
-    const interval = setInterval(loadInstances, 3000);
-    return () => clearInterval(interval);
   }, []);
 
-  const handleCreate = async () => {
-    if (!newName.trim()) return;
-    setIsCreating(true);
-    await fetch('/api/whatsapp/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'create', name: newName })
-    });
-    setNewName('');
-    setIsCreating(false);
-    loadInstances();
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(() => {
+      fetch('/api/whatsapp/instances')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.success) {
+            setInstances(d.data);
+            // Atualiza instância do modal em tempo real se aberto
+            if (pairingInstance) {
+              const updated = d.data.find((inst: WhatsappInstance) => inst.id === pairingInstance.id);
+              if (updated) setPairingInstance(updated);
+            }
+          }
+        })
+        .catch(() => {});
+
+      fetch('/api/admin/whatsapp-mode')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setModeInfo(d); })
+        .catch(() => {});
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [loadData, pairingInstance]);
+
+  // Toggle independente de motor
+  const handleToggleEngine = async (engine: 'meta' | 'baileys', currentStatus: boolean) => {
+    setTogglingEngine(engine);
+    const targetStatus = !currentStatus;
+    try {
+      const res = await fetch('/api/admin/whatsapp-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ engine, enabled: targetStatus })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showFeedback(true, data.message);
+        loadData();
+      } else {
+        showFeedback(false, data.error || 'Erro ao alterar estado do motor.');
+      }
+    } catch {
+      showFeedback(false, 'Erro de comunicação com o servidor.');
+    } finally {
+      setTogglingEngine(null);
+    }
   };
 
-  const handleAction = async (id: string, action: 'connect' | 'logout' | 'delete') => {
-    setLoading(true);
-    await fetch('/api/whatsapp/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, id })
-    });
-    loadInstances();
+  // Criação de nova instância Baileys para pareamento
+  const handleCreateBaileysInstance = async () => {
+    setCreatingInstance(true);
+    try {
+      const res = await fetch('/api/whatsapp/instances', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newInstanceName.trim() || `WhatsApp Chip ${instances.filter(i => i.engine === 'baileys').length + 1}`,
+          engine: 'baileys'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPairingInstance(data.data);
+        setIsPairingModalOpen(true);
+        setNewInstanceName('');
+        loadData();
+      } else {
+        showFeedback(false, data.error || 'Falha ao criar nova instância.');
+      }
+    } catch {
+      showFeedback(false, 'Erro ao criar instância no servidor.');
+    } finally {
+      setCreatingInstance(false);
+    }
   };
+
+  // Ações de instância Baileys (Reiniciar, Desconectar, Excluir)
+  const handleInstanceAction = async (id: string, action: 'restart' | 'disconnect' | 'delete') => {
+    if (action === 'delete' && !confirm('Tem certeza que deseja excluir esta instância de WhatsApp?')) return;
+    setActionInProgress(`${action}_${id}`);
+    try {
+      if (action === 'delete') {
+        const res = await fetch(`/api/whatsapp/instances?id=${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          showFeedback(true, 'Instância excluída com sucesso.');
+          if (pairingInstance?.id === id) setIsPairingModalOpen(false);
+          loadData();
+        }
+      } else {
+        const res = await fetch('/api/admin/whatsapp-mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: action === 'disconnect' ? 'logout' : 'restart', instanceId: id })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showFeedback(true, data.message);
+          loadData();
+        } else {
+          showFeedback(false, data.error || 'Erro ao processar ação.');
+        }
+      }
+    } catch {
+      showFeedback(false, 'Falha na comunicação com o servidor.');
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  const handleSaveMasking = async () => {
+    setSavingMask(true);
+    try {
+      const res = await fetch('/api/admin/whatsapp-masking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(masking)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.config) setMasking(data.config);
+        showFeedback(true, 'Configurações de mascaramento salvas com sucesso!');
+      } else {
+        showFeedback(false, data.error || 'Erro ao salvar mascaramento.');
+      }
+    } catch {
+      showFeedback(false, 'Erro ao comunicar com o servidor.');
+    } finally {
+      setSavingMask(false);
+    }
+  };
+
+  const handleSaveVerifyToken = async () => {
+    if (!verifyToken.trim()) {
+      showFeedback(false, 'Preencha o Webhook Verify Token.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('/api/config/system', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'meta_verify_token', value: verifyToken.trim() })
+      });
+      if (res.ok) {
+        showFeedback(true, 'Verify Token salvo com sucesso!');
+      } else {
+        showFeedback(false, 'Falha ao salvar configuração.');
+      }
+    } catch {
+      showFeedback(false, 'Erro ao salvar.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddMetaInstance = async () => {
+    if (!newMetaPhoneId.trim() || !newMetaToken.trim() || !newMetaNumber.trim()) {
+      alert('Preencha os campos obrigatórios: Número, Phone ID e Token.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/whatsapp/instances', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newMetaName.trim() || 'WhatsApp Meta Oficial',
+          number: newMetaNumber.trim(),
+          phoneId: newMetaPhoneId.trim(),
+          token: newMetaToken.trim(),
+          engine: 'meta'
+        })
+      });
+      if (res.ok) {
+        setNewMetaName(''); setNewMetaNumber(''); setNewMetaPhoneId(''); setNewMetaToken('');
+        loadData();
+        showFeedback(true, 'Número da Meta cadastrado com sucesso!');
+      } else {
+        alert('Erro ao cadastrar número da Meta.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Falha na comunicação com o servidor.');
+    }
+  };
+
+  const patchMasking = (patch: Partial<MaskingConfig>) => setMasking(prev => ({ ...prev, ...patch }));
+
+  const baileysInstances = instances.filter(i => (i.engine || 'baileys') === 'baileys');
+  const metaInstances = instances.filter(i => i.engine === 'meta');
+
+  const getStatusBadge = (s: string) => {
+    switch (s) {
+      case 'connected':
+        return { label: 'Conectado', classes: 'text-emerald-700 bg-emerald-50 border-emerald-300 font-bold' };
+      case 'waiting_qr':
+        return { label: 'Aguardando QR Code', classes: 'text-amber-800 bg-amber-50 border-amber-300 font-bold animate-pulse' };
+      case 'reconnecting':
+        return { label: 'Reconectando...', classes: 'text-sky-800 bg-sky-50 border-sky-300 font-bold' };
+      case 'suspended':
+        return { label: 'Suspenso (Preservado)', classes: 'text-indigo-800 bg-indigo-50 border-indigo-200 font-bold' };
+      default:
+        return { label: 'Desconectado', classes: 'text-slate-600 bg-slate-100 border-slate-300 font-bold' };
+    }
+  };
+
+  const activeMaskModes = masking.enabled ? [
+    masking.browserFingerprint,
+    masking.simulateTyping,
+    masking.simulateReading,
+    masking.simulateReceipt,
+    masking.typingDelayBetweenChunks,
+    masking.standbyEnabled,
+    masking.typingCancelSimulation,
+  ].filter(Boolean).length : 0;
 
   return (
-    <main className="w-full p-4 md:p-6 space-y-6 animate-fade-in">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <main className="w-full p-4 md:p-8 space-y-8 animate-fade-in max-w-6xl mx-auto">
+
+      {/* ── HEADER ─────────────────────────────────────────── */}
+      <header className="bg-white border border-slate-200/90 shadow-sm rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#22c55e' }}>
-            ▶ SYSTEM // WHATSAPP INTEGRATION
-          </p>
-          <h1 className="text-2xl font-black tracking-tight text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-            Aparelhos Conectados
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className={`w-2.5 h-2.5 rounded-full ${
+              modeInfo.mode === 'hybrid' ? 'bg-indigo-500 shadow-[0_0_8px_#6366f1]' :
+              modeInfo.mode === 'meta' ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' :
+              modeInfo.mode === 'baileys' ? 'bg-sky-500 shadow-[0_0_8px_#0ea5e9]' :
+              'bg-slate-400'
+            }`} />
+            <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">
+              WHATSAPP HUB // DUAL-ENGINE HÍBRIDO & MULTI-INSTÂNCIA
+            </span>
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            Central de WhatsApp
+            <span className={`text-xs px-2.5 py-1 rounded-full font-bold border uppercase tracking-wider ${
+              modeInfo.mode === 'hybrid' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+              modeInfo.mode === 'meta' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+              modeInfo.mode === 'baileys' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+              'bg-slate-100 text-slate-600 border-slate-300'
+            }`}>
+              {modeInfo.mode === 'hybrid' ? '⚡ Modo Híbrido Concorrente' :
+               modeInfo.mode === 'meta' ? '🛡️ Apenas Meta Cloud API' :
+               modeInfo.mode === 'baileys' ? '📱 Apenas Baileys Multi-Device' :
+               '○ Motores Desativados'}
+            </span>
           </h1>
-          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            Gerencie múltiplos números de WhatsApp para balanceamento de carga no atendimento automático.
+          <p className="text-xs text-slate-600 mt-1 max-w-3xl leading-relaxed">
+            Opere a API Oficial da Meta e o WhatsApp Web Baileys simultaneamente ou de forma isolada. Suporte a múltiplos aparelhos com rotação inteligente, Session Pinning e proteção anti-ban.
           </p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700">
+            {baileysInstances.filter(i => i.status === 'connected').length} Baileys Online • {metaInstances.length} Meta Ativos
+          </div>
         </div>
       </header>
 
-      <div className="aurora-card p-4 md:p-6 mb-6">
-        <h2 className="text-lg font-bold text-white mb-4">Adicionar Novo Aparelho</h2>
-        <div className="flex gap-4 items-center">
-          <input 
-            type="text" 
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Ex: WhatsApp Suporte" 
-            className="flex-1 bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-sky-500"
-          />
-          <button 
-            onClick={handleCreate} 
-            disabled={isCreating || !newName.trim()}
-            className="aurora-btn text-xs px-4 py-2 flex items-center gap-2" 
-            style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
-          >
-            <Plus size={16} />
-            Adicionar
-          </button>
+      {/* ── TABS NAVIGATION ─────────────────────────────────── */}
+      <nav className="flex items-center gap-2 p-1.5 bg-slate-100/80 border border-slate-200/90 rounded-2xl w-full sm:w-fit shadow-xs">
+        <button
+          type="button"
+          onClick={() => setActiveTab('connections')}
+          className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            activeTab === 'connections'
+              ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80 font-black'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+          }`}
+        >
+          <Smartphone className="w-4 h-4 text-sky-600" />
+          <span>Conexões & Motores</span>
+          <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+            {instances.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('messages')}
+          className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            activeTab === 'messages'
+              ? 'bg-white text-emerald-950 shadow-sm border border-emerald-300 font-black'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+          }`}
+        >
+          <MessageSquare className="w-4 h-4 text-emerald-600" />
+          <span>Personalização de Mensagens</span>
+          <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold">
+            NOVO
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('masking')}
+          className={`flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            activeTab === 'masking'
+              ? 'bg-white text-indigo-950 shadow-sm border border-indigo-200 font-black'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-indigo-600" />
+          <span>Proteção Anti-Ban</span>
+          {masking.enabled && (
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          )}
+        </button>
+      </nav>
+
+      {/* ── FEEDBACK ──────────────────────────────────────── */}
+      {feedback && (
+        <div className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium transition-all ${
+          feedback.success
+            ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+            : 'bg-amber-50 border-amber-300 text-amber-800'
+        }`}>
+          {feedback.success
+            ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            : <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+          }
+          <span>{feedback.message}</span>
         </div>
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {loading && instances.length === 0 ? (
-          <div className="aurora-card p-6 flex flex-col items-center justify-center min-h-[300px]">
-            <div className="w-12 h-12 border-4 border-slate-700 border-t-sky-500 rounded-full animate-spin mb-4"></div>
-            <p className="text-sky-400 font-bold">Carregando dispositivos...</p>
-          </div>
-        ) : instances.length === 0 ? (
-          <div className="aurora-card p-6 flex flex-col items-center justify-center min-h-[300px] col-span-full">
-            <div className="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center mb-4 border border-slate-700">
-              <Phone className="text-slate-500" size={32} />
-            </div>
-            <p className="text-slate-400 font-bold text-xl mb-2">Nenhum aparelho configurado</p>
-            <p className="text-sm text-slate-500 text-center">
-              Adicione um aparelho acima para começar a usar a integração.
-            </p>
-          </div>
-        ) : (
-          instances.map(inst => (
-            <div key={inst.id} className="aurora-card flex flex-col min-h-[400px]">
-              <div className="p-4 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/30">
-                <div>
-                  <h3 className="font-bold text-white text-sm">{inst.name}</h3>
-                  <span className={`text-[10px] font-black uppercase tracking-wider ${inst.status === 'connected' ? 'text-emerald-400' : 'text-slate-500'}`}>
-                    {inst.status === 'connected' ? 'Conectado' : 'Desconectado'}
-                  </span>
+      {loading ? (
+        <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-500">
+          <RefreshCcw className="w-8 h-8 animate-spin text-emerald-600" />
+          <p className="text-xs uppercase tracking-wider font-semibold text-slate-600">Carregando motores e instâncias...</p>
+        </div>
+      ) : (
+        <div className="space-y-8">
+
+          {/* ════════════════════════════════════════════════════════
+              ABA 1: CONEXÕES & MOTORES
+             ════════════════════════════════════════════════════════ */}
+          {activeTab === 'connections' && (
+            <div className="space-y-8">
+              {/* 1. DUAL-ENGINE CONTROLS */}
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-amber-500" />
+                      Controle Independente de Motores (Dual-Engine)
+                    </h2>
+                    <p className="text-xs text-slate-600">
+                      Ambos os motores podem rodar em paralelo ou de forma exclusiva sem exclusão mútua.
+                    </p>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => handleAction(inst.id, 'delete')}
-                  className="text-slate-500 hover:text-red-400 transition-colors"
-                  title="Excluir Aparelho"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
 
-              <div className="flex-1 p-6 flex flex-col items-center justify-center">
-                {inst.status === 'connected' ? (
-                  <div className="flex flex-col items-center w-full">
-                    {inst.profilePicUrl ? (
-                      <img src={inst.profilePicUrl} alt="WhatsApp" className="w-20 h-20 rounded-full border-2 border-emerald-500/50 mb-4 object-cover shadow-[0_0_20px_rgba(16,185,129,0.2)]" />
-                    ) : (
-                      <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4 border border-emerald-500/50">
-                        <span className="text-3xl">📱</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* CARD: BAILEYS MULTI-DEVICE */}
+                  <div className={`p-6 rounded-2xl border-2 transition-all duration-200 bg-white shadow-xs ${
+                    modeInfo.baileysEnabled ? 'border-sky-500 ring-1 ring-sky-200' : 'border-slate-200'
+                  }`}>
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl ${modeInfo.baileysEnabled ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-500'}`}>
+                          <Bot className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-base">WhatsApp Multi-Device (Baileys)</h3>
+                          <span className="text-[10px] font-mono text-sky-700 uppercase tracking-widest font-bold">
+                            Multi-Aparelhos // Rotação Round-Robin
+                          </span>
+                        </div>
+                      </div>
+                      <ToggleSwitch
+                        enabled={modeInfo.baileysEnabled}
+                        onChange={() => handleToggleEngine('baileys', modeInfo.baileysEnabled)}
+                        disabled={togglingEngine === 'baileys'}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                      Conecte múltiplos números através de QR Code. Disparos rotativos de vouchers, suporte interativo e respostas bidirecionais autônomas.
+                    </p>
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className={`px-2.5 py-1 rounded-full font-bold uppercase text-[10px] ${
+                        modeInfo.baileysEnabled ? 'bg-sky-50 text-sky-700 border border-sky-200' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {modeInfo.baileysEnabled ? '● Motor Ativo' : '○ Motor Desligado'}
+                      </span>
+                      <span className="text-slate-600 font-semibold">{baileysInstances.length} aparelho(s) cadastrado(s)</span>
+                    </div>
+                  </div>
+
+                  {/* CARD: META CLOUD API */}
+                  <div className={`p-6 rounded-2xl border-2 transition-all duration-200 bg-white shadow-xs ${
+                    modeInfo.metaEnabled ? 'border-emerald-500 ring-1 ring-emerald-200' : 'border-slate-200'
+                  }`}>
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl ${modeInfo.metaEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                          <ShieldCheck className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-base">API Oficial da Meta Cloud</h3>
+                          <span className="text-[10px] font-mono text-emerald-700 uppercase tracking-widest font-bold">
+                            Meta Graph API // Templates Pré-Aprovados
+                          </span>
+                        </div>
+                      </div>
+                      <ToggleSwitch
+                        enabled={modeInfo.metaEnabled}
+                        onChange={() => handleToggleEngine('meta', modeInfo.metaEnabled)}
+                        disabled={togglingEngine === 'meta'}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                      Disparo de notificações oficiais com zero risco de banimento. Ao suspender o motor, todos os tokens e IDs permanecem preservados em definitivo.
+                    </p>
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className={`px-2.5 py-1 rounded-full font-bold uppercase text-[10px] ${
+                        modeInfo.metaEnabled ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                      }`}>
+                        {modeInfo.metaEnabled ? '● Motor Ativo' : '🛡️ Suspenso (Dados Salvos)'}
+                      </span>
+                      <span className="text-slate-600 font-semibold">{metaInstances.length} número(s) Meta</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* 2. BAILEYS MULTI-INSTANCE MANAGEMENT */}
+              {modeInfo.baileysEnabled && (
+                <section className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                        <Smartphone className="w-5 h-5 text-sky-600" />
+                        Aparelhos WhatsApp Conectados ({baileysInstances.length})
+                      </h2>
+                      <p className="text-xs text-slate-600">
+                        Gerencie cada conexão individualmente. Mensagens e vouchers serão distribuídos em Round-Robin entre os números online.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCreateBaileysInstance}
+                        disabled={creatingInstance}
+                        className="px-4 py-2.5 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white transition-colors flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Conectar Novo WhatsApp
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Instances Cards Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {baileysInstances.map((inst) => {
+                      const bStatus = getStatusBadge(inst.status);
+                      const isBusy = actionInProgress === inst.id;
+
+                      return (
+                        <div
+                          key={inst.id}
+                          className={`p-5 rounded-2xl bg-white border-2 transition-all flex flex-col justify-between gap-4 shadow-xs ${
+                            inst.status === 'connected'
+                              ? 'border-emerald-500/60 shadow-emerald-500/5'
+                              : inst.status === 'waiting_qr'
+                              ? 'border-amber-400/80 shadow-amber-500/5'
+                              : 'border-slate-200'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className={`p-2.5 rounded-xl shrink-0 ${
+                                  inst.status === 'connected' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                                }`}>
+                                  <Phone className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0">
+                                  <h3 className="font-black text-slate-900 text-sm truncate">{inst.name}</h3>
+                                  <p className="text-[11px] font-mono text-slate-700 font-bold truncate">
+                                    {inst.number || 'Aguardando pareamento'}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] border uppercase shrink-0 ${bStatus.classes}`}>
+                                {bStatus.label}
+                              </span>
+                            </div>
+
+                            {inst.dailyCount !== undefined && (
+                              <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 flex items-center justify-between text-xs text-slate-600 mb-2">
+                                <span className="flex items-center gap-1.5 font-medium">
+                                  <Activity className="w-3.5 h-3.5 text-slate-400" />
+                                  Mensagens hoje:
+                                </span>
+                                <span className="font-bold text-slate-900">{inst.dailyCount}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Botões de Ação */}
+                          <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              {inst.status !== 'connected' && (
+                                <button
+                                  type="button"
+                                  onClick={() => { setPairingInstance(inst); setIsPairingModalOpen(true); }}
+                                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 flex items-center gap-1 cursor-pointer"
+                                  title="Parear aparelho via QR Code"
+                                >
+                                  <QrCode className="w-3.5 h-3.5" />
+                                  Parear
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleInstanceAction(inst.id, 'restart')}
+                                disabled={isBusy}
+                                className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 border border-slate-200 cursor-pointer"
+                                title="Reiniciar Conexão"
+                              >
+                                <RotateCw className={`w-3.5 h-3.5 ${isBusy ? 'animate-spin' : ''}`} />
+                              </button>
+                              {inst.status === 'connected' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleInstanceAction(inst.id, 'disconnect')}
+                                  disabled={isBusy}
+                                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer"
+                                  title="Desconectar com Graceful Shutdown"
+                                >
+                                  <LogOut className="w-3.5 h-3.5" />
+                                  Desconectar
+                                </button>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleInstanceAction(inst.id, 'delete')}
+                              disabled={isBusy}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Excluir Instância"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {baileysInstances.length === 0 && (
+                      <div className="col-span-full p-8 rounded-2xl bg-slate-50 border border-slate-200 border-dashed text-center space-y-3">
+                        <WifiOff className="w-8 h-8 text-slate-400 mx-auto" />
+                        <p className="text-sm font-bold text-slate-700">Nenhum aparelho WhatsApp conectado no Baileys.</p>
+                        <p className="text-xs text-slate-500">Clique em &quot;Conectar Novo WhatsApp&quot; para parear seu primeiro número.</p>
                       </div>
                     )}
-                    <p className="text-emerald-400 font-bold text-lg mb-1">{inst.number ? `+${inst.number}` : 'Pronto para uso'}</p>
-                    <p className="text-xs text-slate-400 text-center mb-6">
-                      Sessão ativa e processando mensagens automáticas.
+                  </div>
+                </section>
+              )}
+
+              {/* META CLOUD API CONFIG */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                      Configuração da Meta Cloud API Oficial
+                    </h2>
+                    <p className="text-xs text-slate-600">
+                      Conecte números da Meta Cloud API via Access Token permanente.
                     </p>
-                    <button  
-                      onClick={() => handleAction(inst.id, 'logout')} 
-                      className="aurora-btn text-xs w-full py-2 flex items-center justify-center gap-2" 
-                      style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}
+                  </div>
+                </div>
+
+                {/* Add Meta Number Form */}
+                <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-4">
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-emerald-600" />
+                    Adicionar Novo Número Oficial (Meta)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1 block">Nome de Identificação</label>
+                      <input
+                        type="text" value={newMetaName} onChange={(e) => setNewMetaName(e.target.value)}
+                        placeholder="Ex: WhatsApp Oficial Suporte"
+                        className="w-full bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1 block">Número (com DDI)</label>
+                      <input
+                        type="text" value={newMetaNumber} onChange={(e) => setNewMetaNumber(e.target.value)}
+                        placeholder="Ex: 5544999999999"
+                        className="w-full bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1 block">Phone Number ID (Meta Developers)</label>
+                      <input
+                        type="text" value={newMetaPhoneId} onChange={(e) => setNewMetaPhoneId(e.target.value)}
+                        placeholder="Ex: 105829482910482"
+                        className="w-full bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1 block">Permanent Access Token</label>
+                      <input
+                        type="password" value={newMetaToken} onChange={(e) => setNewMetaToken(e.target.value)}
+                        placeholder="EAALX..."
+                        className="w-full bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 font-mono"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddMetaInstance}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" /> Cadastrar Número da Meta
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════
+              ABA 2: PERSONALIZAÇÃO DE MENSAGENS (NOVO)
+             ════════════════════════════════════════════════════════ */}
+          {activeTab === 'messages' && (
+            <WhatsappMessageCustomizer />
+          )}
+
+          {/* ════════════════════════════════════════════════════════
+              ABA 3: PROTEÇÃO ANTI-BAN
+             ════════════════════════════════════════════════════════ */}
+          {activeTab === 'masking' && (
+            <section className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <span className="text-xl">🎭</span>
+                    Modos de Mascaramento Anti-Ban (Humano)
+                  </h2>
+                  <p className="text-xs text-slate-600 leading-relaxed max-w-xl">
+                    Cada aparelho Baileys herda estes padrões comportamentais: fingerprint Chrome legítimo, digitação humana (50-70 WPM) e pausas naturais.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {activeMaskModes > 0 && (
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      {activeMaskModes}/7 ativos
+                    </span>
+                  )}
+                  <ToggleSwitch
+                    enabled={masking.enabled}
+                    onChange={(v) => patchMasking({ enabled: v })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <MaskingCard
+                  icon={Layers}
+                  title="Browser Fingerprint (Chrome)"
+                  description="Identifica todos os clientes como Google Chrome 125.0 no protocolo WhatsApp Web."
+                  enabled={masking.browserFingerprint}
+                  onToggle={(v) => patchMasking({ browserFingerprint: v })}
+                  masterEnabled={masking.enabled}
+                  color="sky"
+                />
+
+                <MaskingCard
+                  icon={MessageSquare}
+                  title="Simulação de Digitação"
+                  description='Exibe "digitando..." por tempo proporcional ao comprimento da mensagem.'
+                  enabled={masking.simulateTyping}
+                  onToggle={(v) => patchMasking({ simulateTyping: v })}
+                  masterEnabled={masking.enabled}
+                  color="amber"
+                />
+
+                <MaskingCard
+                  icon={Eye}
+                  title="Simulação de Leitura"
+                  description="Marca mensagens recebidas como lidas após 2–8 segundos de leitura humana."
+                  enabled={masking.simulateReading}
+                  onToggle={(v) => patchMasking({ simulateReading: v })}
+                  masterEnabled={masking.enabled}
+                  color="emerald"
+                />
+
+                <MaskingCard
+                  icon={CheckCircle2}
+                  title="Confirmação de Recebimento"
+                  description="Adiciona delay de 0.5–2s antes de confirmar entrega para simular latência de rede móvel."
+                  enabled={masking.simulateReceipt}
+                  onToggle={(v) => patchMasking({ simulateReceipt: v })}
+                  masterEnabled={masking.enabled}
+                  color="sky"
+                />
+
+                <MaskingCard
+                  icon={Pause}
+                  title="Delay entre Blocos de Texto"
+                  description="Quebra textos longos em parágrafos com intervalo de 1–3.5s entre cada envio."
+                  enabled={masking.typingDelayBetweenChunks}
+                  onToggle={(v) => patchMasking({ typingDelayBetweenChunks: v })}
+                  masterEnabled={masking.enabled}
+                  color="violet"
+                />
+
+                <MaskingCard
+                  icon={MousePointerClick}
+                  title="Digitação com Hesitação"
+                  description='Simula digitação humana realista: "digitando..." → pausa → "digitando..." novamente.'
+                  enabled={masking.typingCancelSimulation}
+                  onToggle={(v) => patchMasking({ typingCancelSimulation: v })}
+                  masterEnabled={masking.enabled}
+                  color="amber"
+                />
+
+                {/* Standby Full Width */}
+                <div className="md:col-span-2">
+                  <MaskingCard
+                    icon={Clock}
+                    title="Simulação de Standby (Delay de Atendimento)"
+                    description="Aguarda um intervalo aleatório antes de iniciar a resposta, simulando um atendente humano ocupado."
+                    enabled={masking.standbyEnabled}
+                    onToggle={(v) => patchMasking({ standbyEnabled: v })}
+                    masterEnabled={masking.enabled}
+                    color="rose"
+                  >
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">Delay Mínimo</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range" min={10} max={masking.standbyMaxSeconds - 10} step={5}
+                            value={masking.standbyMinSeconds}
+                            onChange={(e) => patchMasking({ standbyMinSeconds: parseInt(e.target.value) })}
+                            className="flex-1 accent-rose-500"
+                          />
+                          <span className="text-xs font-mono font-bold text-rose-700 w-12 text-right shrink-0">{masking.standbyMinSeconds}s</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">Delay Máximo</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="range" min={masking.standbyMinSeconds + 10} max={300} step={5}
+                            value={masking.standbyMaxSeconds}
+                            onChange={(e) => patchMasking({ standbyMaxSeconds: parseInt(e.target.value) })}
+                            className="flex-1 accent-rose-500"
+                          />
+                          <span className="text-xs font-mono font-bold text-rose-700 w-12 text-right shrink-0">{masking.standbyMaxSeconds}s</span>
+                        </div>
+                      </div>
+                    </div>
+                  </MaskingCard>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                <p className="text-xs text-slate-600">Configurações aplicadas dinamicamente a todas as instâncias Baileys.</p>
+                <button
+                  type="button"
+                  onClick={handleSaveMasking}
+                  disabled={savingMask}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {savingMask ? 'Salvando...' : 'Salvar Mascaramento'}
+                </button>
+              </div>
+            </section>
+          )}
+
+          {/* ════════════════════════════════════════════════════════
+              4. META CLOUD API SECTION
+             ════════════════════════════════════════════════════════ */}
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                  Configuração da Meta Cloud API Oficial
+                </h2>
+                <p className="text-xs text-slate-600">
+                  Gerenciamento de credenciais permanentes, Webhook e números oficiais da Meta.
+                </p>
+              </div>
+            </div>
+
+            {/* Webhook Settings */}
+            <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <LinkIcon className="w-4 h-4 text-emerald-600" />
+                Webhook Verify Token
+              </h3>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={verifyToken}
+                  onChange={(e) => setVerifyToken(e.target.value)}
+                  placeholder="Seu token secreto de webhook configurado na Meta"
+                  className="flex-1 bg-slate-50 border border-slate-300 focus:bg-white focus:border-emerald-500 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveVerifyToken}
+                  disabled={saving}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <Save className="w-4 h-4" />
+                  {saving ? 'Salvando...' : 'Salvar Token'}
+                </button>
+              </div>
+            </div>
+
+            {/* Meta Numbers Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {metaInstances.map((inst) => (
+                <div key={inst.id} className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-base">{inst.name}</h3>
+                      <p className="text-slate-600 font-mono text-sm">{inst.number || 'Número Meta'}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleInstanceAction(inst.id, 'delete')}
+                      className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
+                      title="Excluir Número"
                     >
-                      <LogOut size={14} /> Sair do WhatsApp
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                ) : inst.status === 'connecting' && !inst.qr ? (
-                  <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 border-4 border-slate-700 border-t-sky-500 rounded-full animate-spin mb-4"></div>
-                    <p className="text-sky-400 font-bold text-sm">Iniciando sessão...</p>
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-mono text-[11px]">Phone ID: {inst.phoneId}</span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                      modeInfo.metaEnabled ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                    }`}>
+                      {modeInfo.metaEnabled ? 'Ativo' : 'Suspenso'}
+                    </span>
                   </div>
-                ) : inst.qr ? (
-                  <div className="flex flex-col items-center w-full">
-                    <div className="bg-white p-3 rounded-2xl mb-4 shadow-[0_0_30px_rgba(34,197,94,0.15)]">
-                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inst.qr)}`} alt="QR Code" className="w-40 h-40" />
+                </div>
+              ))}
+
+              {metaInstances.length === 0 && (
+                <div className="col-span-full p-8 rounded-2xl bg-slate-50 border border-slate-200 border-dashed text-center text-slate-500 text-xs">
+                  Nenhum número da Meta cadastrado no momento. Cadastre abaixo.
+                </div>
+              )}
+            </div>
+
+            {/* Add Meta Number Form */}
+            <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Plus className="w-4 h-4 text-emerald-600" />
+                Adicionar Novo Número Oficial (Meta)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1 block">Nome de Identificação</label>
+                  <input
+                    type="text" value={newMetaName} onChange={(e) => setNewMetaName(e.target.value)}
+                    placeholder="Ex: WhatsApp Oficial Suporte"
+                    className="w-full bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1 block">Número (com DDI)</label>
+                  <input
+                    type="text" value={newMetaNumber} onChange={(e) => setNewMetaNumber(e.target.value)}
+                    placeholder="Ex: 5544999999999"
+                    className="w-full bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 font-mono"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1 block">Phone Number ID (Meta Developers)</label>
+                  <input
+                    type="text" value={newMetaPhoneId} onChange={(e) => setNewMetaPhoneId(e.target.value)}
+                    placeholder="Ex: 105829482910482"
+                    className="w-full bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 font-mono"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-1 block">Permanent Access Token</label>
+                  <input
+                    type="password" value={newMetaToken} onChange={(e) => setNewMetaToken(e.target.value)}
+                    placeholder="EAALX..."
+                    className="w-full bg-slate-50 border border-slate-300 focus:bg-white rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-emerald-500 font-mono"
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddMetaInstance}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Cadastrar Número da Meta
+              </button>
+            </div>
+          </section>
+
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════
+          5. MODAL DE PAREAMENTO MULTI-QR (BAILEYS)
+         ════════════════════════════════════════════════════════ */}
+      {isPairingModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in"
+          style={{ backgroundColor: 'rgba(15, 23, 42, 0.72)' }}
+        >
+          <div className="bg-white border-2 border-slate-300 rounded-3xl shadow-2xl max-w-xl w-full p-6 md:p-8 space-y-6 relative animate-scale-in text-slate-900">
+            <button
+              type="button"
+              onClick={() => setIsPairingModalOpen(false)}
+              className="absolute top-5 right-5 p-2 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 cursor-pointer transition-colors"
+              title="Fechar"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping" />
+                <span className="text-[11px] font-mono text-sky-900 bg-sky-100 px-2 py-0.5 rounded-md border border-sky-300 uppercase font-black tracking-widest">
+                  PAREAMENTO BAILEYS // {pairingInstance?.name || 'NOVA INSTÂNCIA'}
+                </span>
+              </div>
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                Escaneie o QR Code com seu WhatsApp
+              </h3>
+              <p className="text-xs text-slate-600 mt-1 font-medium">
+                Aponte o leitor de aparelhos conectados do aplicativo para sincronizar este número.
+              </p>
+            </div>
+
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 pt-1">
+              <div className="p-3 bg-white border-2 border-slate-300 rounded-2xl shadow-sm shrink-0 flex flex-col items-center">
+                {pairingInstance?.status === 'connected' ? (
+                  <div className="w-[210px] h-[210px] flex flex-col items-center justify-center gap-2 text-emerald-900 bg-emerald-50 border-2 border-emerald-300 rounded-xl p-3 text-center">
+                    <div className="w-14 h-14 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-md mb-1">
+                      <CheckCircle2 className="w-9 h-9" />
                     </div>
-                    <p className="text-white font-bold text-sm mb-1">Escaneie o QR Code</p>
-                    <p className="text-[10px] text-slate-400 text-center mb-5">
-                      Abra o WhatsApp no celular, vá em Aparelhos Conectados e escaneie.
-                    </p>
-                    <div className="flex gap-2 w-full">
-                      <button 
-                        onClick={() => handleAction(inst.id, 'connect')} 
-                        className="aurora-btn text-[10px] flex-1 py-2 flex items-center justify-center gap-1" 
-                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
-                      >
-                        <RefreshCcw size={12} /> Atualizar
-                      </button>
-                      <button 
-                        onClick={() => handleAction(inst.id, 'logout')} 
-                        className="aurora-btn text-[10px] flex-1 py-2 flex items-center justify-center gap-1" 
-                        style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}
-                      >
-                        <LogOut size={12} /> Cancelar
-                      </button>
-                    </div>
+                    <span className="font-extrabold text-sm uppercase tracking-wider text-emerald-950">Aparelho Pareado!</span>
+                    <span className="text-xs font-black text-slate-900 font-mono bg-white px-3 py-1 rounded-lg border border-emerald-300 shadow-xs">
+                      +{pairingInstance.number}
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-700 mt-0.5 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Sincronizado & Online
+                    </span>
                   </div>
+                ) : pairingInstance?.qrCode ? (
+                  <>
+                    <div className="p-2 bg-white rounded-xl border border-slate-200 shadow-inner">
+                      <QRCodeSVG value={pairingInstance.qrCode} size={190} level="M" includeMargin={true} />
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-2.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-[11px] font-extrabold tracking-wide">
+                      <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                      QR CODE ATIVO & PRONTO
+                    </div>
+                  </>
                 ) : (
-                  <div className="flex flex-col items-center w-full">
-                    <div className="w-20 h-20 rounded-full bg-slate-800 flex items-center justify-center mb-4 border border-slate-700">
-                      <span className="text-3xl text-slate-500">🚫</span>
-                    </div>
-                    <p className="text-slate-400 font-bold text-lg mb-1">Desconectado</p>
-                    <p className="text-xs text-slate-500 text-center mb-6">
-                      Clique abaixo para parear o dispositivo.
-                    </p>
-                    <button 
-                      onClick={() => handleAction(inst.id, 'connect')} 
-                      className="aurora-btn text-xs w-full py-2" 
-                      style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
+                  <div className="w-[210px] h-[210px] flex flex-col items-center justify-center gap-2.5 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
+                    <RefreshCcw className="w-9 h-9 animate-spin text-sky-600" />
+                    <span className="text-xs font-bold text-slate-800">Gerando QR Code...</span>
+                    <span className="text-[11px] font-medium text-slate-500">Iniciando socket Baileys</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3.5 text-xs text-slate-800 flex-1">
+                <div className="flex items-center gap-2 pb-1.5 border-b border-slate-200">
+                  <Smartphone className="w-4 h-4 text-sky-600 shrink-0" />
+                  <h4 className="font-black text-slate-900 uppercase tracking-wider text-xs">
+                    Instruções de conexão:
+                  </h4>
+                </div>
+
+                <ol className="space-y-2.5">
+                  {[
+                    { num: '1', title: 'Abra o WhatsApp', desc: 'No celular com o chip deste número.' },
+                    { num: '2', title: 'Aparelhos Conectados', desc: 'Toque em ⋮ (Android) ou Configurações (iPhone).' },
+                    { num: '3', title: 'Conectar um Aparelho', desc: 'Toque no botão de conexão verde.' },
+                    { num: '4', title: 'Aponte a Câmera', desc: 'Escaneie o QR Code em destaque ao lado.' },
+                  ].map((item) => (
+                    <li key={item.num} className="flex items-start gap-2.5">
+                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-slate-900 text-white font-black shrink-0 text-[11px] shadow-xs">
+                        {item.num}
+                      </span>
+                      <div className="text-xs leading-snug">
+                        <span className="font-extrabold text-slate-900">{item.title}: </span>
+                        <span className="font-medium text-slate-700">{item.desc}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 text-[11px] text-amber-950 font-medium">
+                  <span className="text-amber-600 font-bold shrink-0">💡</span>
+                  <span>Mantenha o aparelho conectado à internet até concluir a primeira sincronização.</span>
+                </div>
+
+                {pairingInstance?.id && (
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleInstanceAction(pairingInstance.id, 'restart')}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
                     >
-                      Conectar Dispositivo
+                      <RotateCw className="w-3.5 h-3.5 text-sky-600" />
+                      <span>Gerar Novo QR Code</span>
                     </button>
                   </div>
                 )}
               </div>
             </div>
-          ))
-        )}
-      </div>
 
-      <div className="space-y-6 mt-8">
-        <div className="aurora-card p-6">
-          <h3 className="text-md font-bold text-white mb-3">Como Funciona o Balanceamento?</h3>
-          <ul className="space-y-3 text-sm text-slate-400">
-              <li className="flex gap-2">
-                <span className="text-sky-400">1.</span>
-                Ao conectar mais de um aparelho, o sistema irá revezá-los de forma inteligente sempre que um cliente for redirecionado.
-              </li>
-              <li className="flex gap-2">
-                <span className="text-sky-400">2.</span>
-                Isso distribui a carga de mensagens e ajuda a evitar bloqueios do WhatsApp por atividades atípicas.
-              </li>
-              <li className="flex gap-2">
-                <span className="text-emerald-400">3.</span>
-                Se um dos aparelhos cair a conexão, o sistema continuará operando com os demais que estiverem online.
-              </li>
-          </ul>
+            <div className="pt-4 border-t border-slate-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsPairingModalOpen(false)}
+                className="px-6 py-2.5 rounded-xl text-xs font-extrabold bg-slate-900 hover:bg-slate-800 text-white cursor-pointer shadow-md hover:shadow-lg transition-all"
+              >
+                Concluir
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+
     </main>
   );
 }

@@ -79,7 +79,7 @@ export default function LivePreviewInspectorHUD({
         ) : (
           <div className="flex items-center gap-2.5 text-slate-400 text-[11px] py-0.5">
             <span className="text-sm">👆</span>
-            <p className="leading-snug text-slate-350">
+            <p className="leading-snug text-slate-200 font-medium">
               Passe o mouse em <strong>qualquer elemento no celular</strong> ou nos <strong>cards do editor</strong> para destacar e ver o que pode ser editado.
             </p>
           </div>

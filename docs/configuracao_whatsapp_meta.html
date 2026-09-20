@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Oficial: Configuração da API WhatsApp (Meta) - MikroGestor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #334155; }
+        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .step-number { background: linear-gradient(135deg, #3b82f6, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .img-placeholder { border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; width: 100%; max-width: 900px; margin: 30px auto; display: block; }
+        .gradient-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+        .link-exato { background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; padding: 12px 16px; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; margin-bottom: 16px; transition: all 0.2s; text-decoration: none; }
+        .link-exato:hover { background-color: #dbeafe; transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1); }
+    </style>
+</head>
+<body class="antialiased text-lg">
+
+    <!-- Header -->
+    <header class="gradient-bg text-white py-16 px-6 text-center">
+        <h1 class="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">Guia Oficial do MikroGestor</h1>
+        <p class="text-2xl text-slate-300 max-w-4xl mx-auto leading-relaxed">O passo a passo definitivo e infalível para configurar a API Oficial do WhatsApp Cloud da Meta, proteger sua conta contra banimentos e ativar o envio 100% automático no seu sistema.</p>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-12">
+
+        <!-- Intro -->
+        <section class="glass-panel p-8 md:p-10 rounded-2xl shadow-sm mb-12">
+            <h2 class="text-3xl font-bold mb-6 text-slate-800"><i class="fa-solid fa-rocket text-blue-500 mr-4"></i>Por que usar a API Oficial?</h2>
+            <p class="mb-6 text-xl leading-relaxed">Diferente do Baileys ou da leitura de QR Code do WhatsApp Web, a Cloud API oficial da Meta <strong>jamais desconecta sozinha</strong>, não exige um celular físico ligado na tomada, e o risco de banimento de chip é quase nulo se você seguir a regra básica de como redigir os Modelos (Templates).</p>
+            <div class="bg-amber-50 border-l-8 border-amber-400 p-6 rounded-r-xl">
+                <p class="text-amber-900 text-xl font-medium leading-relaxed"><i class="fa-solid fa-triangle-exclamation mr-3"></i><strong>Atenção:</strong> A Meta concede 1.000 mensagens gratuitas por mês dentro da chamada "Janela de Serviço" (quando o cliente fala com você primeiro). Mensagens enviadas fora dessa janela de 24 horas cobram centavos e exigem o uso de um <strong>Modelo Aprovado</strong>.</p>
+            </div>
+        </section>
+
+        <!-- Passo 1 -->
+        <section class="glass-panel p-8 md:p-10 rounded-2xl shadow-sm mb-12" id="passo1">
+            <div class="flex items-center mb-8">
+                <span class="text-6xl font-black step-number mr-6">01</span>
+                <h2 class="text-4xl font-bold text-slate-800">Criando o App no Meta for Developers</h2>
+            </div>
+            
+            <a href="https://developers.facebook.com/apps/" target="_blank" class="link-exato">
+                <i class="fa-solid fa-arrow-up-right-from-square mr-3"></i> Acessar: Painel de Aplicativos (Meta for Developers)
+            </a>
+
+            <ol class="list-decimal pl-8 space-y-5 mb-8 text-xl leading-relaxed mt-4">
+                <li>Acesse o link exato acima e faça login com a sua conta pessoal do Facebook.</li>
+                <li>Clique no botão verde <strong>Criar Aplicativo</strong> no canto superior direito.</li>
+                <li>Na tela <em>"O que você deseja que o seu aplicativo faça?"</em>, selecione a opção <strong>Outro</strong> ou <strong>Configurar o login do Facebook / Negócios</strong>. <br><em class="text-slate-500 text-lg">(Procure sempre a opção focada em "Empresa" ou "Business").</em></li>
+                <li>Dê um nome ao seu app (exemplo: <code class="bg-slate-200 px-2 py-1 rounded">MikroGestor Bot</code>).</li>
+                <li>Insira o seu e-mail de contato profissional e vincule à sua Conta Empresarial (Business Manager). Em seguida, clique em <strong>Criar aplicativo</strong>.</li>
+            </ol>
+            <img src="images/passo1.svg" alt="Tela Criar App" class="img-placeholder">
+        </section>
+
+        <!-- Passo 2 -->
+        <section class="glass-panel p-8 md:p-10 rounded-2xl shadow-sm mb-12" id="passo2">
+            <div class="flex items-center mb-8">
+                <span class="text-6xl font-black step-number mr-6">02</span>
+                <h2 class="text-4xl font-bold text-slate-800">Adicionando e Verificando o WhatsApp</h2>
+            </div>
+            
+            <p class="text-xl mb-6 leading-relaxed">Após criar o app, você cairá no Painel de Produtos. Agora vamos ativar o motor do WhatsApp.</p>
+            
+            <ol class="list-decimal pl-8 space-y-5 mb-8 text-xl leading-relaxed">
+                <li>Na página "Adicionar Produtos", desça a tela até achar o bloco do <strong>WhatsApp</strong> e clique no botão <strong>Configurar</strong>.</li>
+                <li>Na barra lateral esquerda que irá aparecer, clique na setinha para expandir o menu <strong>WhatsApp</strong> e clique em <strong>Configuração da API (API Setup)</strong>.</li>
+                <li>Role até o final dessa página. Você verá um botão chamado <strong>Adicionar um Número de Telefone</strong>.</li>
+                <li>Clique nele, digite o nome de exibição do seu provedor, escolha a categoria (ex: Telecomunicações) e avance.</li>
+                <li>Insira o seu número de WhatsApp com o DDD e escolha se quer receber o código de verificação por SMS ou Ligação Telefônica.</li>
+                <li>Digite o código recebido para confirmar.</li>
+            </ol>
+            <div class="bg-blue-50 border-l-8 border-blue-500 p-6 rounded-r-xl mb-8">
+                <p class="text-blue-900 font-medium text-xl leading-relaxed"><strong>Dica de Ouro:</strong> Nunca utilize o seu número pessoal principal. É recomendado comprar um chip novo e exclusivo apenas para rodar o robô do sistema.</p>
+            </div>
+            <img src="images/passo2.svg" alt="Tela Adicionar Numero" class="img-placeholder">
+        </section>
+
+        <!-- Passo 3 -->
+        <section class="glass-panel p-8 md:p-10 rounded-2xl shadow-sm mb-12" id="passo3">
+            <div class="flex items-center mb-8">
+                <span class="text-6xl font-black step-number mr-6">03</span>
+                <h2 class="text-4xl font-bold text-slate-800">Pegando o Identificador (Phone ID)</h2>
+            </div>
+            
+            <a href="https://developers.facebook.com/apps/" target="_blank" class="link-exato">
+                <i class="fa-solid fa-arrow-up-right-from-square mr-3"></i> Acessar: Painel de Aplicativos > WhatsApp > Configuração da API
+            </a>
+
+            <p class="text-xl mb-6 leading-relaxed mt-4">Agora que o número foi adicionado, precisamos copiar o "CPF" desse número para o sistema.</p>
+            <ul class="list-disc pl-8 space-y-4 mb-8 text-xl text-slate-700 leading-relaxed">
+                <li>Ainda na mesma página de <strong>Configuração da API</strong>, olhe para o topo da página, no quadro chamado "Enviar e Receber Mensagens".</li>
+                <li>Localize o campo <strong>Identificador do Número de Telefone</strong> (Phone Number ID).</li>
+                <li>Você verá um número bem longo (exemplo: <code class="bg-slate-200 px-2 py-1 rounded font-bold">1332999779896363</code>).</li>
+                <li>Copie este número e guarde-o num bloco de notas (nós vamos colar ele dentro do painel do MikroGestor depois).</li>
+            </ul>
+            <img src="images/passo3.svg" alt="Phone ID" class="img-placeholder">
+        </section>
+
+        <!-- Passo 4 -->
+        <section class="glass-panel p-8 md:p-10 rounded-2xl shadow-sm mb-12" id="passo4">
+            <div class="flex items-center mb-8">
+                <span class="text-6xl font-black step-number mr-6">04</span>
+                <h2 class="text-4xl font-bold text-slate-800">Gerando o Token Permanente</h2>
+            </div>
+            
+            <a href="https://business.facebook.com/settings/system-users" target="_blank" class="link-exato">
+                <i class="fa-solid fa-arrow-up-right-from-square mr-3"></i> Acessar: Gerenciador de Negócios (Usuários do Sistema)
+            </a>
+
+            <p class="text-xl mb-6 leading-relaxed mt-4">Atenção: O token fornecido na página anterior dura apenas 24 horas. Para que o MikroGestor funcione para sempre sem interrupções, você <strong>precisa</strong> criar um "Token de Usuário do Sistema".</p>
+            <ol class="list-decimal pl-8 space-y-5 mb-8 text-xl leading-relaxed">
+                <li>Acesse o link exato acima (Configurações do Negócio).</li>
+                <li>Na barra lateral, certifique-se de estar em <strong>Usuários > Usuários do Sistema</strong>.</li>
+                <li>Clique no botão <strong>Adicionar</strong>.</li>
+                <li>Dê um nome para o usuário (ex: <code class="bg-slate-200 px-2 py-1 rounded">Robo MikroGestor</code>) e selecione a Função de <strong>Administrador do Sistema</strong>. Clique em Criar.</li>
+                <li>Com o novo usuário selecionado na lista, clique no botão <strong>Adicionar Ativos</strong>.</li>
+                <li>No menu esquerdo da telinha que abrir, selecione <strong>Aplicativos</strong>. Marque a caixinha do aplicativo que você criou no Passo 1 e libere a chave de <strong>Controle Total (Gerenciar App)</strong>. Salve.</li>
+                <li>Agora clique no botão <strong>Gerar novo token</strong>.</li>
+                <li>Na janela que abrir, selecione o seu App. Desça a lista de permissões e <strong>você DEVE marcar estas duas caixinhas obrigatórias:</strong>
+                    <ul class="list-disc pl-10 mt-4 text-slate-800 font-mono text-xl space-y-2 font-bold bg-slate-100 p-4 rounded border">
+                        <li>whatsapp_business_messaging</li>
+                        <li>whatsapp_business_management</li>
+                    </ul>
+                </li>
+                <li>Role até o final e mande Gerar o token.</li>
+                <li>O sistema vai te dar um código gigantesco que começa com <strong><code class="bg-slate-200 px-2 py-1 rounded text-red-600">EAAZ...</code></strong>.</li>
+                <li><strong>COPIE IMEDIATAMENTE!</strong> A Meta nunca mais mostrará essa tela. Guarde o Token EAAZ no bloco de notas junto com o Phone ID.</li>
+            </ol>
+            <img src="images/passo4.svg" alt="Gerar Token Permanente" class="img-placeholder">
+        </section>
+
+        <!-- Passo 5 -->
+        <section class="glass-panel p-8 md:p-10 rounded-2xl shadow-sm mb-12" id="passo5">
+            <div class="flex items-center mb-8">
+                <span class="text-6xl font-black step-number mr-6">05</span>
+                <h2 class="text-4xl font-bold text-slate-800">Camuflando Modelos (Templates)</h2>
+            </div>
+            
+            <a href="https://business.facebook.com/wa/manage/message-templates/" target="_blank" class="link-exato">
+                <i class="fa-solid fa-arrow-up-right-from-square mr-3"></i> Acessar: Gerenciador de WhatsApp (Modelos de Mensagem)
+            </a>
+
+            <p class="text-xl mb-6 leading-relaxed mt-4">Sempre que o MikroGestor precisar "chamar o cliente" primeiro (exemplo: Enviar aviso de que abriu vaga na Fila de Espera), você é obrigado a usar um modelo de mensagem aprovado pela Meta.</p>
+            
+            <div class="bg-red-50 border-l-8 border-red-500 p-8 rounded-r-xl mb-8 shadow-sm">
+                <h3 class="text-2xl font-bold text-red-800 mb-4"><i class="fa-solid fa-ban mr-3"></i>Cuidado com a categoria de AUTENTICAÇÃO</h3>
+                <p class="text-red-900 mb-4 text-xl leading-relaxed">Se a Inteligência Artificial da Meta detectar que você está enviando dados de Login, Senhas ou OTP, ela força seu modelo para a categoria de "Autenticação" (que é caríssima e tem regras severas). Para fugir disso, nós <strong>camuflamos</strong> as mensagens para passarem como <strong>"Utilidade"</strong> (Aviso Técnico/Entrega de Produto Digital).</p>
+                <ul class="list-disc pl-8 text-red-900 space-y-2 font-bold text-xl">
+                    <li>Nunca digite as palavras explícitas "Login", "Usuário", "Senha" ou "Password".</li>
+                    <li>Nunca use emojis comprometedores, como chaves (🔑) ou cadeados (🔒).</li>
+                    <li>Utilize variáveis genéricas que pareçam uma configuração. Ex: use <code class="bg-red-100 px-2 py-1 rounded">US</code> (para usuário) e <code class="bg-red-100 px-2 py-1 rounded">SN</code> (para senha/serial number).</li>
+                </ul>
+            </div>
+
+            <h3 class="text-2xl font-bold mb-4">Exemplo de Template 100% à Prova de Falhas (Categoria: Utilidade)</h3>
+            <div class="bg-slate-800 text-green-400 font-mono p-6 rounded-xl mb-8 shadow-inner text-xl leading-relaxed">
+                Olá {{1}}! A configuração foi concluída com sucesso.<br><br>
+                Detalhes técnicos:<br><br>
+                US: {{2}}<br>
+                SN: {{3}}<br><br>
+                Guarde essas informações. Se precisar de suporte, basta responder aqui.
+            </div>
+            
+            <p class="text-xl mb-6 leading-relaxed"><strong>Como criar?</strong> Acesse o link exato acima, clique no botão verde <strong>Criar modelo</strong>, escolha a categoria <strong>Utilidade</strong> e o idioma <strong>Portuguese (BR)</strong>. Digite o texto exatamente como aprovamos, coloque variáveis onde as informações mudam, e clique em Enviar. A aprovação geralmente sai em alguns minutos.</p>
+            <img src="images/passo5.svg" alt="Modelos de Mensagem" class="img-placeholder">
+        </section>
+
+        <!-- Passo 6 -->
+        <section class="glass-panel p-8 md:p-10 rounded-2xl shadow-sm mb-12" id="passo6">
+            <div class="flex items-center mb-8">
+                <span class="text-6xl font-black step-number mr-6">06</span>
+                <h2 class="text-4xl font-bold text-slate-800">Configurando no MikroGestor</h2>
+            </div>
+            
+            <p class="text-xl mb-6 leading-relaxed">Com o <strong>Token Permanente (EAAZ...)</strong> e o <strong>ID do Telefone (Phone ID)</strong> copiados no seu bloco de notas, colocar o sistema no ar é moleza.</p>
+            <ol class="list-decimal pl-8 space-y-5 mb-8 text-xl leading-relaxed">
+                <li>Abra o seu painel web do MikroGestor.</li>
+                <li>Vá no menu de <strong>Configurações > WhatsApp</strong>.</li>
+                <li>No campo "Modo de Operação", selecione a opção <strong>Cloud API (Meta Oficial)</strong>.</li>
+                <li>Cole o seu <code class="bg-slate-200 px-2 py-1 rounded font-bold">Identificador do Telefone</code> no campo <code>Phone ID</code>.</li>
+                <li>Cole o seu <code class="bg-slate-200 px-2 py-1 rounded font-bold text-red-600">Token EAAZ...</code> no campo <code>Token Permanente</code>.</li>
+                <li>Clique no botão <strong>Salvar e Conectar</strong>.</li>
+            </ol>
+            
+            <div class="bg-green-50 border-l-8 border-green-500 p-8 rounded-r-xl mt-10">
+                <h3 class="text-green-900 font-bold text-2xl mb-3"><i class="fa-solid fa-check-circle mr-3"></i>O Sistema está Online!</h3>
+                <p class="text-green-800 text-xl leading-relaxed">A partir de agora, o MikroGestor responderá a todos os clientes automaticamente. As mensagens nas janelas gratuitas (24h) serão enviadas como texto livre, e os avisos da Fila de Espera usarão os seus templates aprovados. Zero risco de desconexão e operação em paz!</p>
+            </div>
+        </section>
+
+        <!-- Troubleshooting / Desfazer -->
+        <section class="glass-panel p-8 md:p-10 rounded-2xl shadow-sm mb-12 border-t-8 border-red-500" id="troubleshooting">
+            <div class="flex items-center mb-8">
+                <i class="fa-solid fa-life-ring text-5xl text-red-500 mr-6"></i>
+                <h2 class="text-4xl font-bold text-slate-800">Deu erro? Como desfazer ou deletar tudo</h2>
+            </div>
+            
+            <p class="text-xl mb-6 leading-relaxed">Se você cometeu um erro grave no caminho, bloqueou o número sem querer, ou precisa começar do zero absoluto, fique calmo. Siga os passos abaixo para destruir a configuração antiga de forma segura e liberar seu número para tentar de novo.</p>
+            
+            <div class="space-y-8">
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-3">1. Como deletar um Número de Telefone</h3>
+                    <p class="text-xl leading-relaxed text-slate-600 mb-3">Se você associou o número errado ou quer remover o número da conta atual:</p>
+                    <ul class="list-disc pl-8 space-y-2 text-xl text-slate-700">
+                        <li>Acesse o <a href="https://business.facebook.com/wa/manage/phone-numbers/" target="_blank" class="text-blue-600 hover:underline">Gerenciador de WhatsApp (Números de Telefone)</a>.</li>
+                        <li>Na lista, localize o seu número e clique no ícone de Lixeira (<i class="fa-solid fa-trash text-slate-400"></i>) na extremidade direita.</li>
+                        <li>Siga as instruções para exclusão. Após excluir, o número fica livre para ser associado a outra conta.</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-3">2. Como revogar o Token Permanente</h3>
+                    <p class="text-xl leading-relaxed text-slate-600 mb-3">Se o seu Token EAAZ vazou ou parou de funcionar:</p>
+                    <ul class="list-disc pl-8 space-y-2 text-xl text-slate-700">
+                        <li>Acesse os <a href="https://business.facebook.com/settings/system-users" target="_blank" class="text-blue-600 hover:underline">Usuários do Sistema</a>.</li>
+                        <li>Selecione o seu usuário "Robo MikroGestor".</li>
+                        <li>Na parte inferior da tela, você verá o histórico de tokens gerados. Clique no botão de Lixeira para <strong>Revogar</strong> o token comprometido. Ele vai parar de funcionar na hora.</li>
+                        <li>Gere um novo clicando em "Gerar novo token".</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-3">3. Como excluir o Aplicativo Inteiro</h3>
+                    <p class="text-xl leading-relaxed text-slate-600 mb-3">Se quiser recomeçar o processo totalmente do zero:</p>
+                    <ul class="list-disc pl-8 space-y-2 text-xl text-slate-700">
+                        <li>Acesse a página inicial do <a href="https://developers.facebook.com/apps/" target="_blank" class="text-blue-600 hover:underline">Meta for Developers</a> e clique no seu App.</li>
+                        <li>Na barra lateral esquerda, vá em <strong>Configurações > Avançado</strong>.</li>
+                        <li>Desça até o final da página e clique no botão vermelho <strong>Remover Aplicativo</strong> (Delete App). Você precisará digitar a sua senha do Facebook para confirmar a exclusão.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-10 text-center text-lg">
+        <p>&copy; 2026 MikroGestor - Documentação Oficial.</p>
+    </footer>
+
+</body>
+</html>

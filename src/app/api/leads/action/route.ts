@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const connected = await mk.connect(activeRouter.host, activeRouter.user, activeRouter.password, activeRouter.port);
     if (!connected) return NextResponse.json({ success: false, error: 'Falha na conexão com roteador.' }, { status: 500 });
 
-    const hotspotUser = payment.lead.hotspotUser;
+    const hotspotUser = payment.isVoucher && payment.voucherCode ? payment.voucherCode : payment.lead.hotspotUser;
 
     if (action === 'approve') {
       // Atualiza banco
@@ -30,22 +30,39 @@ export async function POST(request: Request) {
         data: { status: 'approved' }
       });
 
-      // Ativa no MikroTik caso estivesse desativado
+      // Ativa no MikroTik caso estivesse desativado, ou cria se for voucher e nao existir
       const users = await mk.getHotspotUsers() as any[];
       const found = users.find(u => u['name'] === hotspotUser);
       if (found) {
         const id = found['.id'] || found['id'];
         await mk.enableHotspotUser(id);
+      } else if (payment.isVoucher) {
+        // Se for voucher e nao ta no mk, cria
+        await mk.addHotspotUser({
+          name: hotspotUser,
+          password: hotspotUser,
+          profile: payment.profile,
+          'limit-uptime': payment.uptimeLimit || 'none',
+          comment: `Voucher Aprovado | Lead: ${payment.lead.hotspotUser}`,
+          server: 'all'
+        }).catch(() => {});
       }
 
       // Manda mensagem de agradecimento
       if (payment.lead.whatsappNumber) {
-        whatsappService.sendWhatsAppMessage('admin', payment.lead.whatsappNumber, 
-          `🎉 *Pagamento Confirmado!*\n\nMuito obrigado! O seu acesso já está validado e liberado permanentemente no sistema.`
-        );
+        const msg = payment.isVoucher 
+          ? `🎉 *Voucher Aprovado!*\n\nSeu pagamento foi confirmado.\nCredenciais prontas para uso!\n\nUsuário: ${hotspotUser}\nSenha: ${hotspotUser}` 
+          : `🎉 *Pagamento Confirmado!*\n\nMuito obrigado! O seu acesso já está validado e liberado permanentemente no sistema.`;
+        whatsappService.sendWhatsAppMessage('admin', payment.lead.whatsappNumber, msg);
       }
 
     } else if (action === 'block') {
+      // Atualiza banco
+      await prisma.payment.update({
+        where: { id: paymentId },
+        data: { status: 'blocked' }
+      });
+
       // Bloqueia no MikroTik
       const users = await mk.getHotspotUsers() as any[];
       const found = users.find(u => u['name'] === hotspotUser);
@@ -66,7 +83,7 @@ export async function POST(request: Request) {
 
       // Manda mensagem de cobrança
       if (payment.lead.whatsappNumber) {
-        const configPix = await prisma.systemConfig.findUnique({ where: { key: 'MANUAL_PIX_KEY' } });
+        const configPix = await prisma.systemConfig.findUnique({ where: { key: 'manual_pix_key' } });
         const pixKey = configPix?.value || '';
 
         whatsappService.sendWhatsAppMessage('admin', payment.lead.whatsappNumber, 

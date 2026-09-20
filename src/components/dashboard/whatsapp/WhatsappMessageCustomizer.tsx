@@ -1,0 +1,1014 @@
+"use client";
+
+import { useEffect, useState } from 'react';
+import {
+  MessageSquare, Sparkles, RefreshCcw, Save, RotateCcw,
+  CheckCircle2, AlertCircle, Tag, Eye, Info, Send, Copy, Check,
+  GitBranch, Clock, ArrowRight, Layers, Sliders, ToggleLeft, ToggleRight,
+  ShieldCheck, Zap, UserCheck, ShoppingCart
+} from 'lucide-react';
+
+interface TriggerTag {
+  tag: string;
+  label: string;
+  example: string;
+}
+
+interface MessageTrigger {
+  id: string;
+  key: string;
+  mode: 'free' | 'paid';
+  category: 'hotspot' | 'sales' | 'finance' | 'chatbot' | 'support';
+  categoryLabel: string;
+  title: string;
+  triggerEvent: string;
+  description: string;
+  defaultTemplate: string;
+  currentTemplate: string;
+  isCustomized: boolean;
+  availableTags: TriggerTag[];
+}
+
+interface FlowStepConfig {
+  id: string;
+  name: string;
+  key: string;
+  enabled: boolean;
+  delaySeconds: number;
+}
+
+interface TriggerFlowConfig {
+  enabled: boolean;
+  steps: FlowStepConfig[];
+}
+
+interface SystemFlowMap {
+  welcome_paid: TriggerFlowConfig;
+  welcome_free: TriggerFlowConfig;
+  pix_generated: { enabled: boolean; key: string };
+  payment_approved: { enabled: boolean; key: string };
+  voucher_paid: { enabled: boolean; key: string };
+  voucher_free: { enabled: boolean; key: string };
+  chatbot_paid: { enabled: boolean; key: string };
+  chatbot_free: { enabled: boolean; key: string };
+}
+
+export function WhatsappMessageCustomizer() {
+  const [triggers, setTriggers] = useState<MessageTrigger[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedMode, setSelectedMode] = useState<'paid' | 'free'>('paid');
+  const [activeSystemMode, setActiveSystemMode] = useState<'paid' | 'free'>('paid');
+  const [updatingSystemMode, setUpdatingSystemMode] = useState(false);
+  const [selectedId, setSelectedId] = useState<string>('welcome_paid');
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [editedTemplates, setEditedTemplates] = useState<Record<string, string>>({});
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ key: string; success: boolean; message: string } | null>(null);
+  const [copiedTag, setCopiedTag] = useState<string | null>(null);
+
+  // Estados da Régua / Fluxograma
+  const [flowMap, setFlowMap] = useState<SystemFlowMap | null>(null);
+  const [savingFlow, setSavingFlow] = useState(false);
+  const [activeViewTab, setActiveViewTab] = useState<'flowchart' | 'templates'>('flowchart');
+
+  const fetchTemplates = () => {
+    setLoading(true);
+    fetch('/api/admin/whatsapp-messages')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.triggers) {
+          setTriggers(data.triggers);
+          if (data.flowConfig) {
+            setFlowMap(data.flowConfig);
+          }
+          if (data.activeSystemMode) {
+            setActiveSystemMode(data.activeSystemMode);
+            setSelectedMode(data.activeSystemMode);
+          }
+          const initialMap: Record<string, string> = {};
+          data.triggers.forEach((t: MessageTrigger) => {
+            initialMap[t.key] = t.currentTemplate;
+          });
+          setEditedTemplates(initialMap);
+
+          const firstInMode = data.triggers.find((t: MessageTrigger) => t.mode === (data.activeSystemMode || 'paid'));
+          if (firstInMode) {
+            setSelectedId(firstInMode.id);
+          }
+        }
+      })
+      .catch((err) => console.error('Erro ao carregar mensagens:', err))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  // Quando o usuário troca de modo (Pago x Free), atualiza o item selecionado para o primeiro daquele modo
+  const handleModeChange = (mode: 'paid' | 'free') => {
+    setSelectedMode(mode);
+    setActiveCategory('all');
+    const firstTrigger = triggers.find((t) => t.mode === mode);
+    if (firstTrigger) {
+      setSelectedId(firstTrigger.id);
+    }
+  };
+
+  // Alterna o modo ativo do sistema no banco
+  const handleToggleSystemMode = async (newMode: 'paid' | 'free') => {
+    setUpdatingSystemMode(true);
+    try {
+      const res = await fetch('/api/admin/whatsapp-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'setActiveMode', mode: newMode }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActiveSystemMode(newMode);
+        setSelectedMode(newMode);
+        const firstTrigger = triggers.find((t) => t.mode === newMode);
+        if (firstTrigger) {
+          setSelectedId(firstTrigger.id);
+        }
+        setFeedback({ key: 'SYSTEM_MODE', success: true, message: data.message });
+      } else {
+        setFeedback({ key: 'SYSTEM_MODE', success: false, message: data.message || 'Erro ao alterar modo' });
+      }
+    } catch {
+      setFeedback({ key: 'SYSTEM_MODE', success: false, message: 'Falha na conexão' });
+    } finally {
+      setUpdatingSystemMode(false);
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  };
+
+  // Manipulação de Etapas do Fluxograma
+  const handleToggleStep = (flowKey: 'welcome_paid' | 'welcome_free', stepId: string) => {
+    if (!flowMap) return;
+    setFlowMap((prev) => {
+      if (!prev) return prev;
+      const targetFlow = prev[flowKey];
+      const updatedSteps = targetFlow.steps.map((s) =>
+        s.id === stepId ? { ...s, enabled: !s.enabled } : s
+      );
+      return {
+        ...prev,
+        [flowKey]: { ...targetFlow, steps: updatedSteps },
+      };
+    });
+  };
+
+  const handleUpdateDelay = (flowKey: 'welcome_paid' | 'welcome_free', stepId: string, delaySeconds: number) => {
+    if (!flowMap) return;
+    setFlowMap((prev) => {
+      if (!prev) return prev;
+      const targetFlow = prev[flowKey];
+      const updatedSteps = targetFlow.steps.map((s) =>
+        s.id === stepId ? { ...s, delaySeconds: Math.max(0, delaySeconds) } : s
+      );
+      return {
+        ...prev,
+        [flowKey]: { ...targetFlow, steps: updatedSteps },
+      };
+    });
+  };
+
+  const handleToggleMasterTrigger = (key: keyof SystemFlowMap) => {
+    if (!flowMap) return;
+    setFlowMap((prev) => {
+      if (!prev) return prev;
+      const item = prev[key];
+      return {
+        ...prev,
+        [key]: { ...item, enabled: !item.enabled },
+      };
+    });
+  };
+
+  const handleSaveFlow = async () => {
+    if (!flowMap) return;
+    setSavingFlow(true);
+    try {
+      const res = await fetch('/api/admin/whatsapp-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'saveFlow', flowConfig: flowMap }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFeedback({ key: 'FLOW_SAVE', success: true, message: data.message });
+      } else {
+        setFeedback({ key: 'FLOW_SAVE', success: false, message: data.message || 'Erro ao salvar fluxograma' });
+      }
+    } catch {
+      setFeedback({ key: 'FLOW_SAVE', success: false, message: 'Falha na conexão' });
+    } finally {
+      setSavingFlow(false);
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  };
+  const modeTriggers = triggers.filter((t) => t.mode === selectedMode);
+
+  const filteredTriggers =
+    activeCategory === 'all'
+      ? modeTriggers
+      : modeTriggers.filter((t) => t.category === activeCategory);
+
+  const selectedTrigger = modeTriggers.find((t) => t.id === selectedId) || modeTriggers[0];
+
+  const handleTemplateChange = (key: string, value: string) => {
+    setEditedTemplates((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleInsertTag = (tag: string) => {
+    if (!selectedTrigger) return;
+    const current = editedTemplates[selectedTrigger.key] || '';
+    handleTemplateChange(selectedTrigger.key, current + ' ' + tag);
+    setCopiedTag(tag);
+    setTimeout(() => setCopiedTag(null), 2000);
+  };
+
+  const handleSave = async (trigger: MessageTrigger) => {
+    setSavingKey(trigger.key);
+    try {
+      const template = editedTemplates[trigger.key] ?? trigger.currentTemplate;
+      const res = await fetch('/api/admin/whatsapp-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: trigger.key, template, action: 'save' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTriggers((prev) =>
+          prev.map((t) =>
+            t.key === trigger.key
+              ? { ...t, currentTemplate: template, isCustomized: data.isCustomized }
+              : t
+          )
+        );
+        setFeedback({ key: trigger.key, success: true, message: 'Modelo salvo com sucesso!' });
+      } else {
+        setFeedback({ key: trigger.key, success: false, message: data.message || 'Erro ao salvar' });
+      }
+    } catch {
+      setFeedback({ key: trigger.key, success: false, message: 'Falha na requisição' });
+    } finally {
+      setSavingKey(null);
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  };
+
+  const handleReset = async (trigger: MessageTrigger) => {
+    if (!confirm(`Deseja restaurar a mensagem "${trigger.title}" para o padrão original de fábrica?`)) return;
+    setSavingKey(trigger.key);
+    try {
+      const res = await fetch('/api/admin/whatsapp-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: trigger.key, action: 'reset' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        handleTemplateChange(trigger.key, trigger.defaultTemplate);
+        setTriggers((prev) =>
+          prev.map((t) =>
+            t.key === trigger.key
+              ? { ...t, currentTemplate: trigger.defaultTemplate, isCustomized: false }
+              : t
+          )
+        );
+        setFeedback({ key: trigger.key, success: true, message: 'Padrão original restaurado!' });
+      }
+    } catch {
+      setFeedback({ key: trigger.key, success: false, message: 'Erro ao restaurar' });
+    } finally {
+      setSavingKey(null);
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  };
+
+  const categories = [
+    { id: 'all', label: 'Todos os Gatilhos' },
+    { id: 'hotspot', label: 'Portal Hotspot' },
+    { id: 'finance', label: 'Vendas & Cobrança' },
+    { id: 'sales', label: 'Vouchers & Códigos' },
+    { id: 'chatbot', label: 'Chatbot' },
+  ];
+
+  // Preview com simulação das tags
+  const renderPreview = (text: string, tags: TriggerTag[]) => {
+    let preview = text;
+    tags.forEach((t) => {
+      const regex = new RegExp(t.tag.replace(/[{}]/g, '\\$&'), 'gi');
+      preview = preview.replace(regex, t.example);
+    });
+    return preview;
+  };
+
+
+  if (loading) {
+    return (
+      <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-500">
+        <RefreshCcw className="w-8 h-8 animate-spin text-emerald-600" />
+        <p className="text-xs uppercase tracking-wider font-semibold text-slate-600">
+          Carregando modelos de mensagens e gatilhos...
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* ── Mode Selector Tabs & System Active Mode Switch ────────────────── */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Left: Mode Selection Tabs */}
+        <div className="flex items-center gap-2 p-1 bg-slate-100/90 rounded-2xl border border-slate-200 w-fit">
+          <button
+            type="button"
+            onClick={() => handleModeChange('paid')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+              selectedMode === 'paid'
+                ? 'bg-amber-500 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
+            }`}
+          >
+            <span>💳 Modelos Pagos (Vendas & PIX)</span>
+            {activeSystemMode === 'paid' && (
+              <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-white/20 text-white border border-white/30">
+                Ativo no Sistema
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleModeChange('free')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+              selectedMode === 'free'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/70'
+            }`}
+          >
+            <span>🎁 Modelos Free (Eventos & Grátis)</span>
+            {activeSystemMode === 'free' && (
+              <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-white/20 text-white border border-white/30">
+                Ativo no Sistema
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Right: Global Portal Mode Setter */}
+        <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-500">
+              Modo Atual em Produção:
+            </span>
+            <span className="font-black text-slate-900 flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${activeSystemMode === 'paid' ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500 animate-pulse'}`} />
+              {activeSystemMode === 'paid' ? 'Venda de Planos (Pago)' : 'Livre / Evento (Free)'}
+            </span>
+          </div>
+
+          <div className="h-6 w-px bg-slate-200 mx-1" />
+
+          <button
+            type="button"
+            disabled={updatingSystemMode}
+            onClick={() => handleToggleSystemMode(activeSystemMode === 'paid' ? 'free' : 'paid')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border disabled:opacity-50 ${
+              activeSystemMode === 'paid'
+                ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+                : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+            }`}
+          >
+            {updatingSystemMode
+              ? 'Alterando...'
+              : activeSystemMode === 'paid'
+              ? 'Mudar Sistema para Modo Free'
+              : 'Mudar Sistema para Modo Pago'}
+          </button>
+        </div>
+      </div>
+
+      {feedback && feedback.key === 'SYSTEM_MODE' && (
+        <div className="p-3 rounded-xl border text-xs font-bold flex items-center gap-2 bg-emerald-50 border-emerald-300 text-emerald-800 animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <span>{feedback.message}</span>
+        </div>
+      )}
+
+      {/* ── View Selector: Fluxograma vs Lista de Modelos ─────────────────── */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveViewTab('flowchart')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+              activeViewTab === 'flowchart'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <GitBranch className="w-4 h-4 text-emerald-400" />
+            Fluxograma Interativo & Régua de Mensagens
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveViewTab('templates')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+              activeViewTab === 'templates'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Layers className="w-4 h-4 text-amber-400" />
+            Editor Completo de Templates ({triggers.length})
+          </button>
+        </div>
+
+        {activeViewTab === 'flowchart' && (
+          <button
+            type="button"
+            onClick={handleSaveFlow}
+            disabled={savingFlow}
+            className="px-4 py-2 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Save className="w-3.5 h-3.5" />
+            {savingFlow ? 'Salvando Régua...' : 'Salvar Configuração da Régua'}
+          </button>
+        )}
+      </div>
+
+      {feedback && feedback.key === 'FLOW_SAVE' && (
+        <div className="p-3 rounded-xl border text-xs font-bold flex items-center gap-2 bg-emerald-50 border-emerald-300 text-emerald-800 animate-fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <span>{feedback.message}</span>
+        </div>
+      )}
+
+      {/* ── INTERACTIVE PIPELINE FLOWCHART VIEW ────────────────────────────── */}
+      {activeViewTab === 'flowchart' && flowMap && (
+        <div className="space-y-6">
+          {/* Header do Fluxo com Contexto */}
+          <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-sm space-y-2 border border-slate-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                  selectedMode === 'paid' ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500 text-slate-950'
+                }`}>
+                  {selectedMode === 'paid' ? 'Funil: Modo Pago / Vendas' : 'Funil: Modo Free / Evento'}
+                </span>
+                <h3 className="text-sm font-bold text-slate-100">
+                  Jornada Automatizada do Cliente no WhatsApp
+                </h3>
+              </div>
+              <span className="text-xs text-slate-400">
+                Alterne os interruptores para definir quais mensagens são enviadas e ajuste os segundos de espera.
+              </span>
+            </div>
+          </div>
+
+          {/* FLUXO 1: CADASTRO DO VISITANTE (A RÉGUA DE ONBOARDING) */}
+          <div className="bg-white border-2 border-slate-200 rounded-2xl p-6 shadow-xs space-y-6 relative overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center font-bold">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">
+                    Etapa 1: Cliente Cadastra no Wi-Fi (/portal/register)
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    {selectedMode === 'paid'
+                      ? 'Sequência de Boas-Vindas, Envio de Credenciais, Link de Planos e Lembrete de Cortesia'
+                      : 'Boas-Vindas com Acesso Livre Imediato e Engajamento social'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Master Switch for Welcome Flow */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-600">Disparar Mensagens no Cadastro?</span>
+                <button
+                  type="button"
+                  onClick={() => handleToggleMasterTrigger(selectedMode === 'paid' ? 'welcome_paid' : 'welcome_free')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    (selectedMode === 'paid' ? flowMap.welcome_paid.enabled : flowMap.welcome_free.enabled)
+                      ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                      : 'bg-rose-100 text-rose-900 border-rose-300'
+                  }`}
+                >
+                  {(selectedMode === 'paid' ? flowMap.welcome_paid.enabled : flowMap.welcome_free.enabled) ? (
+                    <>
+                      <ToggleRight className="w-4 h-4 text-emerald-600" /> Ativo
+                    </>
+                  ) : (
+                    <>
+                      <ToggleLeft className="w-4 h-4 text-rose-600" /> Desativado
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Sequence Steps Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {(selectedMode === 'paid' ? flowMap.welcome_paid.steps : flowMap.welcome_free.steps).map((step, idx) => {
+                const triggerDef = triggers.find((t) => t.key === step.key);
+                const isSelected = selectedTrigger?.key === step.key;
+
+                return (
+                  <div
+                    key={step.id}
+                    className={`rounded-2xl border-2 p-4 transition-all flex flex-col justify-between relative ${
+                      !step.enabled
+                        ? 'bg-slate-50/80 border-slate-200 opacity-60'
+                        : isSelected
+                        ? 'bg-emerald-50/40 border-emerald-500 shadow-sm'
+                        : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div>
+                      {/* Top Step Number & Toggle */}
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-slate-900 text-white">
+                          Mensagem {idx + 1}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStep(selectedMode === 'paid' ? 'welcome_paid' : 'welcome_free', step.id)}
+                          className={`text-xs font-black cursor-pointer px-2 py-0.5 rounded-lg border transition-colors ${
+                            step.enabled
+                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                              : 'bg-slate-200 border-slate-300 text-slate-600'
+                          }`}
+                        >
+                          {step.enabled ? '● Ativa' : '○ Desligada'}
+                        </button>
+                      </div>
+
+                      <h5 className="text-xs font-black text-slate-900 leading-snug">
+                        {step.name}
+                      </h5>
+
+                      <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                        {triggerDef?.triggerEvent || 'Evento da sequência'}
+                      </p>
+
+                      {/* Delay Configuration */}
+                      <div className="mt-3 p-2 bg-slate-100/80 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                        <span className="text-[10px] font-extrabold uppercase text-slate-600 flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-slate-500" /> Espera (Delay):
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min={0}
+                            max={3600}
+                            value={step.delaySeconds}
+                            onChange={(e) =>
+                              handleUpdateDelay(
+                                selectedMode === 'paid' ? 'welcome_paid' : 'welcome_free',
+                                step.id,
+                                parseInt(e.target.value) || 0
+                              )
+                            }
+                            className="w-14 bg-white border border-slate-300 rounded px-1.5 py-0.5 text-center text-xs font-mono font-bold"
+                          />
+                          <span className="text-[10px] font-bold text-slate-500">seg</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Button to Select and Edit this step's message text */}
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (triggerDef) {
+                            setSelectedId(triggerDef.id);
+                            setActiveViewTab('templates');
+                          }
+                        }}
+                        className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
+                      >
+                        Editar Texto <ArrowRight className="w-3 h-3" />
+                      </button>
+
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {step.delaySeconds === 0 ? 'Imediato' : `+${step.delaySeconds}s`}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* FLUXO 2: COBRANÇA E PAGAMENTO (SOMENTE MODO PAGO) OU SORTEIO (MODO FREE) */}
+          {selectedMode === 'paid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Evento PIX Gerado */}
+              <div className="bg-white border-2 border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center font-bold">
+                      <ShoppingCart className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900">
+                        Etapa 2A: PIX Copia e Cola Gerado
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Disparo automático ao escolher plano no portal
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleToggleMasterTrigger('pix_generated')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black border cursor-pointer ${
+                      flowMap.pix_generated.enabled
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                        : 'bg-slate-100 border-slate-300 text-slate-500'
+                    }`}
+                  >
+                    {flowMap.pix_generated.enabled ? 'Ativo' : 'Desligado'}
+                  </button>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Envia a chave PIX Copia e Cola diretamente no WhatsApp do cliente com cortesia de 15 minutos para ele abrir o app bancário sem queda de rede.
+                </p>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const trig = triggers.find((t) => t.key === 'WA_MSG_PIX_GENERATED');
+                      if (trig) {
+                        setSelectedId(trig.id);
+                        setActiveViewTab('templates');
+                      }
+                    }}
+                    className="text-xs font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1 cursor-pointer"
+                  >
+                    Personalizar Texto do PIX <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Evento Pagamento Aprovado */}
+              <div className="bg-white border-2 border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900">
+                        Etapa 2B: Pagamento Aprovado (Mercado Pago)
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Disparo imediato ao receber confirmação do banco
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleToggleMasterTrigger('payment_approved')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black border cursor-pointer ${
+                      flowMap.payment_approved.enabled
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                        : 'bg-slate-100 border-slate-300 text-slate-500'
+                    }`}
+                  >
+                    {flowMap.payment_approved.enabled ? 'Ativo' : 'Desligado'}
+                  </button>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Confirma ao cliente que o dinheiro caiu, que a internet está ativa pelo tempo contratado (sem interrupções) e reenvia o login e a senha para guardar.
+                </p>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const trig = triggers.find((t) => t.key === 'WA_MSG_PAYMENT_APPROVED_HOTSPOT');
+                      if (trig) {
+                        setSelectedId(trig.id);
+                        setActiveViewTab('templates');
+                      }
+                    }}
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
+                  >
+                    Personalizar Confirmação de Pago <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* MODO FREE: SORTEIOS & ATENDIMENTO */
+            <div className="bg-white border-2 border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-900">
+                      Sorteios de Leads & Brindes do Evento (/dashboard/leads/sorteio)
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Disparado quando você seleciona um ganhador entre os visitantes conectados
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const trig = triggers.find((t) => t.key === 'WA_MSG_RAFFLE_WINNER_FREE');
+                    if (trig) {
+                      setSelectedId(trig.id);
+                      setActiveViewTab('templates');
+                    }
+                  }}
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer"
+                >
+                  Personalizar Notificação do Sorteado <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Filter Bar for Categories ─────────────────────────────────────── */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+            <MessageSquare className={`w-4 h-4 ${selectedMode === 'paid' ? 'text-amber-500' : 'text-emerald-600'}`} />
+            {selectedMode === 'paid'
+              ? 'Modelos de Mensagem do Modo Pago (Cobranças, Vouchers e PIX)'
+              : 'Modelos de Mensagem do Modo Free (Acesso Aberto, Eventos e Cortesia)'}
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {selectedMode === 'paid'
+              ? 'Estes textos são disparados exclusivamente quando a venda de planos está ativa. Não interferem no modo gratuito.'
+              : 'Estes textos são disparados exclusivamente em cadastros livres e eventos gratuitos. Não possuem menção a cobranças.'}
+          </p>
+        </div>
+
+        {/* Filter Badges */}
+        <div className="flex flex-wrap gap-1.5 shrink-0">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setActiveCategory(cat.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeCategory === cat.id
+                  ? selectedMode === 'paid'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Main Two-Column Layout ────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Triggers List */}
+        <div className="lg:col-span-5 space-y-2.5">
+          <div className="text-[11px] font-black text-slate-700 uppercase tracking-widest px-1">
+            Gatilhos do Sistema ({filteredTriggers.length})
+          </div>
+
+          <div className="space-y-2 max-h-[640px] overflow-y-auto pr-1">
+            {filteredTriggers.map((t) => {
+              const isSelected = selectedTrigger?.id === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setSelectedId(t.id)}
+                  className={`w-full text-left p-4 rounded-2xl border-2 transition-all cursor-pointer relative ${
+                    isSelected
+                      ? selectedMode === 'paid'
+                        ? 'bg-amber-50/70 border-amber-500 shadow-xs'
+                        : 'bg-emerald-50/70 border-emerald-500 shadow-xs'
+                      : 'bg-white border-slate-200/90 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                      {t.categoryLabel}
+                    </span>
+                    {t.isCustomized ? (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        selectedMode === 'paid'
+                          ? 'bg-amber-100 text-amber-900 border-amber-300'
+                          : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                      }`}>
+                        ● Personalizada
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                        Padrão de Fábrica
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className={`text-sm font-bold ${
+                    isSelected
+                      ? selectedMode === 'paid'
+                        ? 'text-amber-950 font-black'
+                        : 'text-emerald-950 font-black'
+                      : 'text-slate-800'
+                  }`}>
+                    {t.title}
+                  </h3>
+
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                    {t.triggerEvent}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Column: Editor & Preview */}
+        {selectedTrigger && (
+          <div className="lg:col-span-7 space-y-4">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-5">
+              {/* Trigger Header */}
+              <div className="border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                    selectedMode === 'paid'
+                      ? 'bg-amber-100 text-amber-900 border-amber-300'
+                      : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                  }`}>
+                    {selectedTrigger.categoryLabel}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {selectedTrigger.key}
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                  {selectedTrigger.title}
+                </h3>
+                <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-2.5 text-xs text-slate-700">
+                  <Info className={`w-4 h-4 shrink-0 mt-0.5 ${selectedMode === 'paid' ? 'text-amber-600' : 'text-emerald-600'}`} />
+                  <div>
+                    <span className="font-extrabold text-slate-900">Momento do Disparo (Gatilho): </span>
+                    <span>{selectedTrigger.triggerEvent}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dynamic Tags Box */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Tag className={`w-3.5 h-3.5 ${selectedMode === 'paid' ? 'text-amber-600' : 'text-emerald-600'}`} />
+                    Tags Dinâmicas (Clique para inserir no texto):
+                  </label>
+                  {copiedTag && (
+                    <span className={`text-[10px] font-bold flex items-center gap-1 ${
+                      selectedMode === 'paid' ? 'text-amber-700' : 'text-emerald-700'
+                    }`}>
+                      <Check className="w-3 h-3" /> Tag {copiedTag} inserida!
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedTrigger.availableTags.map((t) => (
+                    <button
+                      key={t.tag}
+                      type="button"
+                      onClick={() => handleInsertTag(t.tag)}
+                      title={`Insere ${t.tag} (Ex: ${t.example})`}
+                      className={`px-2.5 py-1 rounded-lg border text-xs font-mono font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                        selectedMode === 'paid'
+                          ? 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-900'
+                          : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-900'
+                      }`}
+                    >
+                      <span>{t.tag}</span>
+                      <span className="text-[10px] font-sans font-medium opacity-80">
+                        ({t.label})
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Editor Textarea */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block">
+                  Conteúdo da Mensagem (WhatsApp Markdown):
+                </label>
+                <textarea
+                  rows={8}
+                  value={editedTemplates[selectedTrigger.key] ?? selectedTrigger.currentTemplate}
+                  onChange={(e) => handleTemplateChange(selectedTrigger.key, e.target.value)}
+                  placeholder="Digite o modelo de mensagem..."
+                  className={`w-full bg-slate-50 border border-slate-300 focus:bg-white rounded-xl p-3.5 text-xs font-mono text-slate-900 focus:outline-none transition-colors leading-relaxed ${
+                    selectedMode === 'paid' ? 'focus:border-amber-500' : 'focus:border-emerald-500'
+                  }`}
+                />
+                <p className="text-[11px] text-slate-500">
+                  Dica: use <code className="text-slate-800 font-bold">*negrito*</code>, <code className="text-slate-800 font-bold">_itálico_</code>, ou <code className="text-slate-800 font-bold">`código`</code> para destacar informações.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => handleReset(selectedTrigger)}
+                  disabled={savingKey === selectedTrigger.key}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Restaurar Padrão
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSave(selectedTrigger)}
+                  disabled={savingKey === selectedTrigger.key}
+                  className={`px-6 py-2.5 rounded-xl text-xs font-black text-white shadow-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 ${
+                    selectedMode === 'paid'
+                      ? 'bg-amber-500 hover:bg-amber-600'
+                      : 'bg-emerald-600 hover:bg-emerald-700'
+                  }`}
+                >
+                  <Save className="w-4 h-4" />
+                  {savingKey === selectedTrigger.key ? 'Salvando...' : 'Salvar Modelo'}
+                </button>
+              </div>
+
+              {feedback && feedback.key === selectedTrigger.key && (
+                <div
+                  className={`p-3 rounded-xl border text-xs font-bold flex items-center gap-2 ${
+                    feedback.success
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                      : 'bg-rose-50 border-rose-300 text-rose-800'
+                  }`}
+                >
+                  {feedback.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-rose-600" />
+                  )}
+                  <span>{feedback.message}</span>
+                </div>
+              )}
+
+              {/* Live Preview (Visualização em tempo real simulando tela do WhatsApp) */}
+              <div className="pt-4 border-t border-slate-100 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800">
+                  <Eye className="w-4 h-4 text-emerald-600" />
+                  Simulação de Envio no WhatsApp (Preview com dados reais):
+                </div>
+
+                <div
+                  className="rounded-2xl p-4 border border-emerald-900/10 shadow-inner"
+                  style={{ backgroundColor: '#E5DDD5' }}
+                >
+                  <div className="max-w-md bg-white rounded-2xl rounded-tl-xs p-3.5 shadow-sm text-xs text-slate-900 space-y-1.5 font-sans leading-relaxed whitespace-pre-wrap border border-black/5">
+                    {renderPreview(
+                      editedTemplates[selectedTrigger.key] ?? selectedTrigger.currentTemplate,
+                      selectedTrigger.availableTags
+                    )}
+                    <div className="text-[10px] text-slate-400 text-right font-mono mt-1">
+                      12:00 ✓✓
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

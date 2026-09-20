@@ -2,7 +2,8 @@
 
 # ==============================================================================
 #  MIKROGESTOR VOUCHER — SCRIPT DE INSTALAÇÃO AUTOMÁTICA
-#  Compatível com: Linux (Ubuntu, Debian, DietPi) e Raspberry Pi (ARMv7 / ARM64)
+#  Otimizado para: Raspberry Pi (Pi 3, Pi 4, Pi 5, Zero 2W - ARM64 / ARMv7)
+#                  e Servidores Linux (Debian, Ubuntu, DietPi x86_64)
 # ==============================================================================
 
 set -e
@@ -27,14 +28,14 @@ print_banner() {
     clear
     echo -e "${CYAN}${BOLD}"
     echo "================================================================================"
-    echo "       __  __ _ _              ____           _             "
-    echo "      |  \/  (_) |            / ___| ___  ___| |_ ___  _ __ "
-    echo "      | |\/| | | | _____  ___| |  _ / _ \/ __| __/ _ \| '__|"
-    echo "      | |  | | | |/ _ \ \/ / | |_| |  __/\__ \ || (_) | |   "
-    echo "      |_|  |_|_|_|\___/\__/   \____|\___||___/\__\___/|_|   "
-    echo "                                                            "
-    echo "             SISTEMA DE GESTÃO DE VOUCHERS & HOTSPOT        "
-    echo "            Instalador para Linux e Raspberry Pi            "
+    echo "          __  __ _ _               ____           _             "
+    echo "         |  \/  (_) | ___ __ ___  / ___| ___  ___| |_ ___  _ __ "
+    echo "         | |\/| | | |/ / '__/ _ \| |  _ / _ \/ __| __/ _ \| '__|"
+    echo "         | |  | | |   <| | | (_) | |_| |  __/\__ \ || (_) | |   "
+    echo "         |_|  |_|_|_|\_\_|  \___/ \____|\___||___/\__\___/|_|   "
+    echo "                                                                "
+    echo "                SISTEMA DE GESTÃO DE VOUCHERS & HOTSPOT         "
+    echo "             Instalador Oficial Raspberry Pi & Linux Server     "
     echo "================================================================================"
     echo -e "${NC}"
 }
@@ -72,31 +73,91 @@ detect_system() {
 
     case "$ARCH" in
         x86_64)
-            log_info "Plataforma detectada: PC / Servidor Linux x86_64"
+            log_info "Plataforma: Servidor Linux PC x86_64"
             ;;
         aarch64|arm64)
-            log_info "Plataforma detectada: Raspberry Pi 3/4/5 ou ARM 64-bit"
+            log_info "Plataforma: Raspberry Pi (ARM 64-bit) / ARM64 Server"
             ;;
         armv7l|armv6l)
-            log_info "Plataforma detectada: Raspberry Pi 32-bit (ARMv7/v6)"
+            log_info "Plataforma: Raspberry Pi 32-bit (ARMv7 / ARMv6)"
+            log_warn "Nota: Sistemas 64-bit são recomendados para Raspberry Pi 3/4/5."
             ;;
         *)
-            log_warn "Arquitetura $ARCH não padrão. Continuando com instalação genérica..."
+            log_warn "Arquitetura $ARCH detectada. Prosseguindo com instalação compatível..."
             ;;
     esac
 }
 
-# 3. Instalação das dependências básicas do Linux
+# 3. Otimização de Memória & Configuração de SWAP (Essencial para Raspberry Pi)
+configure_swap() {
+    log_info "Auditando capacidade de memória RAM e SWAP para build seguro..."
+    
+    RAM_KB=$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}' || echo "1048576")
+    SWAP_KB=$(grep SwapTotal /proc/meminfo 2>/dev/null | awk '{print $2}' || echo "0")
+    TOTAL_MEM_MB=$(( (RAM_KB + SWAP_KB) / 1024 ))
+
+    log_info "Memória total combinada (RAM + Swap): ${BOLD}${TOTAL_MEM_MB} MB${NC}"
+
+    # O Next.js requer pelo menos 3GB de memória virtual para o build sem sofrer OOM Kill
+    if [ "$TOTAL_MEM_MB" -lt 3200 ]; then
+        log_warn "Memória combinada baixa (< 3.2 GB). Configurando SWAP de proteção para o build..."
+        
+        # Caso Raspberry Pi OS com dphys-swapfile
+        if [ -f /etc/dphys-swapfile ] && command -v dphys-swapfile > /dev/null 2>&1; then
+            CURRENT_SWAP=$(grep "^CONF_SWAPSIZE=" /etc/dphys-swapfile | cut -d'=' -f2 || echo "100")
+            if [ "$CURRENT_SWAP" -lt 2048 ]; then
+                log_info "Aumentando dphys-swapfile para 2048 MB..."
+                dphys-swapfile swapoff > /dev/null 2>&1 || true
+                sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
+                dphys-swapfile setup > /dev/null 2>&1 || true
+                dphys-swapfile swapon > /dev/null 2>&1 || true
+                log_success "Swap aumentado via dphys-swapfile para 2GB."
+            fi
+        # Caso padrão Debian / Linux com /swapfile
+        elif [ ! -f /swapfile ]; then
+            log_info "Criando arquivo de SWAP seguro de 2GB (/swapfile)..."
+            fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 status=none
+            chmod 600 /swapfile
+            mkswap /swapfile > /dev/null 2>&1
+            swapon /swapfile > /dev/null 2>&1
+            if ! grep -q "/swapfile" /etc/fstab; then
+                echo "/swapfile none swap sw 0 0" >> /etc/fstab
+            fi
+            log_success "Arquivo /swapfile de 2GB provisionado e ativado!"
+        fi
+    else
+        log_success "Memória e SWAP suficientes para compilação do Next.js."
+    fi
+}
+
+# 4. Detecção de Conflitos de Porta 80 (Pi-hole, Lighttpd, Apache, etc.)
+check_port_conflicts() {
+    log_info "Verificando disponibilidade da porta $PORT..."
+    OCCUPIED_PID=$(lsof -i :$PORT -sTCP:LISTEN -t 2>/dev/null | head -n 1 || true)
+    
+    if [ -n "$OCCUPIED_PID" ]; then
+        PROC_NAME=$(ps -p "$OCCUPIED_PID" -o comm= 2>/dev/null || echo "Desconhecido")
+        log_warn "A porta $PORT já está ocupada por: ${BOLD}$PROC_NAME (PID: $OCCUPIED_PID)${NC}"
+        if [ "$PROC_NAME" = "lighttpd" ] || [ "$PROC_NAME" = "pihole-FTL" ] || [ "$PROC_NAME" = "apache2" ] || [ "$PROC_NAME" = "nginx" ]; then
+            log_warn "No Raspberry Pi, isso frequentemente indica a presença de Pi-hole ou servidor web."
+            log_warn "Recomendamos desativar o serviço ou mudar a porta do Pi-hole se desejar usar a porta 80 para o MikroGestor."
+        fi
+    else
+        log_success "Porta $PORT livre e disponível!"
+    fi
+}
+
+# 5. Instalação de Pacotes Essenciais do Sistema
 install_system_packages() {
-    log_info "Atualizando repositórios do sistema (apt update)..."
+    log_info "Atualizando índices de pacotes do sistema (apt update)..."
     apt-get update -y > /dev/null 2>&1
 
-    log_info "Instalando pacotes essenciais (curl, git, build-essential, sqlite3, ufw)..."
-    apt-get install -y curl git build-essential sqlite3 ca-certificates gnupg ufw lsof > /dev/null 2>&1
+    log_info "Instalando utilitários essenciais (curl, git, build-essential, sqlite3, libcap2-bin)..."
+    apt-get install -y curl git build-essential sqlite3 ca-certificates gnupg ufw lsof libcap2-bin > /dev/null 2>&1
     log_success "Pacotes base do sistema instalados com sucesso!"
 }
 
-# 4. Instalação do Node.js (v20 LTS) e NPM
+# 6. Instalação do Node.js (v20 LTS) e NPM
 install_nodejs() {
     NEED_NODE=true
     if command -v node > /dev/null 2>&1; then
@@ -110,17 +171,30 @@ install_nodejs() {
     fi
 
     if [ "$NEED_NODE" = true ]; then
-        log_info "Configurando repositório oficial NodeSource (Node.js 20 LTS)..."
-        mkdir -p /etc/apt/keyrings
-        curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg --yes > /dev/null 2>&1
-        echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list > /dev/null 2>&1
-        apt-get update -y > /dev/null 2>&1
-        apt-get install -y nodejs > /dev/null 2>&1
-        log_success "Node.js $(node -v) e NPM $(npm -v) instalados!"
+        ARCH=$(uname -m)
+        if [ "$ARCH" = "armv7l" ] || [ "$ARCH" = "armv6l" ]; then
+            log_info "Instalando Node.js para Raspberry Pi 32-bit..."
+            apt-get install -y nodejs npm > /dev/null 2>&1 || true
+        else
+            log_info "Configurando repositório oficial NodeSource (Node.js 20 LTS)..."
+            mkdir -p /etc/apt/keyrings
+            curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg --yes > /dev/null 2>&1
+            echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list > /dev/null 2>&1
+            apt-get update -y > /dev/null 2>&1
+            apt-get install -y nodejs > /dev/null 2>&1
+        fi
+        log_success "Node.js $(node -v) e NPM $(npm -v) prontos para uso!"
+    fi
+
+    # Permitir que o binário do Node.js escute em portas abaixo de 1024 sem restrições
+    NODE_BIN=$(command -v node || true)
+    if [ -n "$NODE_BIN" ]; then
+        log_info "Concedendo permissões para binding da porta 80 (cap_net_bind_service)..."
+        setcap 'cap_net_bind_service=+ep' "$NODE_BIN" > /dev/null 2>&1 || true
     fi
 }
 
-# 5. Instalação do PM2 para inicialização automática no boot
+# 7. Instalação do PM2
 install_pm2() {
     if ! command -v pm2 > /dev/null 2>&1; then
         log_info "Instalando PM2 (Gerenciador de Processos Daemon)..."
@@ -131,11 +205,11 @@ install_pm2() {
     fi
 }
 
-# 6. Configuração e Clonagem do MikroGestor Voucher
+# 8. Configuração e Compilação do MikroGestor Voucher
 setup_mikrogestor() {
     TARGET_DIR="${INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
     
-    # Se o script está sendo executado de dentro da própria pasta clonada
+    # Se o script está sendo executado a partir do próprio repositório
     CURRENT_DIR=$(pwd)
     if [ -f "$CURRENT_DIR/package.json" ] && grep -q "mikrogestor-voucher" "$CURRENT_DIR/package.json" 2>/dev/null; then
         TARGET_DIR="$CURRENT_DIR"
@@ -156,17 +230,19 @@ setup_mikrogestor() {
 
     # Criar arquivo .env se não existir
     if [ ! -f "$TARGET_DIR/.env" ]; then
-        log_info "Gerando arquivo de configuração .env com chave secreta segura..."
+        log_info "Gerando arquivo de configuração .env com segredo de produção..."
         JWT_RANDOM=$(openssl rand -hex 32 2>/dev/null || echo "mikrogestor_secret_$(date +%s)")
         cat <<EOF > "$TARGET_DIR/.env"
 DATABASE_URL="file:./dev.db"
 JWT_SECRET="$JWT_RANDOM"
 PORT=$PORT
+NODE_ENV=production
 EOF
         log_success "Arquivo .env configurado."
     fi
 
-    # Permissões da pasta
+    # Criar diretórios de dados locais necessários
+    mkdir -p "$TARGET_DIR/baileys_auth_info"
     chmod -R 755 "$TARGET_DIR"
 
     # Instalação das dependências NPM
@@ -174,33 +250,38 @@ EOF
     cd "$TARGET_DIR"
     npm install --loglevel=error
 
-    # Configuração do Banco de Dados SQLite e Prisma
-    log_info "Inicializando Banco de Dados e Migrations Prisma..."
-    npx prisma db push --accept-data-loss > /dev/null 2>&1
+    # Configuração do Banco de Dados SQLite e Prisma com otimizações WAL
+    log_info "Gerando cliente Prisma com suporte ARM..."
     npx prisma generate > /dev/null 2>&1
+    
+    log_info "Aplicando migrations no SQLite..."
+    npx prisma db push --accept-data-loss > /dev/null 2>&1
+    
+    log_info "Inicializando banco e ativando modo WAL (proteção contra corrupção em SD)..."
     node scripts/init-db.js
 
-    # Compilação do Next.js
-    log_info "Compilando aplicação Next.js para produção (npm run build)..."
+    # Compilação do Next.js com limite de Heap seguro para Raspberry Pi
+    log_info "Compilando aplicação Next.js para produção (com proteção de memória ARM)..."
+    export NODE_OPTIONS="--max-old-space-size=2048"
     npm run build
 
-    log_success "Compilação concluída com sucesso!"
+    log_success "Compilação de produção finalizada com sucesso!"
 }
 
-# 7. Liberar portas no Firewall UFW (se ativo)
+# 9. Configuração de Firewall
 setup_firewall() {
     if command -v ufw > /dev/null 2>&1; then
-        if ufw status | grep -q "Status: active"; then
+        if ufw status 2>/dev/null | grep -q "Status: active"; then
             log_info "Configurando regras no firewall UFW para a porta $PORT e SSH (22)..."
             ufw allow 22/tcp > /dev/null 2>&1
             ufw allow $PORT/tcp > /dev/null 2>&1
             ufw reload > /dev/null 2>&1
-            log_success "Porta $PORT liberada no firewall."
+            log_success "Portas 22 e $PORT liberadas no firewall."
         fi
     fi
 }
 
-# 8. Iniciar com PM2 e configurar inicialização automática no Boot
+# 10. Iniciar com PM2 e configurar inicialização automática no Boot
 start_pm2_service() {
     TARGET_DIR="${INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
     if [ -f "$(pwd)/package.json" ] && grep -q "mikrogestor-voucher" "$(pwd)/package.json" 2>/dev/null; then
@@ -214,58 +295,75 @@ start_pm2_service() {
     pm2 stop "$APP_NAME" > /dev/null 2>&1 || true
     pm2 delete "$APP_NAME" > /dev/null 2>&1 || true
 
-    # Iniciar usando o arquivo ecosystem se disponível ou diretamente
+    # Iniciar usando o arquivo ecosystem.config.js otimizado
     if [ -f "ecosystem.config.js" ]; then
         pm2 start ecosystem.config.js
     else
         pm2 start npm --name "$APP_NAME" -- start
     fi
 
-    log_info "Salvando lista de processos para inicialização automática no boot..."
-    pm2 save
+    log_info "Persistindo lista de processos PM2 para inicialização automática no boot..."
+    pm2 save > /dev/null 2>&1
     
-    # Gerar startup script se ainda não configurado
+    # Configurar systemd startup do PM2
     pm2 startup systemd -u root --hp /root > /dev/null 2>&1 || pm2 startup > /dev/null 2>&1 || true
-    log_success "Serviço PM2 configurado para iniciar automaticamente com o sistema!"
+    log_success "Serviço PM2 configurado para iniciar automaticamente com o Raspberry Pi!"
+
+    # Provisionar arquivo de serviço systemd nativo como alternativa
+    if [ -f "$TARGET_DIR/mikrogestor.service" ]; then
+        cp "$TARGET_DIR/mikrogestor.service" /etc/systemd/system/mikrogestor.service 2>/dev/null || true
+        systemctl daemon-reload > /dev/null 2>&1 || true
+    fi
 }
 
-# 9. Mostrar tela final com dados de acesso
+# 11. Resumo e Instruções Finais
 show_summary() {
     # Obter IP local da máquina
-    LOCAL_IP=$(hostname -I | awk '{print $1}')
+    LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
     [ -z "$LOCAL_IP" ] && LOCAL_IP="localhost"
 
     echo ""
     echo -e "${GREEN}${BOLD}================================================================================"
-    echo "            🎉 MIKROGESTOR VOUCHER INSTALADO COM SUCESSO! 🎉"
+    echo "       🎉 MIKROGESTOR VOUCHER INSTALADO COM SUCESSO NO RASPBERRY PI! 🎉"
     echo "================================================================================${NC}"
     echo ""
-    echo -e "  ${BOLD}🌐 Painel Administrativo:${NC} ${CYAN}http://$LOCAL_IP:$PORT/dashboard${NC}"
-    echo -e "  ${BOLD}📱 Portal de Login / Hotspot:${NC} ${CYAN}http://$LOCAL_IP:$PORT/dashboard/portal${NC}"
-    echo -e "  ${BOLD}🔑 Login Padrão:${NC}          ${YELLOW}admin${NC}"
-    echo -e "  ${BOLD}🔒 Senha Padrão:${NC}          ${YELLOW}123${NC}"
+    echo -e "  ${BOLD}🌐 Painel Administrativo:${NC}     ${CYAN}http://$LOCAL_IP/dashboard${NC}"
+    echo -e "  ${BOLD}📱 Portal de Login / Hotspot:${NC} ${CYAN}http://$LOCAL_IP/dashboard/portal${NC}"
+    echo -e "  ${BOLD}🔑 Usuário Padrão:${NC}            ${YELLOW}admin${NC}"
+    echo -e "  ${BOLD}🔒 Senha Padrão:${NC}            ${YELLOW}123${NC}"
     echo ""
     echo -e "--------------------------------------------------------------------------------"
-    echo -e "  ${BOLD}Comandos úteis do sistema:${NC}"
+    echo -e "  ${BOLD}Comandos úteis de monitoramento e controle:${NC}"
     echo -e "  • Ver status em tempo real:   ${MAGENTA}pm2 status${NC}"
     echo -e "  • Ver logs ao vivo:           ${MAGENTA}pm2 logs mikrogestor-voucher${NC}"
-    echo -e "  • Reiniciar sistema:          ${MAGENTA}pm2 restart mikrogestor-voucher${NC}"
-    echo -e "  • Parar sistema:              ${MAGENTA}pm2 stop mikrogestor-voucher${NC}"
+    echo -e "  • Reiniciar aplicação:        ${MAGENTA}pm2 restart mikrogestor-voucher${NC}"
+    echo -e "  • Parar aplicação:            ${MAGENTA}pm2 stop mikrogestor-voucher${NC}"
     echo -e "  • Atualizar para nova versão: ${MAGENTA}cd $(pwd) && ./install.sh --update${NC}"
     echo -e "================================================================================"
     echo ""
 }
 
-# 10. Modo de Atualização Rápida
+# 12. Modo de Atualização Rápida
 run_update() {
     log_info "Iniciando atualização do MikroGestor Voucher..."
     git pull
     npm install
-    npx prisma db push --accept-data-loss
     npx prisma generate
+    npx prisma db push --accept-data-loss
+    node scripts/init-db.js
+    export NODE_OPTIONS="--max-old-space-size=2048"
     npm run build
     pm2 restart "$APP_NAME"
     log_success "MikroGestor Voucher atualizado com sucesso!"
+    exit 0
+}
+
+# 13. Diagnóstico do Sistema
+run_check() {
+    print_banner
+    detect_system
+    configure_swap
+    check_port_conflicts
     exit 0
 }
 
@@ -274,6 +372,10 @@ case "$1" in
     --update|-u)
         check_root
         run_update
+        ;;
+    --check|-c)
+        check_root
+        run_check
         ;;
     --restart|-r)
         pm2 restart "$APP_NAME"
@@ -291,6 +393,8 @@ case "$1" in
         print_banner
         check_root
         detect_system
+        configure_swap
+        check_port_conflicts
         install_system_packages
         install_nodejs
         install_pm2

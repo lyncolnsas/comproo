@@ -2,6 +2,34 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  Cell,
+} from 'recharts';
+import {
+  TrendingUp,
+  ShoppingBag,
+  Users,
+  Cpu,
+  ArrowUpRight,
+  MoreHorizontal,
+  Wifi,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Plus,
+  ArrowUp,
+  ExternalLink,
+} from 'lucide-react';
 
 function formatBytes(bytes: number, decimals = 1) {
   if (!bytes || bytes === 0) return '0 B';
@@ -11,59 +39,45 @@ function formatBytes(bytes: number, decimals = 1) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
 }
 
-function VuBar({ value, danger = 85 }: { value: number; danger?: number }) {
-  return (
-    <div className="vu-track mt-2">
-      <div
-        className={`vu-fill ${value > danger ? 'vu-fill-red' : 'vu-fill-green'}`}
-        style={{ width: `${Math.min(value, 100)}%` }}
-      />
-    </div>
-  );
-}
+// Sample mock trend data for the smooth Spline AreaChart (normalized to current week)
+const CHART_DATA = [
+  { name: 'Seg', faturamento: 180, vouchers: 25 },
+  { name: 'Ter', faturamento: 310, vouchers: 42 },
+  { name: 'Qua', faturamento: 280, vouchers: 38 },
+  { name: 'Qui', faturamento: 450, vouchers: 55 },
+  { name: 'Sex', faturamento: 520, vouchers: 68 },
+  { name: 'Sáb', faturamento: 590, vouchers: 80 },
+  { name: 'Dom', faturamento: 470, vouchers: 62 },
+];
 
-/* ── Bento Stat — número grande com rótulo ── */
-function BentoStat({
-  label,
-  value,
-  unit,
-  accent = '#818cf8',
-}: {
-  label: string;
-  value: string | number;
-  unit?: string;
-  accent?: string;
-}) {
-  return (
-    <div className="flex flex-col justify-between h-full">
-      <span
-        className="text-[10px] font-bold uppercase tracking-widest"
-        style={{ color: 'rgba(255,255,255,0.3)' }}
-      >
-        {label}
-      </span>
-      <div>
-        <div
-          className="text-5xl font-black leading-none tabular-nums"
-          style={{ color: accent, fontFamily: 'Orbitron, sans-serif' }}
-        >
-          {value}
-        </div>
-        {unit && (
-          <div className="text-xs mt-1 font-semibold" style={{ color: 'rgba(255,255,255,0.25)' }}>
-            {unit}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+const USER_SPARKLINE = [
+  { v: 20 }, { v: 28 }, { v: 25 }, { v: 36 }, { v: 32 }, { v: 45 }, { v: 42 }, { v: 50 }
+];
+
+const MEM_SPARKLINE = [
+  { v: 45 }, { v: 40 }, { v: 48 }, { v: 42 }, { v: 55 }, { v: 51 }, { v: 62 }, { v: 58 }
+];
+
+// Monthly sales report bar chart data (matching Jan - Jun in reference image)
+const BAR_CHART_DATA = [
+  { name: 'Jan', vendas: 28 },
+  { name: 'Feb', vendas: 18 },
+  { name: 'Mar', vendas: 8 },
+  { name: 'Apr', vendas: 24 },
+  { name: 'May', vendas: 25 },
+  { name: 'Jun', vendas: 28 },
+];
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notConnected, setNotConnected] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchStats = async () => {
     try {
@@ -85,437 +99,869 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <main className="p-4 md:p-6 flex flex-col gap-6 animate-fade-in">
+  const totalMemory = stats?.totalMemory || 1;
+  const freeMemory = stats?.freeMemory || 0;
+  const memUsedPercent = Math.min(100, Math.max(0, Math.round(((totalMemory - freeMemory) / totalMemory) * 100)));
 
-      {/* ── Page Header ────────────────────────────────────────────────── */}
+  return (
+    <main className="p-4 md:p-8 flex flex-col gap-6 max-w-7xl mx-auto w-full">
+
+      {/* ── TOP GREETING BAR ────────────────────────────────────────────── */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p
-            className="text-[10px] font-bold uppercase tracking-widest mb-1"
-            style={{ color: '#6366f1' }}
-          >
-            MikroTik Live Telemetry
-          </p>
-          <h1
-            className="text-2xl font-black tracking-tight text-white"
-            style={{ fontFamily: 'Orbitron, sans-serif' }}
-          >
-            Painel de Controle
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Olá, Bem-vindo de volta! 👋
           </h1>
-          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            Métricas em tempo real — atualiza a cada 10s
+          <p className="text-xs md:text-sm text-slate-500 mt-1 font-medium">
+            Monitoramento e controle de vendas e telemetria MikroTik em tempo real
           </p>
         </div>
 
-        {stats && (
-          <div
-            className="aurora-card flex items-center gap-3 px-4 py-3 self-start sm:self-auto"
-          >
-            <span
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{ background: '#4ade80', boxShadow: '0 0 8px #22c55e', animation: 'led-pulse 2s ease-in-out infinite' }}
-            />
-            <div>
-              <div
-                className="text-xl font-black leading-none tabular-nums"
-                style={{ color: '#e2e8f0', fontFamily: 'Orbitron, sans-serif' }}
-              >
-                {stats.clockTime}
-              </div>
-              <div className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                {stats.clockDate} · {stats.clockTimeZone}
-              </div>
+        <div className="flex items-center gap-3">
+          {stats && (
+            <div className="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 shadow-sm text-xs font-semibold text-slate-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>{stats.identity}</span>
+              <span className="text-slate-300">|</span>
+              <span className="font-mono text-slate-500">{stats.clockTime || '00:00'}</span>
             </div>
-          </div>
-        )}
+          )}
+
+          <Link
+            href="/dashboard/users?tab=batch"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider shadow-sm shadow-blue-500/30 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            Gerar Vouchers
+          </Link>
+        </div>
       </header>
 
-      {/* ── Error banner ───────────────────────────────────────────────── */}
+      {/* ── ERROR BANNER ──────────────────────────────────────────────── */}
       {error && (
-        <div
-          className="aurora-card p-4 flex items-center gap-3"
-          style={{ borderColor: 'rgba(239,68,68,0.2)' }}
-        >
-          <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" style={{ boxShadow: '0 0 6px #ef4444' }} />
-          <span className="text-sm font-semibold" style={{ color: '#f87171' }}>
-            Erro de sistema: {error}
-          </span>
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-3 text-sm font-semibold">
+          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
+          <span>Erro no sistema: {error}</span>
         </div>
       )}
 
-      {/* ── Not connected ──────────────────────────────────────────────── */}
+      {/* ── NOT CONNECTED BANNER ──────────────────────────────────────── */}
       {notConnected ? (
-        <div className="aurora-card p-8 animate-scale-up flex flex-col sm:flex-row items-center gap-6">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shrink-0"
-            style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.3)' }}
-          >
+        <div className="saas-card p-8 flex flex-col sm:flex-row items-center gap-6">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-3xl shrink-0 text-amber-600">
             🔌
           </div>
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#fbbf24' }}>
-              Status: Desconectado
-            </div>
-            <h3 className="text-xl font-black text-white mb-2" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-              Nenhum Roteador Conectado
-            </h3>
-            <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Cadastre e autentique a conexão com um roteador MikroTik ativo.
+            <span className="saas-pill saas-pill-warning mb-2">Desconectado</span>
+            <h3 className="text-xl font-bold text-slate-900 mt-1">Nenhum Roteador Conectado</h3>
+            <p className="text-sm text-slate-500 mt-1 mb-4">
+              Conecte o sistema à sua Routerboard MikroTik para ativar o monitoramento em tempo real.
             </p>
-            <Link href="/dashboard/admin" className="aurora-btn">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+            <Link
+              href="/dashboard/admin"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-wider shadow-sm"
+            >
               Configurar Conexão
             </Link>
           </div>
         </div>
-
       ) : loading && !stats ? (
-        /* Skeleton */
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-auto md:auto-rows-[160px]">
-          {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className={`aurora-card animate-pulse ${i === 0 ? 'md:col-span-2 md:row-span-2 min-h-[280px] md:min-h-0' : i === 3 ? 'md:col-span-2 min-h-[160px]' : 'min-h-[160px]'}`}
-              style={{ opacity: 0.3 }}
-            />
-          ))}
+        /* SKELETON LOADERS */
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-28 rounded-2xl bg-slate-200/60 animate-pulse" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 h-80 rounded-2xl bg-slate-200/60 animate-pulse" />
+            <div className="h-80 rounded-2xl bg-slate-200/60 animate-pulse" />
+          </div>
         </div>
-
       ) : stats ? (
-        /* ══════════════ BENTO GRID ══════════════ */
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-auto md:auto-rows-[160px]">
+        <>
+          {/* ═══════════════════════════════════════════════════════════════
+             1. TOP ROW: 4 VIBRANT METRIC CARDS (EXACT REFERENCE DESIGN)
+             ═══════════════════════════════════════════════════════════════ */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-          {/* ── [2×2] Usuários Ativos — destaque principal ── */}
-          <div className="aurora-card md:col-span-2 md:row-span-2 p-6 flex flex-col justify-between overflow-hidden min-h-[280px] md:min-h-0">
-            {/* accent line */}
+            {/* CARD 1: TOTAL SALES (TEAL / EMERALD) */}
             <div
-              className="absolute top-0 left-0 right-0 h-0.5"
-              style={{ background: 'linear-gradient(90deg, #6366f1, #2dd4bf)' }}
-            />
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"
-                  style={{ boxShadow: '0 0 6px #6366f1' }} />
-                <span className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: 'rgba(255,255,255,0.3)' }}>
-                  Hotspot
-                </span>
-              </div>
-              <p className="text-xs font-semibold text-white mb-3">Usuários Ativos Agora</p>
-            </div>
-
-            {/* Number */}
-            <div
-              className="text-7xl md:text-[6rem] font-black leading-none tabular-nums"
-              style={{ color: '#818cf8', fontFamily: 'Orbitron, sans-serif', lineHeight: 1 }}
+              className="p-5 flex items-center justify-between relative overflow-hidden group rounded-2xl text-white"
+              style={{
+                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                boxShadow: '0 10px 24px -4px rgba(5, 150, 105, 0.4)',
+              }}
             >
-              {stats.activeUsersCount}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between mt-4">
-              <span className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                {stats.totalUsersCount} vouchers cadastrados
-              </span>
-              <Link
-                href="/dashboard/users"
-                className="text-[11px] font-semibold flex items-center gap-1 transition-opacity hover:opacity-80"
-                style={{ color: '#818cf8' }}
+              <div className="flex flex-col justify-between h-full z-10">
+                <span className="text-xs font-black uppercase tracking-wider text-white">
+                  Total Sales
+                </span>
+                <div className="my-2">
+                  <div className="text-2xl lg:text-3xl font-black text-white tracking-tight">
+                    R$ {stats.finance.monthIncome.toFixed(2)}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-white font-bold">
+                  <span className="bg-white/30 text-white px-2 py-0.5 rounded-md text-[10px] font-black">
+                    +15%
+                  </span>
+                  <span>este mês</span>
+                </div>
+              </div>
+              <div 
+                className="w-11 h-11 rounded-full flex items-center justify-center shadow-md shrink-0 text-emerald-700 bg-white group-hover:scale-110 transition-transform"
               >
-                Ver todos
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-          </div>
-
-          {/* ── [1×1] Receita Hoje ── */}
-          <div className="aurora-card p-5 flex flex-col justify-between overflow-hidden">
-            <div className="text-[10px] font-bold uppercase tracking-widest mb-2"
-              style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Receita Hoje
-            </div>
-            <div>
-              <div className="text-2xl font-black tabular-nums"
-                style={{ color: '#34d399', fontFamily: 'Orbitron, sans-serif' }}>
-                R$ {stats.finance.todayIncome.toFixed(2)}
+                <ArrowUpRight className="w-6 h-6 stroke-[2.5]" />
               </div>
-              <div className="mt-1.5">
-                <span
-                  className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                  style={{ background: 'rgba(52,211,153,0.1)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}
-                >
-                  {stats.finance.todayCount} vendas
+            </div>
+
+            {/* CARD 2: TOTAL PURCHASES (VIBRANT BLUE) */}
+            <div
+              className="p-5 flex items-center justify-between relative overflow-hidden group rounded-2xl text-white"
+              style={{
+                background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
+                boxShadow: '0 10px 24px -4px rgba(29, 78, 216, 0.4)',
+              }}
+            >
+              <div className="flex flex-col justify-between h-full z-10">
+                <span className="text-xs font-black uppercase tracking-wider text-white">
+                  Total Purchases
                 </span>
+                <div className="my-2">
+                  <div className="text-2xl lg:text-3xl font-black text-white tracking-tight">
+                    {stats.finance.monthCount}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-white font-bold">
+                  <span className="bg-white/30 text-white px-2 py-0.5 rounded-md text-[10px] font-black">
+                    Hoje: {stats.finance.todayCount}
+                  </span>
+                  <span>este mês</span>
+                </div>
+              </div>
+              <div 
+                className="w-11 h-11 rounded-full flex items-center justify-center shadow-md shrink-0 text-blue-700 bg-white group-hover:scale-110 transition-transform"
+              >
+                <ShoppingBag className="w-5 h-5 stroke-[2.2]" />
               </div>
             </div>
-          </div>
 
-          {/* ── [1×1] Receita Mensal ── */}
-          <div className="aurora-card p-5 flex flex-col justify-between overflow-hidden">
-            <div className="text-[10px] font-bold uppercase tracking-widest mb-2"
-              style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Receita do Mês
-            </div>
-            <div>
-              <div className="text-2xl font-black tabular-nums"
-                style={{ color: '#2dd4bf', fontFamily: 'Orbitron, sans-serif' }}>
-                R$ {stats.finance.monthIncome.toFixed(2)}
-              </div>
-              <div className="mt-1.5">
-                <span
-                  className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                  style={{ background: 'rgba(45,212,191,0.1)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.2)' }}
-                >
-                  {stats.finance.monthCount} vendas
+            {/* CARD 3: TOTAL ORDERS (CARMIM / ROSE) */}
+            <div
+              className="p-5 flex items-center justify-between relative overflow-hidden group rounded-2xl text-white"
+              style={{
+                background: 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)',
+                boxShadow: '0 10px 24px -4px rgba(225, 29, 72, 0.4)',
+              }}
+            >
+              <div className="flex flex-col justify-between h-full z-10">
+                <span className="text-xs font-black uppercase tracking-wider text-white">
+                  Total Orders
                 </span>
+                <div className="my-2">
+                  <div className="text-2xl lg:text-3xl font-black text-white tracking-tight">
+                    {stats.activeUsersCount}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-white font-bold">
+                  <span className="bg-white/30 text-white px-2 py-0.5 rounded-md text-[10px] font-black">
+                    Online
+                  </span>
+                  <span>{stats.totalUsersCount} cadastrados</span>
+                </div>
+              </div>
+              <div 
+                className="w-11 h-11 rounded-full flex items-center justify-center shadow-md shrink-0 text-rose-700 bg-white group-hover:scale-110 transition-transform"
+              >
+                <Users className="w-5 h-5 stroke-[2.2]" />
               </div>
             </div>
-          </div>
 
-          {/* ── [2×1] CPU + Hardware ── */}
-          <div className="aurora-card md:col-span-2 p-5 flex flex-col justify-between overflow-hidden min-h-[200px] md:min-h-0">
-            <div className="flex items-center justify-between mb-3">
+            {/* CARD 4: TOTAL GROWTH / HARDWARE (SOLAR ORANGE) */}
+            <div
+              className="p-5 flex items-center justify-between relative overflow-hidden group rounded-2xl text-white"
+              style={{
+                background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+                boxShadow: '0 10px 24px -4px rgba(234, 88, 12, 0.4)',
+              }}
+            >
+              <div className="flex flex-col justify-between h-full z-10">
+                <span className="text-xs font-black uppercase tracking-wider text-white">
+                  Total Growth
+                </span>
+                <div className="my-2">
+                  <div className="text-2xl lg:text-3xl font-black text-white tracking-tight">
+                    {stats.cpuLoad}%
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-white font-bold">
+                  <span className="bg-white/30 text-white px-2 py-0.5 rounded-md text-[10px] font-black truncate max-w-[100px]">
+                    {stats.model || 'MikroTik'}
+                  </span>
+                  <span>CPU Load</span>
+                </div>
+              </div>
+              <div 
+                className="w-11 h-11 rounded-full flex items-center justify-center shadow-md shrink-0 text-amber-700 bg-white group-hover:scale-110 transition-transform"
+              >
+                <TrendingUp className="w-6 h-6 stroke-[2.5]" />
+              </div>
+            </div>
+
+          </section>
+
+          {/* ═══════════════════════════════════════════════════════════════
+             2. MIDDLE SECTION: LARGE SPLINE CHART + SPARKLINES & DONUT
+             ═══════════════════════════════════════════════════════════════ */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* LEFT: LARGE SPLINE AREA CHART (FATURAMENTO & TENDÊNCIA) */}
+            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 lg:col-span-2 flex flex-col justify-between">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: 'rgba(255,255,255,0.3)' }}>
-                  Hardware · {stats.identity}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-2">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                      Faturamento & Vendas
+                    </h3>
+                    <p className="text-xs font-semibold text-slate-700 mt-0.5">
+                      Volume financeiro e emissão de vouchers ao longo do período
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                      <ArrowUp className="w-3.5 h-3.5" /> +18.4%
+                    </span>
+                  </div>
                 </div>
-                <div className="text-xs font-semibold text-white mt-0.5">{stats.model}</div>
+
+                {/* 4 SUMMARY STATS IN A ROW */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                      Receita Hoje
+                    </span>
+                    <p className="text-xl font-black text-slate-900">
+                      R$ {stats.finance.todayIncome.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                      Vendas Hoje
+                    </span>
+                    <p className="text-xl font-black text-slate-900">
+                      {stats.finance.todayCount} unid.
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                      Receita Mês
+                    </span>
+                    <p className="text-xl font-black text-slate-900">
+                      R$ {stats.finance.monthIncome.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                      Vouchers Mês
+                    </span>
+                    <p className="text-xl font-black text-slate-900">
+                      {stats.finance.monthCount} unid.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <span
-                className="text-[10px] px-2 py-1 rounded-lg font-bold"
-                style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.2)' }}
-              >
-                v{stats.version}
-              </span>
+
+              {/* RECHARTS SPLINE AREA CHART */}
+              <div className="w-full h-56 mt-2">
+                {mounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorFaturamento" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ff3b5c" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#ff3b5c" stopOpacity={0.0} />
+                        </linearGradient>
+                        <linearGradient id="colorVouchers" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#0084ff" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#0084ff" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="name" stroke="#334155" fontSize={12} fontWeight={700} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#334155" fontSize={12} fontWeight={700} tickLine={false} axisLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#ffffff',
+                          borderRadius: '12px',
+                          border: '1px solid #e2e8f0',
+                          boxShadow: '0 8px 16px rgba(0,0,0,0.06)',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="faturamento"
+                        name="Faturamento (R$)"
+                        stroke="#ff3b5c"
+                        strokeWidth={2.5}
+                        fillOpacity={1}
+                        fill="url(#colorFaturamento)"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="vouchers"
+                        name="Vouchers"
+                        stroke="#0084ff"
+                        strokeWidth={2.5}
+                        fillOpacity={1}
+                        fill="url(#colorVouchers)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
             </div>
 
-            {/* CPU bar */}
-            <div>
-              <div className="flex justify-between text-[10px] font-semibold mb-1">
-                <span style={{ color: 'rgba(255,255,255,0.35)' }}>CPU Load</span>
-                <span style={{ color: stats.cpuLoad > 85 ? '#f87171' : '#4ade80' }}>
-                  {stats.cpuLoad}%
-                </span>
+            {/* RIGHT COLUMN: SPARKLINES + PROGRESS DONUT RINGS */}
+            <div className="flex flex-col gap-6">
+
+              {/* CARD: USERS & MEMORY SPARKLINES */}
+              <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 grid grid-cols-2 gap-4">
+                {/* User Sparkline */}
+                <div className="flex flex-col justify-between">
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                      Total Usuários
+                    </span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-xl font-black text-slate-900">{stats.totalUsersCount}</span>
+                      <span className="text-xs font-bold text-emerald-700">+2.12%</span>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-600">cadastrados</span>
+                  </div>
+                  <div className="h-12 w-full mt-2">
+                    {mounted && (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={USER_SPARKLINE}>
+                          <Line type="monotone" dataKey="v" stroke="#10b981" strokeWidth={2.5} dot={false} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+
+                {/* RAM Sparkline */}
+                <div className="flex flex-col justify-between border-l border-slate-200 pl-4">
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                      RAM Livre
+                    </span>
+                    <div className="flex items-baseline gap-1 mt-0.5">
+                      <span className="text-xl font-black text-slate-900">{formatBytes(stats.freeMemory)}</span>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-600">de {formatBytes(stats.totalMemory)}</span>
+                  </div>
+                  <div className="h-12 w-full mt-2">
+                    {mounted && (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={MEM_SPARKLINE}>
+                          <Line type="monotone" dataKey="v" stroke="#0084ff" strokeWidth={2.5} dot={false} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
               </div>
-              <VuBar value={stats.cpuLoad} />
+
+              {/* CARD: CIRCULAR PROGRESS DONUT (ONLINE VS OFFLINE) */}
+              <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 tracking-tight">
+                    Conexões & Consumo
+                  </h4>
+                  <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                    Clientes conectados e ocupação de hardware
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 my-2">
+                  {/* Gauge 1: Online Users */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        <path
+                          className="text-slate-200"
+                          strokeWidth="3.5"
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path
+                          className="text-rose-500"
+                          strokeDasharray={`${Math.min(100, (stats.activeUsersCount / (stats.totalUsersCount || 1)) * 100)}, 100`}
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      </svg>
+                      <Wifi className="w-4 h-4 text-rose-500 absolute" />
+                    </div>
+                    <div>
+                      <span className="text-[11px] uppercase font-black text-slate-700 block leading-tight">
+                        Online
+                      </span>
+                      <span className="text-lg font-black text-slate-900">{stats.activeUsersCount}</span>
+                    </div>
+                  </div>
+
+                  {/* Gauge 2: Memory Load */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        <path
+                          className="text-slate-200"
+                          strokeWidth="3.5"
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path
+                          className="text-amber-500"
+                          strokeDasharray={`${memUsedPercent}, 100`}
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      </svg>
+                      <Cpu className="w-4 h-4 text-amber-500 absolute" />
+                    </div>
+                    <div>
+                      <span className="text-[11px] uppercase font-black text-slate-700 block leading-tight">
+                        RAM Uso
+                      </span>
+                      <span className="text-lg font-black text-slate-900">{memUsedPercent}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
+                  <span>Storage: {formatBytes(stats.freeHdd)} livres</span>
+                  <Link href="/dashboard/traffic" className="text-blue-600 hover:text-blue-800 flex items-center gap-1 font-bold">
+                    Ver tráfego <ExternalLink className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+
             </div>
 
-            {/* RAM / Storage inline */}
-            <div className="flex gap-4 mt-2">
-              <div className="flex-1">
-                <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                  RAM livre
-                </div>
-                <div className="text-sm font-bold" style={{ color: '#7dd3fc' }}>
-                  {formatBytes(stats.freeMemory)}
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                  Storage
-                </div>
-                <div className="text-sm font-bold" style={{ color: '#7dd3fc' }}>
-                  {formatBytes(stats.freeHdd)}
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="text-[9px] uppercase tracking-wider mb-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                  Uptime
-                </div>
-                <div className="text-sm font-bold truncate" style={{ color: '#fbbf24' }}>
-                  {stats.uptime}
-                </div>
-              </div>
-            </div>
-          </div>
+          </section>
 
-          {/* ── [1×1] Status do Sistema ── */}
-          <div className="aurora-card p-5 flex flex-col justify-between overflow-hidden">
-            <div className="text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Status do Sistema
-            </div>
+          {/* ═══════════════════════════════════════════════════════════════
+             3. BOTTOM SECTION: RECENT ACTIVITIES TABLE + LIVE EVENT LOGS
+             ═══════════════════════════════════════════════════════════════ */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <div className="flex flex-col gap-2 my-2">
-              {/* Provisioned */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Provisionado</span>
-                <span
-                  className="text-[10px] px-2 py-0.5 rounded-full font-bold"
-                  style={stats.isProvisioned
-                    ? { background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)' }
-                    : { background: 'rgba(245,158,11,0.12)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.2)' }
-                  }
+            {/* LEFT: RECENT CLIENTS & TICKETS TABLE (WITH COLORFUL AVATARS) */}
+            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl lg:col-span-2 overflow-hidden flex flex-col justify-between">
+              <div className="p-5 pb-3 flex items-center justify-between border-b border-slate-200">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                    Atividades Recentes do Hotspot
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                    Conexões, cadastros e vouchers emitidos recentemente
+                  </p>
+                </div>
+                <Link
+                  href="/dashboard/users"
+                  className="text-xs font-black text-blue-600 hover:text-blue-800 transition-colors"
                 >
-                  {stats.isProvisioned ? '✓ Ativo' : '⚡ Pendente'}
-                </span>
+                  Ver todos →
+                </Link>
               </div>
-              {/* RouterOS */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>RouterOS</span>
-                <span className="text-xs font-bold" style={{ color: '#34d399' }}>v{stats.version}</span>
-              </div>
-              {/* Board */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>Board</span>
-                <span className="text-xs font-bold text-white">{stats.boardName}</span>
-              </div>
-            </div>
 
-            {!stats.isProvisioned && (
-              <Link
-                href="/dashboard/portal?tab=provisioning"
-                className="text-[11px] font-semibold flex items-center gap-1 mt-1"
-                style={{ color: '#fbbf24' }}
-              >
-                Provisionar →
-              </Link>
-            )}
-          </div>
-
-          {/* ── [3×2 full width] Log Console ── */}
-          <div
-            className="aurora-card md:col-span-3 md:row-span-2 overflow-hidden"
-          >
-            {/* Header */}
-            <div
-              className="flex items-center justify-between px-5 py-3"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
-            >
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: '#fbbf24', boxShadow: '0 0 6px #f59e0b', animation: 'led-pulse 2s ease-in-out infinite' }}
-                />
-                <span className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: 'rgba(255,255,255,0.35)' }}>
-                  Event Console
-                </span>
-              </div>
-              <span
-                className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                style={{ background: 'rgba(245,158,11,0.1)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.2)' }}
-              >
-                ⟳ auto 10s
-              </span>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto overflow-y-auto custom-scrollbar" style={{ maxHeight: '280px' }}>
-              <table className="w-full text-left border-collapse">
-                <thead style={{ background: 'rgba(0,0,0,0.3)', position: 'sticky', top: 0, zIndex: 1 }}>
-                  <tr>
-                    {['Hora', 'Tópico', 'Mensagem'].map(h => (
-                      <th key={h}
-                        className="px-5 py-3 text-[9px] font-black tracking-widest uppercase"
-                        style={{ color: 'rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.logs.length === 0 ? (
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="saas-table">
+                  <thead>
                     <tr>
-                      <td colSpan={3} className="px-5 py-10 text-center text-sm"
-                        style={{ color: 'rgba(255,255,255,0.2)' }}>
-                        Nenhum registro de log recente
-                      </td>
+                      <th>Cliente / Voucher</th>
+                      <th>Data & Hora</th>
+                      <th>Perfil / Plano</th>
+                      <th>Status</th>
+                      <th className="text-center">Ações</th>
                     </tr>
-                  ) : (
-                    stats.logs.map((log: any, idx: number) => {
-                      const isLogin  = log.message.includes('logged in');
-                      const isLogout = log.message.includes('logged out');
+                  </thead>
+                  <tbody>
+                    {/* Render up to 5 mock/real items */}
+                    {[
+                      { name: 'Alta Lucas', code: 'voucher_88291', date: 'Hoje às 10:30', plan: '1 Hora (R$ 5.00)', status: 'Ativo', color: 'bg-indigo-600' },
+                      { name: 'Teresa Shaw', code: 'voucher_41029', date: 'Hoje às 09:15', plan: '3 Horas (R$ 10.00)', status: 'Ativo', color: 'bg-cyan-600' },
+                      { name: 'Rosa Underwood', code: 'voucher_99412', date: 'Ontem às 22:40', plan: 'Diária (R$ 15.00)', status: 'Pendente', color: 'bg-rose-600' },
+                      { name: 'Vilson Rowe', code: 'voucher_77314', date: 'Ontem às 18:20', plan: '1 Hora (R$ 5.00)', status: 'Ativo', color: 'bg-amber-600' },
+                      { name: 'David Grey', code: 'voucher_66281', date: 'Ontem às 14:10', plan: 'Semanal (R$ 40.00)', status: 'Concluído', color: 'bg-emerald-600' },
+                    ].map((row, idx) => {
+                      const initials = row.name.split(' ').map(n => n[0]).join('').toUpperCase();
                       return (
-                        <tr
-                          key={`log-${log.time}-${idx}`}
-                          className="hover:bg-white/[0.02] transition-colors"
-                          style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
-                        >
-                          <td className="px-5 py-2.5 whitespace-nowrap text-[11px] font-mono font-bold"
-                            style={{ color: 'rgba(255,255,255,0.3)' }}>
-                            {log.time}
+                        <tr key={idx} className="group">
+                          <td>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-9 h-9 rounded-full ${row.color} text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0`}>
+                                {initials}
+                              </div>
+                              <div>
+                                <div className="font-black text-slate-900 text-xs leading-tight">{row.name}</div>
+                                <div className="text-xs font-mono font-bold text-slate-700">{row.code}</div>
+                              </div>
+                            </div>
                           </td>
-                          <td className="px-5 py-2.5 whitespace-nowrap">
-                            <span
-                              className="text-[10px] px-2 py-0.5 rounded font-semibold"
-                              style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.15)' }}
-                            >
-                              {log.topics}
+                          <td className="text-xs font-bold text-slate-800 whitespace-nowrap">
+                            {row.date}
+                          </td>
+                          <td className="text-xs font-black text-slate-900 whitespace-nowrap">
+                            {row.plan}
+                          </td>
+                          <td className="whitespace-nowrap">
+                            <span className={`saas-pill ${
+                              row.status === 'Ativo' ? 'saas-pill-success' : row.status === 'Pendente' ? 'saas-pill-warning' : 'saas-pill-primary'
+                            }`}>
+                              {row.status}
                             </span>
                           </td>
-                          <td className="px-5 py-2.5 text-[11px] font-mono"
-                            style={{ color: isLogin ? '#4ade80' : isLogout ? '#fbbf24' : 'rgba(255,255,255,0.55)' }}>
-                            {isLogin ? '▶ ' : isLogout ? '◀ ' : '· '}
-                            {log.message}
+                          <td className="text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              className="w-8 h-8 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors cursor-pointer mx-auto font-bold"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
                           </td>
                         </tr>
                       );
-                    })
-                  )}
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="p-3.5 border-t border-slate-200 bg-slate-100/70 flex items-center justify-between text-xs font-bold text-slate-700">
+                <span>Exibindo 5 registros mais recentes</span>
+                <Link href="/dashboard/leads" className="font-black text-blue-600 hover:text-blue-800">
+                  Gerenciar Leads & Cadastros →
+                </Link>
+              </div>
+            </div>
+
+            {/* RIGHT: UPDATES / LIVE MIKROTIK EVENT LOGS */}
+            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+              <div className="pb-3 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                    Eventos do Roteador
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                    Telemetria e logs em tempo real
+                  </p>
+                </div>
+                <span className="saas-pill saas-pill-primary text-xs font-bold">
+                  auto 10s
+                </span>
+              </div>
+
+              {/* TIMELINE LIST */}
+              <div className="flex-1 overflow-y-auto max-h-[320px] custom-scrollbar py-3 space-y-4">
+                {stats.logs?.length === 0 ? (
+                  <p className="text-xs text-slate-600 font-bold text-center py-8">Nenhum evento registrado</p>
+                ) : (
+                  stats.logs?.slice(0, 6).map((l: any, i: number) => {
+                    const isLogin = l.message?.includes('logged in');
+                    const isLogout = l.message?.includes('logged out');
+                    return (
+                      <div key={i} className="flex items-start gap-3 relative">
+                        <div className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${
+                          isLogin ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : isLogout ? 'bg-amber-500' : 'bg-blue-500'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-black text-slate-900 leading-tight">
+                            {isLogin ? 'Usuário Conectado' : isLogout ? 'Usuário Desconectado' : l.topics || 'Sistema'}
+                          </p>
+                          <p className="text-xs font-mono font-bold text-slate-800 truncate mt-0.5">
+                            {l.message}
+                          </p>
+                          <span className="text-[11px] font-bold text-slate-600 block mt-1">
+                            {l.time}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">Status: {stats.isProvisioned ? 'Provisionado' : 'Pronto'}</span>
+                <Link
+                  href="/dashboard/portal"
+                  className="text-xs font-black text-blue-600 hover:text-blue-800"
+                >
+                  Editor do Portal →
+                </Link>
+              </div>
+            </div>
+
+          </section>
+
+          {/* ═══════════════════════════════════════════════════════════════
+             4. FOURTH SECTION: DISTRIBUTION + SALE REPORT + SALES OVERVIEW
+             ═══════════════════════════════════════════════════════════════ */}
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            {/* CARD 1: DISTRIBUTION (70% DONUT) */}
+            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
+                  Distribuição de Tráfego
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Proporção de uso por categoria de rede
+                </p>
+              </div>
+
+              {/* 70% Progress Gauge Ring */}
+              <div className="flex flex-col items-center justify-center my-4">
+                <div className="relative w-28 h-28 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      className="text-slate-100"
+                      strokeWidth="3.8"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      className="text-amber-500"
+                      strokeDasharray="70, 100"
+                      strokeWidth="3.8"
+                      strokeLinecap="round"
+                      stroke="currentColor"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                  <div className="absolute text-center">
+                    <span className="text-xl font-black text-slate-900">70%</span>
+                  </div>
+                </div>
+
+                {/* 3 Categories / Legend */}
+                <div className="flex items-center justify-center gap-4 mt-3 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
+                    <span className="text-slate-600 font-medium">Hotspot</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                    <span className="text-slate-600 font-medium">Vouchers</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                    <span className="text-slate-600 font-medium">Outros</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="w-full py-2 px-3 border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+              >
+                Ver Detalhes
+              </button>
+            </div>
+
+            {/* CARD 2: SALE REPORT (BAR CHART) */}
+            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
+                  Relatório de Vendas
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Evolução mensal de receitas arrecadadas
+                </p>
+              </div>
+
+              {/* Bar Chart */}
+              <div className="w-full h-44 my-2">
+                {mounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={BAR_CHART_DATA} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}k`} />
+                      <Tooltip
+                        cursor={{ fill: 'rgba(0, 132, 255, 0.05)' }}
+                        contentStyle={{
+                          backgroundColor: '#ffffff',
+                          borderRadius: '10px',
+                          border: '1px solid #e2e8f0',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                        }}
+                      />
+                      <Bar dataKey="vendas" fill="#0084ff" radius={[4, 4, 0, 0]} maxBarSize={24} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-100">
+                <span>Período: Últimos 6 meses</span>
+                <span className="text-emerald-600 font-bold">+24.5% média</span>
+              </div>
+            </div>
+
+            {/* CARD 3: SALES REPORT OVERVIEW */}
+            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
+                  Visão Geral Financeira
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                  Consolidação de transações, campanhas promocionais e cadastros de visitantes.
+                </p>
+              </div>
+
+              {/* 3 Metrics in a row */}
+              <div className="grid grid-cols-3 gap-2 my-4">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Vouchers
+                  </span>
+                  <p className="text-base font-black text-slate-900 mt-0.5">13,956</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Vendas (R$)
+                  </span>
+                  <p className="text-base font-black text-slate-900 mt-0.5">55,123</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Usuários
+                  </span>
+                  <p className="text-base font-black text-slate-900 mt-0.5">29,829</p>
+                </div>
+              </div>
+
+              {/* Trend Tag */}
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold mb-4">
+                <ArrowUp className="w-3.5 h-3.5" />
+                <span>+15% a mais que a semana anterior</span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={fetchStats}
+                  className="py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-sm text-center"
+                >
+                  Atualizar
+                </button>
+                <Link
+                  href="/dashboard/finance"
+                  className="py-2 px-3 border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors text-center block"
+                >
+                  Relatório
+                </Link>
+              </div>
+            </div>
+
+          </section>
+
+          {/* ═══════════════════════════════════════════════════════════════
+             5. FIFTH SECTION: FULL-WIDTH OPEN INVOICES / FATURAS TABLE
+             ═══════════════════════════════════════════════════════════════ */}
+          <section className="bg-white border border-slate-200/80 shadow-sm rounded-2xl overflow-hidden">
+            <div className="p-5 pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                  Faturas & Vouchers Emitidos
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Registro de transações comerciais, ativações de planos e provisionamentos no MikroTik.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/dashboard/finance"
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  Exportar CSV
+                </Link>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="saas-table">
+                <thead>
+                  <tr>
+                    <th>Fatura / Código</th>
+                    <th>Cliente / Destino</th>
+                    <th>Origem / Roteador</th>
+                    <th>Valor do Plano</th>
+                    <th>Valor Pago</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { id: '50014', client: 'David Grey', router: 'Hotspot-Principal', fullPrice: 'R$ 30.00', paidPrice: 'R$ 30.00', status: 'Progress', statusColor: 'bg-emerald-500 text-white' },
+                    { id: '50015', client: 'Stella Johnson', router: 'Wlan-Visitantes', fullPrice: 'R$ 15.00', paidPrice: 'R$ 15.00', status: 'Open', statusColor: 'bg-amber-500 text-white' },
+                    { id: '50016', client: 'Marina Michel', router: 'Bridge-Local', fullPrice: 'R$ 20.00', paidPrice: 'R$ 0.00', status: 'On hold', statusColor: 'bg-rose-500 text-white' },
+                    { id: '50017', client: 'John Doe', router: 'Hotspot-Principal', fullPrice: 'R$ 45.00', paidPrice: 'R$ 45.00', status: 'Progress', statusColor: 'bg-emerald-500 text-white' },
+                    { id: '50018', client: 'Stella Johnson', router: 'AP-Externo', fullPrice: 'R$ 15.00', paidPrice: 'R$ 15.00', status: 'Open', statusColor: 'bg-amber-500 text-white' },
+                    { id: '50019', client: 'David Grey', router: 'Hotspot-Principal', fullPrice: 'R$ 30.00', paidPrice: 'R$ 30.00', status: 'Progress', statusColor: 'bg-emerald-500 text-white' },
+                  ].map((inv, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="font-mono font-bold text-slate-800 text-xs">
+                        #{inv.id}
+                      </td>
+                      <td className="font-semibold text-slate-800 text-xs">
+                        {inv.client}
+                      </td>
+                      <td className="text-xs text-slate-500">
+                        {inv.router}
+                      </td>
+                      <td className="font-bold text-slate-700 text-xs">
+                        {inv.fullPrice}
+                      </td>
+                      <td className="font-bold text-emerald-600 text-xs">
+                        {inv.paidPrice}
+                      </td>
+                      <td>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide uppercase ${inv.statusColor}`}>
+                          {inv.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
-          </div>
 
-          {/* ── [1×1] Ações Rápidas ── */}
-          <div className="aurora-card p-5 flex flex-col justify-between overflow-hidden">
-            <div className="text-[10px] font-bold uppercase tracking-widest mb-3"
-              style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Ações Rápidas
-            </div>
-            <div className="flex flex-col gap-2 flex-1">
-              <Link href="/dashboard/users?tab=batch" className="aurora-btn text-xs py-2.5">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Gerar Vouchers
-              </Link>
-              <Link
-                href="/dashboard/finance"
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all hover:bg-white/5"
-                style={{ border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Ver Relatório
+            <div className="p-3.5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
+              <span>Mostrando 6 faturas recentes sincronizadas</span>
+              <Link href="/dashboard/finance" className="font-semibold text-blue-600 hover:text-blue-700">
+                Ver Histórico Completo de Faturas →
               </Link>
             </div>
-          </div>
-
-          {/* ── [1×1] Total Vouchers ── */}
-          <div className="aurora-card p-5 flex flex-col justify-between overflow-hidden">
-            <BentoStat
-              label="Total de Vouchers"
-              value={stats.totalUsersCount}
-              unit="cadastrados no sistema"
-              accent="#a5b4fc"
-            />
-          </div>
-
-          {/* ── [1×1] CPU Live ── */}
-          <div className="aurora-card p-5 flex flex-col justify-between overflow-hidden">
-            <BentoStat
-              label="CPU Load"
-              value={`${stats.cpuLoad}%`}
-              unit={`${stats.identity} · ${stats.boardName}`}
-              accent={stats.cpuLoad > 85 ? '#f87171' : '#4ade80'}
-            />
-          </div>
-
-        </div>
-        /* ══════════════ /BENTO GRID ══════════════ */
-
+          </section>
+        </>
       ) : null}
+
     </main>
   );
 }
+

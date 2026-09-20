@@ -25,11 +25,7 @@ export class MikrotikAPI {
   }
 
   async close() {
-    if (this.connection) {
-      try {
-        this.connection.close();
-      } catch (e) {}
-    }
+    this.disconnect();
   }
 
   async getIdentity() {
@@ -985,7 +981,7 @@ export class MikrotikAPI {
 
     // 5. Last resort: live probe (catches edge cases)
     try {
-      await this.client!.menu('/ip/hotspot/server').get();
+      await this.client!.menu('/ip/hotspot').get();
       return { available: true, version, majorVersion, installedPackages, probeError: '' };
     } catch (e: any) {
       probeError = e?.message || 'erro desconhecido';

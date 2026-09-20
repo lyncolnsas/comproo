@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,12 +27,10 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head />
-      <body className="min-h-full flex flex-col relative">
+      <head>
         {/* Global Error Handler — apenas loga no console, sem alert() */}
-        <Script
+        <script
           id="global-error-handler"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               window.onerror = function(message, source, lineno, colno, error) {
@@ -52,7 +49,8 @@ export default function RootLayout({
             `,
           }}
         />
-
+      </head>
+      <body className="min-h-full flex flex-col relative">
         {children}
       </body>
     </html>
