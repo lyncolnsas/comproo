@@ -7,8 +7,21 @@ export async function POST(request: Request) {
   try {
     const { ip, user, pass } = await request.json();
 
+    // Se o IP informado pertencer a um roteador com VPN habilitada, conecta pelo IP da VPN (10.8.0.X)
+    let targetIp = ip;
+    try {
+      const dbRouter = await prisma.router.findFirst({
+        where: {
+          OR: [{ host: ip }, { vpnIp: ip }]
+        }
+      });
+      if (dbRouter?.vpnEnabled && dbRouter.vpnIp) {
+        targetIp = dbRouter.vpnIp;
+      }
+    } catch {}
+
     const mk = new MikrotikAPI();
-    const connected = await mk.connect(ip, user, pass);
+    const connected = await mk.connect(targetIp, user, pass);
 
     if (connected) {
       const identityRes = await mk.getIdentity();
@@ -21,7 +34,11 @@ export async function POST(request: Request) {
         await tx.router.updateMany({ data: { active: false } });
         
         // Upsert the current router
-        const existingRouter = await tx.router.findFirst({ where: { host: ip } });
+        const existingRouter = await tx.router.findFirst({
+          where: {
+            OR: [{ host: ip }, { vpnIp: ip }, { host: targetIp }]
+          }
+        });
         if (existingRouter) {
           await tx.router.update({
             where: { id: existingRouter.id },

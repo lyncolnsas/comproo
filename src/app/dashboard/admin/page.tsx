@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function AdminSettings() {
   const [dbStatus] = useState('Conectado');
@@ -179,11 +180,12 @@ export default function AdminSettings() {
 
   const connectToRouter = async (router: any) => {
     setConnectingId(router.id);
+    const targetIp = router.vpnEnabled && router.vpnIp ? router.vpnIp : router.host;
     try {
       const res = await fetch('/api/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ip: router.host, user: router.user, pass: router.password })
+        body: JSON.stringify({ ip: targetIp, user: router.user, pass: router.password })
       });
       const data = await res.json();
       if (data.success) {
@@ -242,6 +244,25 @@ export default function AdminSettings() {
                   {showRouterForm ? 'Fechar Form' : '+ Adicionar Roteador'}
                 </button>
               </div>
+            </div>
+
+            {/* VPN Banner */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-600/10 text-blue-600 flex items-center justify-center text-base shrink-0">
+                  🛡️
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Acesso Remoto sem IP Público</h4>
+                  <p className="text-[11px] text-slate-600 font-medium">Seu MikroTik está em CGNAT ou rede interna? Conecte-o à VPS com túnel WireGuard.</p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/vpn"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider transition-colors shrink-0 shadow-xs"
+              >
+                Configurar VPN →
+              </Link>
             </div>
 
             <div className="space-y-4">
@@ -323,18 +344,42 @@ export default function AdminSettings() {
                   </div>
                 ) : (
                   routers.map(router => (
-                    <div key={router.id} className="border-2 border-slate-200 rounded-2xl p-4 flex items-center justify-between hover:border-slate-300 transition-all bg-white shadow-xs">
+                    <div key={router.id} className="border-2 border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-all bg-white shadow-xs">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 border border-slate-300 shadow-xs">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 border border-slate-300 shadow-xs shrink-0">
                           <span className="text-slate-700 text-sm">📟</span>
                         </div>
                         <div>
-                          <h4 className="font-black text-slate-950 text-xs uppercase tracking-wider">{router.name}</h4>
-                          <p className="text-xs text-slate-700 font-mono font-bold mt-0.5">{router.host} · {router.user}</p>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-black text-slate-950 text-xs uppercase tracking-wider">{router.name}</h4>
+                            {router.active && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-100 text-blue-700">Ativo</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-700 font-mono font-bold mt-0.5">
+                            {router.host} · {router.user}
+                          </p>
+                          {router.vpnEnabled && router.vpnIp ? (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                VPN: {router.vpnIp}
+                              </span>
+                              <Link href="/dashboard/vpn" className="text-[10px] font-bold text-blue-600 hover:underline">
+                                Gerenciar VPN
+                              </Link>
+                            </div>
+                          ) : (
+                            <div className="mt-1">
+                              <Link href="/dashboard/vpn" className="text-[10px] font-bold text-indigo-600 hover:underline">
+                                + Conectar via VPN WireGuard
+                              </Link>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 self-end sm:self-center">
                         <button
                           onClick={() => connectToRouter(router)}
                           disabled={connectingId === router.id}

@@ -26,6 +26,15 @@ model Router {
   port      Int      @default(8728)
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  // ─── WireGuard VPN ────────────────────────────────────────────
+  // Quando habilitado, a conexão usa vpnIp em vez de host
+  vpnEnabled   Boolean   @default(false)
+  vpnIp        String?   // IP alocado na subnet de controle, ex: "10.8.0.2"
+  vpnPublicKey String?   // Chave pública WireGuard do MikroTik (para o server)
+  vpnPrivKey   String?   // Chave privada WireGuard gerada para o MikroTik
+  vpnLastSeen  DateTime? // Timestamp do último handshake detectado
+  vpnStatus    String    @default("disconnected") // connected | disconnected | pending
 }
 
 model FinanceLog {

@@ -49,20 +49,39 @@ export async function getSessionCredentials(): Promise<{ ip: string; user: strin
 /** Connect to MikroTik — optionally override the IP (for reconnection to new IP) */
 export async function getMikrotikClient(overrideIp?: string) {
   const credentials = await getSessionCredentials();
-  const ip = overrideIp || credentials.ip;
+
+  // Se o roteador tem VPN habilitada, usa o IP VPN (10.8.0.X) em vez do host original.
+  // Isso permite controle total de MikroTiks sem IP público.
+  let targetIp = overrideIp || credentials.ip;
+
+  if (!overrideIp) {
+    try {
+      const activeRouter = await prisma.router.findFirst({
+        where: { active: true },
+        select: { vpnEnabled: true, vpnIp: true, vpnStatus: true },
+      });
+
+      if (activeRouter?.vpnEnabled && activeRouter.vpnIp) {
+        targetIp = activeRouter.vpnIp;
+      }
+    } catch {
+      // Se o banco falhar, usa o IP das credenciais
+    }
+  }
 
   const mk = new MikrotikAPI();
-  const connected = await mk.connect(ip, credentials.user, credentials.pass);
+  const connected = await mk.connect(targetIp, credentials.user, credentials.pass);
 
   if (!connected) {
     throw new MikrotikSessionError(
-      `Não foi possível conectar ao MikroTik em ${ip}.`,
+      `Não foi possível conectar ao MikroTik em ${targetIp}.`,
       'CONNECTION_FAILED'
     );
   }
 
   return mk;
 }
+
 
 /** Update the session cookie with a new IP after provisioning changes the router IP */
 export async function updateSessionIp(newIp: string): Promise<void> {

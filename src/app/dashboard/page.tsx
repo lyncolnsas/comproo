@@ -120,10 +120,12 @@ export default function Dashboard() {
         <div className="flex items-center gap-3">
           {stats && (
             <div className="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 shadow-sm text-xs font-semibold text-slate-700">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className={`w-2 h-2 rounded-full ${stats.offline ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
               <span>{stats.identity}</span>
               <span className="text-slate-300">|</span>
-              <span className="font-mono text-slate-500">{stats.clockTime || '00:00'}</span>
+              <span className="font-mono text-slate-500">
+                {stats.offline ? 'Offline' : (stats.clockTime || '00:00')}
+              </span>
             </div>
           )}
 
@@ -138,10 +140,51 @@ export default function Dashboard() {
       </header>
 
       {/* ── ERROR BANNER ──────────────────────────────────────────────── */}
-      {error && (
+      {error && !stats && (
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-3 text-sm font-semibold">
           <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
           <span>Erro no sistema: {error}</span>
+        </div>
+      )}
+
+      {/* ── OFFLINE / VPN NOTICE BANNER ───────────────────────────────── */}
+      {stats?.offline && (
+        <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-amber-50/80 border border-amber-200/90 text-amber-900 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-600 mt-0.5 shadow-sm">
+              <Wifi className="w-5 h-5 stroke-[2.2]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-black text-sm text-slate-900">
+                  MikroTik Desconectado ou sem IP Público ({stats.targetHost || '192.168.88.1'})
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-200/80 text-amber-900 border border-amber-300">
+                  Túnel Remoto Necessário
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-1 max-w-2xl font-medium leading-relaxed">
+                A VPS não conseguiu comunicação direta com o roteador. Se o seu MikroTik está em uma rede local, CGNAT ou Starlink (sem IP público), configure a <strong>VPN WireGuard</strong> para que o painel tenha controle total remoto sem consumir dados da sua VPS.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+            <Link
+              href="/dashboard/vpn"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-500/25 transition-all cursor-pointer transform hover:-translate-y-0.5"
+            >
+              <span>🛡️</span>
+              <span>Conectar via VPN</span>
+            </Link>
+            <Link
+              href="/dashboard/admin"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+            >
+              <span>⚙️</span>
+              <span>Roteadores</span>
+            </Link>
+          </div>
         </div>
       )}
 
@@ -151,18 +194,26 @@ export default function Dashboard() {
           <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-3xl shrink-0 text-amber-600">
             🔌
           </div>
-          <div>
+          <div className="flex-1">
             <span className="saas-pill saas-pill-warning mb-2">Desconectado</span>
             <h3 className="text-xl font-bold text-slate-900 mt-1">Nenhum Roteador Conectado</h3>
             <p className="text-sm text-slate-500 mt-1 mb-4">
-              Conecte o sistema à sua Routerboard MikroTik para ativar o monitoramento em tempo real.
+              Conecte o sistema à sua Routerboard MikroTik para ativar o monitoramento em tempo real ou provisione o acesso remoto via VPN WireGuard.
             </p>
-            <Link
-              href="/dashboard/admin"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-wider shadow-sm"
-            >
-              Configurar Conexão
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard/admin"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-wider shadow-sm hover:bg-blue-700 transition-colors"
+              >
+                Configurar Conexão
+              </Link>
+              <Link
+                href="/dashboard/vpn"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs uppercase tracking-wider hover:bg-indigo-100 transition-colors"
+              >
+                🛡️ Conectar via VPN
+              </Link>
+            </div>
           </div>
         </div>
       ) : loading && !stats ? (
