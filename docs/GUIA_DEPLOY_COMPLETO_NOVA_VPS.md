@@ -1,4 +1,4 @@
-﻿# 🚀 Guia Definitivo de Deploy do MikroGestor em Nova VPS
+# 🚀 Guia Definitivo de Deploy do MikroGestor em Nova VPS
 
 > **Manual Oficial e À Prova de Falhas para Provisionamento de Produção**  
 > Compatível com: **Ubuntu 22.04 LTS / 24.04 LTS**, **Debian 11 / 12**, **Coolify**, **Docker** e **Raspberry Pi OS (ARM64)**.
@@ -134,25 +134,44 @@ No painel da aplicação no Coolify:
    - **Container Path**: `/app/prisma`
 4. Clique em **Save**.
 
-*(Alternativa equivalente: Vá na aba **General Settings** → **Custom Docker Run Options** e adicione: `-v /data/mikrogestor/prisma:/app/prisma`)*.
+> 💡 **Proteção Anti-Crash de Migração**: O script de inicialização do MikroGestor executa `npx prisma db push --accept-data-loss --skip-generate`. Isso garante que quando novos campos forem adicionados ao schema Prisma em novas versões, o Coolify nunca trave esperando confirmação interativa do terminal, subindo o container com zero retrabalho.
 
 ---
 
-### Passo 5: Variáveis de Ambiente
-Na aba **Environment Variables** da aplicação no Coolify, adicione as variáveis geradas pelo `setup-vps.sh`:
+### Passo 5: Variáveis de Ambiente e DNS Wildcard
+
+#### 1. Apontamento DNS Wildcard (Hostinger / Cloudflare / Registro.br)
+Para que os subdomínios dedicados de cada roteador (ex: `001.mikrogestor.com`, `mkroca.mikrogestor.com`) funcionem automaticamente com SSL Let's Encrypt:
+- **Tipo**: `A`
+- **Nome / Host**: `*`
+- **Valor / IP**: `SEU_IP_VPS` (ex: `2.25.168.82`)
+- **TTL**: 300 segundos ou Automático
+
+#### 2. Variáveis de Ambiente no Coolify
+Na aba **Environment Variables** da aplicação no Coolify, adicione as variáveis:
 
 ```env
 DATABASE_URL=file:/app/prisma/dev.db
 NEXTAUTH_SECRET=sua_chave_secreta_aleatoria_32_chars
-NEXTAUTH_URL=http://SEU_IP_VPS
+NEXTAUTH_URL=https://mikrogestor.com
 PORT=80
 VPS_PUBLIC_IP=SEU_IP_VPS
 VPS_WG_PUBLIC_KEY=sua_chave_publica_wireguard_gerada_no_passo_2
 WG_MANAGER_SECRET=seu_secret_gerado_no_passo_2
-WG_MANAGER_URL=http://172.17.0.1:51821
+
+# ⚠️ REDE DOCKER DO COOLIFY:
+# Se o container estiver na rede bridge 'coolify', o gateway do host é 172.16.1.1.
+# Se estiver na rede bridge padrão do Docker, o gateway é 172.17.0.1.
+WG_MANAGER_URL=http://172.16.1.1:51821
+
+# ❗ OBRIGATÓRIO PARA DEPLOY EM NUVEM / VPS:
+DEPLOYMENT_MODE=vps
+PORTAL_PUBLIC_DOMAIN=mikrogestor.com
 ```
 
-> 💡 *Dica*: Se você apontou um domínio (ex: `painel.meuprovedor.com`), coloque `NEXTAUTH_URL=https://painel.meuprovedor.com` e defina o domínio no campo **Domains** do Coolify para que o Traefik/Caddy gere o certificado SSL Let's Encrypt automaticamente.
+> ⚠️ **Atenção sobre o Gateway Docker (`WG_MANAGER_URL`)**:  
+> No Coolify, containers criados pela plataforma usam a rede Docker nomeada `coolify` cuja faixa é `172.16.1.0/24`, tendo como gateway o IP `172.16.1.1`. Configure `WG_MANAGER_URL=http://172.16.1.1:51821`. O UFW na VPS deve estar liberado com:  
+> `ufw allow from 172.16.0.0/12 to any port 51821 proto tcp`
 
 ---
 
@@ -162,7 +181,7 @@ Clique no botão **Deploy** no topo do Coolify.
 #### O que o sistema faz sozinho durante o build e inicialização:
 1. **Fase de Build (`npm install`)**: O script `postinstall` executa automaticamente `scripts/patch-routeros.js`, garantindo que a biblioteca `node-routeros` suporte as respostas `!empty` do RouterOS v7.
 2. **Fase de Inicialização (`npm start`)**:
-   - Executa `npx prisma db push --skip-generate` (cria as tabelas no SQLite persistente se ainda não existirem).
+   - Executa `npx prisma db push --accept-data-loss --skip-generate` (cria/atualiza as tabelas no SQLite persistente sem risco de bloqueio interativo).
    - Executa `node scripts/init-db.js` (ativa o modo **WAL** de alta concorrência e cria o usuário padrão `admin` / `123` caso o banco seja novo).
    - Inicia o Next.js na porta `80`.
 
@@ -304,6 +323,9 @@ docker compose up -d
 | `Error: P1001 Can't reach database` | Permissão insuficiente no diretório de dados do SQLite. | Execute na VPS:<br>`chmod -R 777 /data/mikrogestor/prisma` |
 | Syntax error ao colar o script no Winbox Terminal | Quebra de linhas Windows (`\r\n`) ou barras invertidas (`\`) no script. | Todos os comandos para RouterOS v7 devem ser gerados em linha única com `;` separando comandos. |
 | Daemon WG-Manager retornando HTTP 401 Unauthorized | O cabeçalho `X-WG-Secret` enviado pelo MikroGestor não confere com o secret da VPS. | Verifique `cat /etc/mikrogestor-wg.secret` na VPS e atualize a variável `WG_MANAGER_SECRET` no Coolify. |
+| Regras de Walled Garden IP ficam com flag `I` (invalid) | No RouterOS v7, a tabela `/ip/hotspot/walled-garden/ip` **NÃO ACEITA ASTERISCOS** no campo `dst-host`. | Utilize apenas o domínio exato (`mikrogestor.com`) ou IP (`dst-address`). O MikroGestor agora sanitiza e remove asteriscos automaticamente. |
+| Walled Garden acumulando regras repetidas e duplicadas | Múltiplos provisionamentos ou chamadas concorrentes sem checagem de existência prévia. | O MikroGestor agora possui garantia estrita de idempotência com deduplicação ativa em `src/lib/routeros.ts`. Para limpar manualmente no Winbox: `/ip hotspot walled-garden remove [find]; /ip hotspot walled-garden ip remove [find]` e re-provisionar. |
+| Container em Crash Loop após deploy com mensagem `Do you want to continue? All data will be lost.` | O Prisma detectou alteração de schema e aguarda confirmação interativa no terminal headless do Coolify. | Certifique-se de que o script `start` em `package.json` inclui `--accept-data-loss` (`npx prisma db push --accept-data-loss --skip-generate`). |
 
 ---
 

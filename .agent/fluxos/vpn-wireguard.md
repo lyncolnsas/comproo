@@ -34,7 +34,9 @@ Se o servidor VPS ainda não possui o WireGuard ativo:
    - `VPS_WG_PUBLIC_KEY`
    - `VPS_PUBLIC_IP`
    - `WG_MANAGER_SECRET`
-   - `WG_MANAGER_URL=http://172.17.0.1:51821`
+   - `WG_MANAGER_URL=http://172.16.1.1:51821` (ou `http://172.17.0.1:51821` se rede Docker padrão)
+   - `DEPLOYMENT_MODE=vps`
+   - `PORTAL_PUBLIC_DOMAIN=mikrogestor.com`
 3. Fazer o Redeploy da aplicação no Coolify.
 
 ---

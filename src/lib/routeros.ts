@@ -249,10 +249,38 @@ export class MikrotikAPI {
   async addWalledGarden(action: 'allow' | 'deny', dstHost: string, comment: string = '') {
     if (!this.client) throw new Error('Not connected');
     const menu = this.client.menu('/ip/hotspot/walled-garden');
+    const cleanHost = dstHost.replace(/^\*+|\*+$/g, '').trim();
+    if (!cleanHost) return null;
+    const wildcardPattern = `*${cleanHost}*`;
+
+    // 1. Busca regras existentes para verificar duplicatas (idempotência estrita)
+    const existingRules = ((await menu.get()) as any[]) || [];
+    const matching = existingRules.filter((r: any) => {
+      const rHost = (r['dst-host'] || '').replace(/^\*+|\*+$/g, '').trim();
+      return (
+        (rHost.toLowerCase() === cleanHost.toLowerCase() ||
+          r['dst-host'] === wildcardPattern ||
+          r['dst-host'] === cleanHost) &&
+        r.action === action
+      );
+    });
+
+    if (matching.length > 0) {
+      // Se houver mais de uma regra para o mesmo host, remove os duplicados sobressalentes
+      for (let i = 1; i < matching.length; i++) {
+        const dupId = matching[i]['.id'] || matching[i].id;
+        if (dupId) {
+          await menu.remove(dupId).catch(() => null);
+        }
+      }
+      return matching[0];
+    }
+
+    const comm = comment.startsWith('MikroGestor:') ? comment : `MikroGestor: ${comment}`;
     return await menu.add({
       action: action,
-      'dst-host': `*${dstHost}*`, // wildcard to match subdomains
-      comment: `MikroGestor: ${comment}`
+      'dst-host': wildcardPattern,
+      comment: comm,
     });
   }
 
@@ -271,11 +299,45 @@ export class MikrotikAPI {
   async addWalledGardenIp(action: 'accept' | 'reject' | 'drop', dstAddressOrHost: string, comment: string = '') {
     if (!this.client) throw new Error('Not connected');
     const menu = this.client.menu('/ip/hotspot/walled-garden/ip');
-    const clean = dstAddressOrHost.replace(/^\*+|\*+$/g, '');
+    // Remove qualquer asterisco (RouterOS v7 invalida regras com asteriscos em walled-garden/ip)
+    const clean = dstAddressOrHost.replace(/\*/g, '').trim();
+    if (!clean) return null;
     const isIp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(\/\d{1,2})?$/.test(clean);
+
+    const existingRules = ((await menu.get()) as any[]) || [];
+
+    // Limpa regras corrompidas com asteriscos na tabela IP
+    for (const r of existingRules) {
+      if (r.invalid === true || r.invalid === 'true' || (r['dst-host'] && r['dst-host'].includes('*'))) {
+        const id = r['.id'] || r.id;
+        if (id) await menu.remove(id).catch(() => null);
+      }
+    }
+
+    // Verifica duplicatas exatas
+    const matching = existingRules.filter((r: any) => {
+      if (isIp) {
+        return r['dst-address'] === clean && r.action === action;
+      } else {
+        const rHost = (r['dst-host'] || '').replace(/\*/g, '').trim();
+        return rHost.toLowerCase() === clean.toLowerCase() && r.action === action;
+      }
+    });
+
+    if (matching.length > 0) {
+      for (let i = 1; i < matching.length; i++) {
+        const dupId = matching[i]['.id'] || matching[i].id;
+        if (dupId) {
+          await menu.remove(dupId).catch(() => null);
+        }
+      }
+      return matching[0];
+    }
+
+    const comm = comment.startsWith('MikroGestor:') ? comment : `MikroGestor: ${comment}`;
     const data: any = {
       action: action,
-      comment: `MikroGestor: ${comment}`
+      comment: comm,
     };
     if (isIp) {
       data['dst-address'] = clean;
@@ -289,6 +351,174 @@ export class MikrotikAPI {
     if (!this.client) throw new Error('Not connected');
     const menu = this.client.menu('/ip/hotspot/walled-garden/ip');
     return await menu.remove(id);
+  }
+
+  /**
+   * Varredura profunda para limpar e desduplicar regras de Walled Garden no RouterOS
+   */
+  async cleanupAndDeduplicateWalledGarden(opts?: { isVps?: boolean }) {
+    if (!this.client) throw new Error('Not connected');
+
+    // 1. Limpeza no Walled Garden HTTP
+    try {
+      const wgMenu = this.client.menu('/ip/hotspot/walled-garden');
+      const list = ((await wgMenu.get()) as any[]) || [];
+      const seenHosts = new Set<string>();
+
+      for (const item of list) {
+        const rawHost = item['dst-host'] || '';
+        const clean = rawHost.replace(/^\*+|\*+$/g, '').trim().toLowerCase();
+        if (!clean) continue;
+
+        if (seenHosts.has(clean)) {
+          const id = item['.id'] || item.id;
+          if (id) await wgMenu.remove(id).catch(() => null);
+        } else {
+          seenHosts.add(clean);
+        }
+      }
+    } catch (err) {
+      console.warn('[Cleanup WG] Erro ao desduplicar Walled Garden HTTP:', err);
+    }
+
+    // 2. Limpeza no Walled Garden IP
+    try {
+      const wgIpMenu = this.client.menu('/ip/hotspot/walled-garden/ip');
+      const listIp = ((await wgIpMenu.get()) as any[]) || [];
+      const seenDestinations = new Set<string>();
+
+      for (const item of listIp) {
+        const id = item['.id'] || item.id;
+        if (!id) continue;
+
+        // Regra inválida ou com asterisco (não suportado em IP no ROS v7)
+        if (item.invalid === true || item.invalid === 'true' || (item['dst-host'] && item['dst-host'].includes('*'))) {
+          await wgIpMenu.remove(id).catch(() => null);
+          continue;
+        }
+
+        // Se estiver em modo VPS, remove IPs locais do Docker ou da antiga LAN
+        if (opts?.isVps) {
+          const addr = item['dst-address'] || '';
+          if (
+            addr.startsWith('172.16.') ||
+            addr.startsWith('172.17.') ||
+            addr.startsWith('192.168.') ||
+            (item.comment && item.comment.includes('Auto-Cadastro'))
+          ) {
+            await wgIpMenu.remove(id).catch(() => null);
+            continue;
+          }
+        }
+
+        const destKey = item['dst-address']
+          ? `ip_${item['dst-address']}`
+          : `host_${(item['dst-host'] || '').replace(/\*/g, '').trim().toLowerCase()}`;
+
+        const fullKey = `${item.action || 'accept'}_${destKey}`;
+        if (seenDestinations.has(fullKey)) {
+          await wgIpMenu.remove(id).catch(() => null);
+        } else {
+          seenDestinations.add(fullKey);
+        }
+      }
+    } catch (err) {
+      console.warn('[Cleanup WG] Erro ao desduplicar Walled Garden IP:', err);
+    }
+
+    // 3. Limpeza de Static DNS legado no modo VPS
+    if (opts?.isVps) {
+      try {
+        const dnsStatic = this.client.menu('/ip/dns/static');
+        const statics = ((await dnsStatic.get()) as any[]) || [];
+        for (const s of statics) {
+          if (s.name === 'portal.wifi.local') {
+            const sid = s['.id'] || s.id;
+            if (sid) await dnsStatic.remove(sid).catch(() => null);
+          }
+        }
+      } catch (err) {
+        console.warn('[Cleanup WG] Erro ao limpar static DNS legado:', err);
+      }
+    }
+  }
+
+  /**
+   * Configuração completa, segura e 100% idempotente de Walled Garden no MikroTik.
+   * Evita repetições, remove duplicatas e garante acesso irrestrito ao portal e gateways.
+   */
+  async ensureWalledGardenRules(opts?: {
+    mode?: 'local' | 'vps';
+    publicDomain?: string;
+    subdomain?: string;
+    adminIp?: string;
+  }) {
+    if (!this.client) throw new Error('Not connected');
+    const isVps = opts?.mode === 'vps';
+    const publicDomain = (opts?.publicDomain || '').replace(/^\*+|\*+$/g, '').trim();
+    const subdomain = (opts?.subdomain || '').replace(/^\*+|\*+$/g, '').trim();
+    const adminIp = opts?.adminIp || '';
+
+    // 1. Executa limpeza e deduplicação profunda primeiro
+    await this.cleanupAndDeduplicateWalledGarden({ isVps });
+
+    if (!isVps) {
+      // ── MODO LOCAL ──────────────────────────────────────────────────────────
+      if (adminIp) {
+        await this.addWalledGarden('allow', adminIp, 'Auto-Cadastro / API IP');
+        await this.addWalledGardenIp('accept', adminIp, 'Auto-Cadastro / API IP');
+      }
+      await this.addWalledGarden('allow', 'portal.wifi.local', 'Auto-Cadastro / API DNS');
+      await this.addWalledGardenIp('accept', 'portal.wifi.local', 'Auto-Cadastro / API DNS');
+    } else {
+      // ── MODO VPS ────────────────────────────────────────────────────────────
+      // 1. Domínio principal e subdomínios MikroGestor
+      if (publicDomain) {
+        await this.addWalledGarden('allow', publicDomain, 'Portal Publico VPS');
+        await this.addWalledGarden('allow', `www.${publicDomain}`, 'Portal Publico WWW');
+        await this.addWalledGardenIp('accept', publicDomain, 'Dominio Publico (HTTPS)');
+        await this.addWalledGardenIp('accept', `www.${publicDomain}`, 'WWW Dominio Publico (HTTPS)');
+      }
+
+      // 2. Subdomínio dedicado do roteador (se atribuído)
+      if (subdomain) {
+        await this.addWalledGarden('allow', subdomain, 'Subdominio Roteador');
+        await this.addWalledGardenIp('accept', subdomain, 'Subdominio Roteador (HTTPS)');
+      }
+
+      // 3. IP público da VPS (para requisições diretas / APIs)
+      const VPS_PUBLIC_IP = process.env.VPS_PUBLIC_IP;
+      if (VPS_PUBLIC_IP) {
+        await this.addWalledGardenIp('accept', VPS_PUBLIC_IP, 'VPS IP Publico (HTTPS)');
+      }
+
+      // 4. IP VPN de controle (10.8.0.1)
+      const VPN_SERVER_IP = process.env.VPN_SERVER_IP || '10.8.0.1';
+      await this.addWalledGardenIp('accept', VPN_SERVER_IP, 'IP VPN Servidor');
+
+      // 5. Integrações Essenciais (Mercado Pago, WhatsApp, Google Fonts)
+      const essentialDomains = [
+        'mercadopago.com',
+        'www.mercadopago.com',
+        'mercadopago.com.br',
+        'www.mercadopago.com.br',
+        'api.mercadopago.com',
+        'api.mercadolibre.com',
+        'mercadolivre.com.br',
+        'www.mercadolivre.com.br',
+        'whatsapp.com',
+        'web.whatsapp.com',
+        'api.whatsapp.com',
+        'whatsapp.net',
+        'fonts.googleapis.com',
+        'fonts.gstatic.com',
+      ];
+
+      for (const d of essentialDomains) {
+        await this.addWalledGarden('allow', d, `Integracao ${d}`);
+        await this.addWalledGardenIp('accept', d, `Integracao ${d} (HTTPS)`);
+      }
+    }
   }
 
   async setTimeBlockRule(startTime: string, endTime: string, days: string, comment: string) {
@@ -809,145 +1039,15 @@ export class MikrotikAPI {
       result.bypass = 'Modo VPS: IP Binding ignorado (IP Docker não roteável pelo hotspot).';
     }
 
-    // ── Walled Garden (HTTP Porta 80) ─────────────────────────────────────────
-    // LOCAL: libera IP LAN do servidor + portal.wifi.local
-    // VPS:   libera domínio público + gateways essenciais
+    // ── Walled Garden (HTTP e IP) unificado e deduplicado ─────────────────────
     try {
-      const wgMenu = this.client.menu('/ip/hotspot/walled-garden');
-      const list = await wgMenu.get() as any[];
-
-      const addWgEntry = async (host: string, comment: string) => {
-        if (!host) return;
-        const wildcard = `*${host}*`;
-        const exists = list.some((item: any) => item['dst-host'] === wildcard || item['dst-host'] === host);
-        if (!exists) {
-          await wgMenu.add({
-            action: 'allow',
-            'dst-host': wildcard,
-            comment: `MikroGestor: ${comment}`
-          }).catch(() => null);
-        }
-      };
-
-      if (!isVps) {
-        await addWgEntry(adminIp, 'Auto-Cadastro / API');
-        await addWgEntry('portal.wifi.local', 'Auto-Cadastro / API DNS');
-      } else {
-        if (publicDomain) {
-          await addWgEntry(publicDomain, 'Portal Publico VPS');
-          await addWgEntry(`www.${publicDomain}`, 'Portal Publico WWW');
-        }
-        const essentialDomains = [
-          'mercadopago.com',
-          'mercadopago.com.br',
-          'mercadolivre.com.br',
-          'mercadolibre.com',
-          'whatsapp.com',
-          'whatsapp.net'
-        ];
-        for (const d of essentialDomains) {
-          await addWgEntry(d, `Integracao ${d}`);
-        }
-      }
+      await this.ensureWalledGardenRules({
+        mode: isVps ? 'vps' : 'local',
+        publicDomain,
+        adminIp,
+      });
     } catch (e: any) {
-      console.warn('Failed to configure walled garden during provisioning:', e);
-    }
-
-    // ── Walled Garden IP (HTTPS Porta 443 + IP Bypass) ─────────────────────────
-    // REGRA CRÍTICA: O MikroTik Hotspot bloqueia TODO o tráfego HTTPS (porta 443) para
-    // clientes não autenticados, a menos que o destino esteja aceito em /ip/hotspot/walled-garden/ip!
-    // ATENÇÃO: No RouterOS v7, 'dst-host' em walled-garden/ip NÃO aceita asteriscos (fica invalid: true).
-    // Deve ser cadastrado o hostname exato (ex: 'mikrogestor.com') ou o endereço IP ('dst-address').
-    try {
-      const wgIpMenu = this.client.menu('/ip/hotspot/walled-garden/ip');
-      const listIp = await wgIpMenu.get() as any[];
-
-      // Limpeza preventiva de regras com asterisco que ficaram inválidas
-      for (const item of listIp) {
-        if (item.invalid === true || item.invalid === 'true' || (item['dst-host'] && item['dst-host'].includes('*'))) {
-          const itemId = item['.id'] || item.id;
-          if (itemId) {
-            await wgIpMenu.remove(itemId).catch(() => null);
-          }
-        }
-      }
-
-      const addWgIpAddress = async (ip: string, comment: string) => {
-        if (!ip) return;
-        const exists = listIp.some((item: any) => item['dst-address'] === ip && item.action === 'accept');
-        if (!exists) {
-          await wgIpMenu.add({
-            action: 'accept',
-            'dst-address': ip,
-            comment: `MikroGestor: ${comment}`
-          }).catch(() => null);
-        }
-      };
-
-      const addWgIpHost = async (host: string, comment: string) => {
-        if (!host) return;
-        const clean = host.replace(/^\*+|\*+$/g, '');
-        const exists = listIp.some((item: any) => item['dst-host'] === clean && item.action === 'accept');
-        if (!exists) {
-          await wgIpMenu.add({
-            action: 'accept',
-            'dst-host': clean,
-            comment: `MikroGestor: ${comment}`
-          }).catch(() => null);
-        }
-      };
-
-      if (!isVps) {
-        await addWgIpAddress(adminIp, 'Auto-Cadastro / API IP');
-      } else {
-        // 1. Hostnames do sistema MikroGestor (HTTPS liberado para clientes antes do login)
-        if (publicDomain) {
-          await addWgIpHost(publicDomain, 'Dominio Publico (HTTPS)');
-          await addWgIpHost(`www.${publicDomain}`, 'WWW Dominio Publico (HTTPS)');
-        }
-        // 2. IP Público da VPS
-        const VPS_PUBLIC_IP = process.env.VPS_PUBLIC_IP;
-        if (VPS_PUBLIC_IP) {
-          await addWgIpAddress(VPS_PUBLIC_IP, 'VPS IP Publico (HTTPS)');
-        }
-        // 3. IP VPN do Servidor (controle)
-        const VPN_SERVER_IP = process.env.VPN_SERVER_IP || '10.8.0.1';
-        await addWgIpAddress(VPN_SERVER_IP, 'IP VPN Servidor');
-
-        // 4. Gateways de Pagamento (Mercado Pago), WhatsApp e Fontes (para o portal carregar completo em HTTPS)
-        const externalHosts = [
-          'mercadopago.com',
-          'www.mercadopago.com',
-          'mercadopago.com.br',
-          'www.mercadopago.com.br',
-          'api.mercadopago.com',
-          'api.mercadolibre.com',
-          'mercadolivre.com.br',
-          'www.mercadolivre.com.br',
-          'whatsapp.com',
-          'web.whatsapp.com',
-          'api.whatsapp.com',
-          'whatsapp.net',
-          'fonts.googleapis.com',
-          'fonts.gstatic.com'
-        ];
-        for (const h of externalHosts) {
-          await addWgIpHost(h, `Integracao ${h} (HTTPS)`);
-        }
-
-        // 5. Limpeza de static DNS para portal.wifi.local que causa conflito
-        try {
-          const dnsStatic = this.client.menu('/ip/dns/static');
-          const statics = await dnsStatic.get() as any[];
-          const legacy = statics.filter((s: any) => s.name === 'portal.wifi.local');
-          for (const s of legacy) {
-            const sid = s['.id'] || s.id;
-            if (sid) await dnsStatic.remove(sid).catch(() => null);
-          }
-        } catch (dnsErr) {}
-      }
-    } catch (e: any) {
-      console.warn('Failed to add walled garden IP bypass during provisioning:', e);
+      console.warn('Failed to configure walled garden rules in ensureAdminArpAndBypass:', e);
     }
 
     // ── Force DNS (Redirect & Block Private DNS) — ambos os modos ────────────

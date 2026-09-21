@@ -332,13 +332,17 @@ export class WireGuardService {
       );
     }
 
+    const certHost = process.env.PORTAL_PUBLIC_DOMAIN 
+      ? (process.env.PORTAL_PUBLIC_DOMAIN.startsWith("www.") ? process.env.PORTAL_PUBLIC_DOMAIN : `www.${process.env.PORTAL_PUBLIC_DOMAIN}`)
+      : "www.mikrogestor.com";
+
     const sslBlock = subdomain && routerId
       ? `
 # --- 6. CERTIFICADO SSL E AUTO-RENOVACAO (SUBDOMINIO ${subdomain}) ---
 :do { /system scheduler remove [find name=mg-renew-ssl] } on-error={}
 :do { /system script remove [find name=mg-sync-ssl] } on-error={}
 
-/system script add name=mg-sync-ssl policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon comment="MikroGestor: Sincroniza e renova SSL para ${subdomain}" source=":do { :log info \\"[MikroGestor] Baixando certificado SSL para ${subdomain}...\\"; /tool fetch url=\\"https://www.mikrogestor.com/api/vpn/router/${routerId}/cert-file?type=cert\\" dst-path=\\"mg-cert.pem\\" check-certificate=no; :delay 2s; /tool fetch url=\\"https://www.mikrogestor.com/api/vpn/router/${routerId}/cert-file?type=key\\" dst-path=\\"mg-key.pem\\" check-certificate=no; :delay 2s; :do { /certificate remove [find name=\\"mg-ssl-${slug || 'cert'}\\"] } on-error={}; /certificate import file-name=mg-cert.pem passphrase=\\"\\" name=\\"mg-ssl-${slug || 'cert'}\\"; :delay 2s; /certificate import file-name=mg-key.pem passphrase=\\"\\" name=\\"mg-ssl-${slug || 'cert'}\\"; :delay 2s; :do { /file remove [find name=\\"mg-cert.pem\\"] } on-error={}; :do { /file remove [find name=\\"mg-key.pem\\"] } on-error={}; :do { /ip service set www-ssl certificate=\\"mg-ssl-${slug || 'cert'}\\" disabled=no port=443 } on-error={}; :do { /ip hotspot profile set [find name=hsprof_hotspot] ssl-certificate=\\"mg-ssl-${slug || 'cert'}\\" https=yes dns-name=\\"${subdomain}\\" } on-error={}; :log info \\"[MikroGestor] Certificado SSL ${subdomain} importado com sucesso!\\"; } on-error={ :log warning \\"[MikroGestor] Falha na sincronizacao SSL (pode estar aguardando emissao). Tentando novamente no proximo ciclo.\\"; }"
+/system script add name=mg-sync-ssl policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon comment="MikroGestor: Sincroniza e renova SSL para ${subdomain}" source=":do { :log info \\"[MikroGestor] Baixando certificado SSL para ${subdomain}...\\"; /tool fetch url=\\"https://${certHost}/api/vpn/router/${routerId}/cert-file?type=cert\\" dst-path=\\"mg-cert.pem\\" check-certificate=no; :delay 2s; /tool fetch url=\\"https://${certHost}/api/vpn/router/${routerId}/cert-file?type=key\\" dst-path=\\"mg-key.pem\\" check-certificate=no; :delay 2s; :do { /certificate remove [find name=\\"mg-ssl-${slug || 'cert'}\\"] } on-error={}; /certificate import file-name=mg-cert.pem passphrase=\\"\\" name=\\"mg-ssl-${slug || 'cert'}\\"; :delay 2s; /certificate import file-name=mg-key.pem passphrase=\\"\\" name=\\"mg-ssl-${slug || 'cert'}\\"; :delay 2s; :do { /file remove [find name=\\"mg-cert.pem\\"] } on-error={}; :do { /file remove [find name=\\"mg-key.pem\\"] } on-error={}; :do { /ip service set www-ssl certificate=\\"mg-ssl-${slug || 'cert'}\\" disabled=no port=443 } on-error={}; :do { /ip hotspot profile set [find name=hsprof_hotspot] ssl-certificate=\\"mg-ssl-${slug || 'cert'}\\" https=yes dns-name=\\"${subdomain}\\" } on-error={}; :log info \\"[MikroGestor] Certificado SSL ${subdomain} importado com sucesso!\\"; } on-error={ :log warning \\"[MikroGestor] Falha na sincronizacao SSL (pode estar aguardando emissao). Tentando novamente no proximo ciclo.\\"; }"
 
 /system scheduler add name=mg-renew-ssl interval=15d start-time=startup policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon on-event=mg-sync-ssl comment="MikroGestor: Renovacao automatica de SSL a cada 15 dias"
 
@@ -386,6 +390,18 @@ ${subdomain ? `# Subdomínio: ${subdomain}\n` : ""}# Gerado em: ${new Date().toI
 :do {
   :local ruleHs [/ip firewall filter find comment="MikroGestor: block hotspot thru VPN"]
   :if ([:len $ruleHs] = 0) do={ /ip firewall filter add chain=forward in-interface=bridge-hotspot out-interface=wg-mikrogestor action=drop comment="MikroGestor: block hotspot thru VPN" }
+} on-error={}
+
+# --- 5. WALLED GARDEN IDEMPOTENTE (ACESSO SISTEMA & GATEWAYS) ---
+:do {
+  :if ([:len [/ip hotspot walled-garden find where dst-host="*mikrogestor.com*"]] = 0) do={ /ip hotspot walled-garden add action=allow dst-host="*mikrogestor.com*" comment="MikroGestor: Dominio Publico" }
+  :if ([:len [/ip hotspot walled-garden ip find where dst-host="mikrogestor.com"]] = 0) do={ /ip hotspot walled-garden ip add action=accept dst-host="mikrogestor.com" comment="MikroGestor: Dominio Publico (HTTPS)" }
+  :if ([:len [/ip hotspot walled-garden ip find where dst-host="www.mikrogestor.com"]] = 0) do={ /ip hotspot walled-garden ip add action=accept dst-host="www.mikrogestor.com" comment="MikroGestor: WWW Dominio Publico (HTTPS)" }
+  :if ([:len [/ip hotspot walled-garden ip find where dst-address="${vpsIp}"]] = 0) do={ /ip hotspot walled-garden ip add action=accept dst-address="${vpsIp}" comment="MikroGestor: VPS IP Publico (HTTPS)" }
+  :if ([:len [/ip hotspot walled-garden ip find where dst-address="10.8.0.1"]] = 0) do={ /ip hotspot walled-garden ip add action=accept dst-address="10.8.0.1" comment="MikroGestor: IP VPN Servidor" }
+${subdomain ? `  :if ([:len [/ip hotspot walled-garden find where dst-host="*${subdomain}*"]] = 0) do={ /ip hotspot walled-garden add action=allow dst-host="*${subdomain}*" comment="MikroGestor: Subdominio Roteador" }
+  :if ([:len [/ip hotspot walled-garden ip find where dst-host="${subdomain}"]] = 0) do={ /ip hotspot walled-garden ip add action=accept dst-host="${subdomain}" comment="MikroGestor: Subdominio Roteador (HTTPS)" }
+` : ""}
 } on-error={}
 ${sslBlock}
 :log info "MikroGestor VPN: configuracao concluida (${vpnIp})"

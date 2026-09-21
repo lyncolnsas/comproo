@@ -33,6 +33,8 @@ Configuração no Coolify:
 - **Opção A**: Application → Persistent Storage → Add Volume (`/data/mikrogestor/prisma` -> `/app/prisma`)
 - **Opção B**: Application → General Settings → Custom Docker Run Options: `-v /data/mikrogestor/prisma:/app/prisma`
 
+> 🛡️ **Zero Retrabalho com Schema Sync**: O container inicia com `npx prisma db push --accept-data-loss --skip-generate`. Isso evita que qualquer divergência entre o código e o banco existente cause bloqueio interativo ou crash loops.
+
 ### 1.3 WireGuard: NAT Masquerade & Split-Tunnel Obrigatório
 1. **Split-Tunneling**: `AllowedIPs` do peer MikroTik deve ser SEMPRE `10.8.0.0/24` (NUNCA `0.0.0.0/0`).
 2. **NAT Masquerade no Host (Crucial para Docker)**: O arquivo `/etc/wireguard/wg0.conf` no host DEVE conter:
@@ -40,7 +42,7 @@ Configuração no Coolify:
    PostUp   = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o %i -j MASQUERADE
    PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o %i -j MASQUERADE
    ```
-   *Sem o MASQUERADE, pacotes vindos do Docker (172.17.0.X) chegam ao MikroTik com IP de origem que ele desconhece ou descarta.*
+   *Sem o MASQUERADE, pacotes vindos do Docker (172.16.X.X ou 172.17.X.X) chegam ao MikroTik com IP de origem que ele desconhece ou descarta.*
 3. **Portas de controle VPN**: TCP 8728 (API plain) e TCP 8729 (API SSL).
 4. **Daemon WG-Manager**: Escuta em `0.0.0.0:51821`, protegido por header `X-WG-Secret`.
 5. **UFW**: Deve liberar porta 51820/udp para o mundo e porta 51821/tcp para a rede Docker (`172.16.0.0/12`).
@@ -60,6 +62,11 @@ Para que todo roteador conectado responda em um subdomínio próprio (ex: `mkroc
    - O daemon extrai certificado e chave em `/cert/extract?domain=<subdomain>`.
    - O MikroTik baixa os arquivos via `/tool fetch` e renova a cada 15 dias via `/system scheduler`.
 
+### 1.5 Walled Garden: Regras Críticas no RouterOS v7
+1. **Sem asteriscos em `walled-garden/ip`**: No RouterOS v7, `dst-host` em `/ip/hotspot/walled-garden/ip` **NÃO ACEITA ASTERISCOS** (ex: `*mikrogestor.com*` se torna `invalid: true`). Deve ser sempre o domínio exato (`mikrogestor.com`, `www.mikrogestor.com`) ou IP do host (`dst-address`).
+2. **Idempotência estrita**: Todas as chamadas de provisionamento usam `ensureWalledGardenRules`, que varre regras existentes, deduplica entradas antigas e apenas insere as regras faltantes.
+3. **Isolamento de IPs Docker**: O sincronizador de rede (`network-sync.ts`) nunca deve injetar IPs de containers Docker (`172.16.x.x`) ou DNS local (`portal.wifi.local`) no MikroTik quando `DEPLOYMENT_MODE === 'vps'`.
+
 ---
 
 ## 2. Deploy em Nova VPS do Zero (Checklist Rápido)
@@ -68,32 +75,37 @@ Para que todo roteador conectado responda em um subdomínio próprio (ex: `mkroc
    ```bash
    curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
    ```
-2. **Executar instalador de infraestrutura do MikroGestor**:
+2. **Configurar Apontamento DNS Wildcard**:
+   - `*` -> `IP_PUBLICO_VPS`
+   - `@` -> `IP_PUBLICO_VPS`
+   - `www` -> `IP_PUBLICO_VPS`
+3. **Executar instalador de infraestrutura do MikroGestor**:
    ```bash
    bash <(curl -sSL https://raw.githubusercontent.com/lyncolnsas/mikrogestor-voucher22/main/vpn/setup-vps.sh)
    ```
-3. **Criar aplicação no Coolify**:
+4. **Criar aplicação no Coolify**:
    - Repo: `https://github.com/lyncolnsas/mikrogestor-voucher22.git`
    - Build Pack: `Nixpacks`
    - Porta: `80`
-4. **Configurar Persistent Storage**:
+5. **Configurar Persistent Storage**:
    - `/data/mikrogestor/prisma` (Host) → `/app/prisma` (Container)
-5. **Colar Variáveis de Ambiente no Coolify**:
+6. **Colar Variáveis de Ambiente no Coolify**:
    ```env
    DATABASE_URL=file:/app/prisma/dev.db
    NEXTAUTH_SECRET=(gerado pelo setup-vps.sh)
-   NEXTAUTH_URL=https://SEU_DOMINIO (ou http://SEU_IP_VPS)
+   NEXTAUTH_URL=https://SEU_DOMINIO
    PORT=80
    VPS_PUBLIC_IP=SEU_IP_VPS
    VPS_WG_PUBLIC_KEY=(chave do servidor wg0)
    WG_MANAGER_SECRET=(secret do wg-manager)
-   WG_MANAGER_URL=http://172.17.0.1:51821
+   # Gateway Docker do Coolify: 172.16.1.1 (ou 172.17.0.1 em Docker padrão)
+   WG_MANAGER_URL=http://172.16.1.1:51821
    # ❗ OBRIGATÓRIO para modo VPS — sem isso o hotspot fica inacessível!
    DEPLOYMENT_MODE=vps
-   PORTAL_PUBLIC_DOMAIN=SEU_DOMINIO  # Ex: app.empresa.com (sem http:// e sem barra)
+   PORTAL_PUBLIC_DOMAIN=SEU_DOMINIO  # Ex: mikrogestor.com (sem http:// e sem barra)
    ```
-6. **Clicar em Deploy no Coolify**.
-7. **Executar validação automatizada em 8 camadas**:
+7. **Clicar em Deploy no Coolify**.
+8. **Executar validação automatizada em 8 camadas**:
    ```bash
    bash scripts/verificar-deploy-completo.sh
    ```
@@ -112,9 +124,14 @@ Para que todo roteador conectado responda em um subdomínio próprio (ex: `mkroc
 - **Causa 2**: Falta de regra `iptables -t nat -A POSTROUTING -o wg0 -j MASQUERADE` no host.
 - **Causa 3**: Serviço de API desativado no MikroTik (`/ip service enable api`).
 
-### P1001: Can't reach database
-- **Causa**: Falta de permissão no diretório montado.
-- **Solução**: No host, execute `chmod -R 777 /data/mikrogestor/prisma`.
+### P1001: Can't reach database ou Container Crash Loop
+- **Causa**: Falta de permissão no diretório montado ou conflito interativo de migração.
+- **Solução**: No host, execute `chmod -R 777 /data/mikrogestor/prisma`. O script `npm run start` já inclui `--accept-data-loss` para prevenir bloqueios.
+
+### Walled Garden com regras inválidas ou duplicadas
+- **Causa**: Inserção de `*` em `walled-garden/ip` no RouterOS v7 ou provisionamento repetido.
+- **Solução**: O MikroGestor trata isso nativamente via `ensureWalledGardenRules` e `cleanupAndDeduplicateWalledGarden`. Para resetar manualmente:
+  `/ip hotspot walled-garden remove [find]; /ip hotspot walled-garden ip remove [find]` e execute o provisionamento novamente no painel.
 
 ### Portal do Hotspot inacessível após provisionamento (modo VPS)
 - **Sintoma**: Clientes do hotspot são redirecionados mas não conseguem abrir o portal de login.

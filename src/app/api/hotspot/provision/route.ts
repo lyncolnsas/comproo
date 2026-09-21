@@ -738,23 +738,16 @@ export async function POST(request: Request) {
         }
       } catch (e: any) { warn('user_profile', e?.message || String(e)); }
 
-      // Passo 9.1: Walled Garden & SSL Bypass para Domínio e Subdomínio
+      // Passo 9.1: Walled Garden & SSL Bypass para Domínio e Subdomínio (Unificado e Deduplicado)
       try {
         const publicDomain = getPublicDomain();
-        if (publicDomain) {
-          await mk.addWalledGarden('allow', `*${publicDomain}*`, 'MikroGestor Public Domain');
-          await mk.addWalledGardenIp('accept', publicDomain, 'MikroGestor Public IP HTTPS');
-          await mk.addWalledGardenIp('accept', `www.${publicDomain}`, 'MikroGestor WWW HTTPS');
-        }
-        if (routerSubdomain) {
-          await mk.addWalledGarden('allow', routerSubdomain, 'MikroGestor Router Subdomain');
-          await mk.addWalledGardenIp('accept', routerSubdomain, 'MikroGestor Router Subdomain HTTPS');
-        }
-        const vpsIp = process.env.VPS_PUBLIC_IP || '2.25.168.82';
-        if (vpsIp) {
-          await mk.addWalledGardenIp('accept', vpsIp, 'MikroGestor VPS Host IP');
-        }
-        ok('walled_garden', `Walled Garden configurado para ${publicDomain || 'VPS'}${routerSubdomain ? ' e ' + routerSubdomain : ''}.`);
+        await mk.ensureWalledGardenRules({
+          mode: deployMode,
+          publicDomain: publicDomain || undefined,
+          subdomain: routerSubdomain || undefined,
+          adminIp,
+        });
+        ok('walled_garden', `Walled Garden configurado e deduplicado para ${publicDomain || 'VPS'}${routerSubdomain ? ' e ' + routerSubdomain : ''}.`);
       } catch (e: any) {
         warn('walled_garden', `Walled Garden: ${e?.message || e}`);
       }

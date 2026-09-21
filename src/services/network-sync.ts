@@ -64,10 +64,54 @@ export class NetworkSyncService {
         }
       }
 
+      const isVps = process.env.DEPLOYMENT_MODE === 'vps' || router.vpnEnabled;
+
       const api = new MikrotikAPI();
       const connected = await api.connect(router.host, router.user, router.password, router.port);
       if (!connected) return;
 
+      if (isVps) {
+        // ── MODO VPS: NUNCA injeta IPs do Docker ou portal.wifi.local ───────────
+        // Remove quaisquer entradas legadas de portal.wifi.local ou IPs de container
+        try {
+          const dnsMenu = (api as any).client.menu('/ip/dns/static');
+          const listDns = ((await dnsMenu.get()) as any[]) || [];
+          for (const d of listDns) {
+            if (d.name === 'portal.wifi.local') {
+              const id = d.id || d['.id'];
+              if (id) {
+                await dnsMenu.remove(id).catch(() => null);
+                console.log('[AutoSync] Removida entrada legada de portal.wifi.local no modo VPS.');
+              }
+            }
+          }
+
+          const wgIpMenu = (api as any).client.menu('/ip/hotspot/walled-garden/ip');
+          const listIp = ((await wgIpMenu.get()) as any[]) || [];
+          for (const item of listIp) {
+            const addr = item['dst-address'] || '';
+            if (
+              addr.startsWith('172.16.') ||
+              addr.startsWith('172.17.') ||
+              addr.startsWith('192.168.') ||
+              (item.comment && item.comment.includes('Auto-Cadastro'))
+            ) {
+              const id = item.id || item['.id'];
+              if (id) {
+                await wgIpMenu.remove(id).catch(() => null);
+                console.log(`[AutoSync] Removida regra Walled Garden IP legada (${addr}) no modo VPS.`);
+              }
+            }
+          }
+        } catch (cleanErr) {
+          console.warn('[AutoSync] VPS cleanup warning:', cleanErr);
+        }
+
+        await api.close();
+        return;
+      }
+
+      // ── MODO LOCAL (Servidor na LAN física) ──────────────────────────────────
       try {
         // DNS static entry for portal.wifi.local
         const dnsMenu = (api as any).client.menu('/ip/dns/static');
