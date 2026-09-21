@@ -89,7 +89,7 @@ export class NetworkSyncService {
           const wgIpMenu = (api as any).client.menu('/ip/hotspot/walled-garden/ip');
           const listIp = ((await wgIpMenu.get()) as any[]) || [];
           for (const item of listIp) {
-            const addr = item['dst-address'] || '';
+            const addr = item.dstAddress || item['dst-address'] || '';
             if (
               addr.startsWith('172.16.') ||
               addr.startsWith('172.17.') ||
@@ -149,7 +149,8 @@ export class NetworkSyncService {
         let needsWgUpdate = oldsIp.length === 0;
 
         for (const old of oldsIp) {
-          if (old['dst-address'] !== currentIp) {
+          const oldAddr = old.dstAddress || old['dst-address'] || '';
+          if (oldAddr !== currentIp) {
             needsWgUpdate = true;
             await wgIpMenu.remove(old.id || old['.id']);
           }

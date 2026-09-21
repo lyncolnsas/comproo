@@ -254,13 +254,15 @@ export class MikrotikAPI {
     const wildcardPattern = `*${cleanHost}*`;
 
     // 1. Busca regras existentes para verificar duplicatas (idempotência estrita)
+    // OBS: routeros-client converte campos kebab-case para camelCase (ex: dstHost / dstAddress)
     const existingRules = ((await menu.get()) as any[]) || [];
     const matching = existingRules.filter((r: any) => {
-      const rHost = (r['dst-host'] || '').replace(/^\*+|\*+$/g, '').trim();
+      const hostVal = r.dstHost || r['dst-host'] || '';
+      const rHost = hostVal.replace(/^\*+|\*+$/g, '').trim();
       return (
         (rHost.toLowerCase() === cleanHost.toLowerCase() ||
-          r['dst-host'] === wildcardPattern ||
-          r['dst-host'] === cleanHost) &&
+          hostVal === wildcardPattern ||
+          hostVal === cleanHost) &&
         r.action === action
       );
     });
@@ -308,7 +310,8 @@ export class MikrotikAPI {
 
     // Limpa regras corrompidas com asteriscos na tabela IP
     for (const r of existingRules) {
-      if (r.invalid === true || r.invalid === 'true' || (r['dst-host'] && r['dst-host'].includes('*'))) {
+      const hostVal = r.dstHost || r['dst-host'] || '';
+      if (r.invalid === true || r.invalid === 'true' || hostVal.includes('*')) {
         const id = r['.id'] || r.id;
         if (id) await menu.remove(id).catch(() => null);
       }
@@ -316,10 +319,12 @@ export class MikrotikAPI {
 
     // Verifica duplicatas exatas
     const matching = existingRules.filter((r: any) => {
+      const addrVal = r.dstAddress || r['dst-address'] || '';
+      const hostVal = r.dstHost || r['dst-host'] || '';
       if (isIp) {
-        return r['dst-address'] === clean && r.action === action;
+        return addrVal === clean && r.action === action;
       } else {
-        const rHost = (r['dst-host'] || '').replace(/\*/g, '').trim();
+        const rHost = hostVal.replace(/\*/g, '').trim();
         return rHost.toLowerCase() === clean.toLowerCase() && r.action === action;
       }
     });
@@ -366,7 +371,7 @@ export class MikrotikAPI {
       const seenHosts = new Set<string>();
 
       for (const item of list) {
-        const rawHost = item['dst-host'] || '';
+        const rawHost = item.dstHost || item['dst-host'] || '';
         const clean = rawHost.replace(/^\*+|\*+$/g, '').trim().toLowerCase();
         if (!clean) continue;
 
@@ -390,20 +395,21 @@ export class MikrotikAPI {
       for (const item of listIp) {
         const id = item['.id'] || item.id;
         if (!id) continue;
+        const hostVal = item.dstHost || item['dst-host'] || '';
+        const addrVal = item.dstAddress || item['dst-address'] || '';
 
         // Regra inválida ou com asterisco (não suportado em IP no ROS v7)
-        if (item.invalid === true || item.invalid === 'true' || (item['dst-host'] && item['dst-host'].includes('*'))) {
+        if (item.invalid === true || item.invalid === 'true' || hostVal.includes('*')) {
           await wgIpMenu.remove(id).catch(() => null);
           continue;
         }
 
         // Se estiver em modo VPS, remove IPs locais do Docker ou da antiga LAN
         if (opts?.isVps) {
-          const addr = item['dst-address'] || '';
           if (
-            addr.startsWith('172.16.') ||
-            addr.startsWith('172.17.') ||
-            addr.startsWith('192.168.') ||
+            addrVal.startsWith('172.16.') ||
+            addrVal.startsWith('172.17.') ||
+            addrVal.startsWith('192.168.') ||
             (item.comment && item.comment.includes('Auto-Cadastro'))
           ) {
             await wgIpMenu.remove(id).catch(() => null);
@@ -411,9 +417,9 @@ export class MikrotikAPI {
           }
         }
 
-        const destKey = item['dst-address']
-          ? `ip_${item['dst-address']}`
-          : `host_${(item['dst-host'] || '').replace(/\*/g, '').trim().toLowerCase()}`;
+        const destKey = addrVal
+          ? `ip_${addrVal}`
+          : `host_${hostVal.replace(/\*/g, '').trim().toLowerCase()}`;
 
         const fullKey = `${item.action || 'accept'}_${destKey}`;
         if (seenDestinations.has(fullKey)) {
