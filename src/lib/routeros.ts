@@ -2,6 +2,36 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { RouterOSClient, RosApiMenu } from 'routeros-client';
 
+// ─── Patch para RouterOS v7 (!empty replies) ──────────────────────────────────
+// No RouterOS v7, consultas a tabelas vazias retornam a sentença "!empty" antes
+// de "!done". A biblioteca 'node-routeros' desconhece "!empty" e lança RosException
+// dentro de Channel.onUnknown. Este patch trata "!empty" de forma nativa e segura.
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { Channel } = require('node-routeros/dist/Channel');
+  if (Channel && Channel.prototype && !(Channel.prototype as any)._ros7Patched) {
+    (Channel.prototype as any)._ros7Patched = true;
+    const origProcessPacket = Channel.prototype.processPacket;
+    Channel.prototype.processPacket = function (packet: string[]) {
+      const reply = packet[0];
+      if (reply === '!empty') {
+        this.data = [];
+        return;
+      }
+      return origProcessPacket.call(this, packet);
+    };
+    Channel.prototype.onUnknown = function (reply: string) {
+      if (reply === '!empty') {
+        this.data = [];
+        return;
+      }
+      console.warn('[MikroTik] Unhandled reply from RouterOS:', reply);
+    };
+  }
+} catch (e) {
+  console.warn('[MikrotikAPI] Falha ao aplicar patch para RouterOS v7:', e);
+}
+
 export class MikrotikAPI {
   private client: RosApiMenu | null = null;
   private connection: RouterOSClient | null = null;
