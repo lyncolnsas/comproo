@@ -4,6 +4,17 @@ Sistema completo e profissional para **Gestão de Vouchers, Hotspot MikroTik, Es
 
 ---
 
+## ☁️ Deploy em Nuvem / VPS (Coolify & WireGuard)
+
+Para instalar o MikroGestor em uma **VPS nova (Ubuntu 22.04/24.04, Debian 11/12)** usando **Coolify** ou **Docker**, consulte o guia oficial passo a passo:
+👉 **[Guia Definitivo de Deploy em Nova VPS (docs/GUIA_DEPLOY_COMPLETO_NOVA_VPS.md)](docs/GUIA_DEPLOY_COMPLETO_NOVA_VPS.md)**
+
+- ⚡ **Instalação WireGuard + Daemon + Firewall em 1 comando**: `sudo bash vpn/setup-vps.sh`
+- 🛡️ **Persistência garantida do banco SQLite**: Mapeamento `/data/mikrogestor/prisma` -> `/app/prisma`
+- 🔍 **Validação automática em 8 camadas**: `bash scripts/verificar-deploy-completo.sh`
+
+---
+
 ## 💻 Instalação Rápida no Linux e Raspberry Pi
 
 Compatível com **Ubuntu, Debian, DietPi, Raspberry Pi OS (Raspbian - 32-bit e 64-bit)** e qualquer distribuição baseada em Debian.

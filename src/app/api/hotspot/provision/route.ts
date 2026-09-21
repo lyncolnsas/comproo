@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { getMikrotikClient, getSessionCredentials, MikrotikSessionError } from '@/lib/session';
 import { MikrotikAPI } from '@/lib/routeros';
 import { routerErrorResponse } from '@/lib/api-error';
-import { getMaskedPortalUrl } from '@/lib/domain';
+import { getMaskedPortalUrl, isVpsMode, getPublicDomain } from '@/lib/domain';
 
 // ── Helper: detect admin IP ───────────────────────────────────────────────────
 function getAdminIp(req: Request): string | null {
@@ -459,15 +459,24 @@ export async function POST(request: Request) {
 
     // Passo de Whitelist: ARP + Admin Bypass (IP Binding) + Walled Garden no Hotspot
     // Executado IMEDIATAMENTE após a bridge ser confirmada para que o Node.js não perca a conexão.
+    // MODO LOCAL: usa IP LAN como referência; MODO VPS: usa domínio público no Walled Garden.
+    const deployMode = isVpsMode() ? 'vps' : 'local';
+    const publicDomain = getPublicDomain() || '';
     try {
-      if (adminIp) {
-        const arRes = await mk.ensureAdminArpAndBypass(adminIp, BRIDGE, adminMac).catch((e: any) => ({
+      if (adminIp || deployMode === 'vps') {
+        const arRes = await mk.ensureAdminArpAndBypass(
+          adminIp || '0.0.0.0',
+          BRIDGE,
+          adminMac,
+          { mode: deployMode, publicDomain }
+        ).catch((e: any) => ({
           arp: `Erro ARP: ${e?.message}`,
           bypass: `Erro bypass: ${e?.message}`,
         }));
-        ok('admin_bypass', `Bypass e Walled Garden liberados para ${adminIp} (MAC: ${adminMac || 'N/A'}). ARP: ${arRes.arp} | IP-Binding: ${arRes.bypass}`);
+        const modeLabel = deployMode === 'vps' ? `VPS (domínio: ${publicDomain || 'NÃO CONFIGURADO'})` : `Local (IP: ${adminIp})`;
+        ok('admin_bypass', `Bypass e Walled Garden liberados — Modo ${modeLabel}. ARP: ${arRes.arp} | IP-Binding: ${arRes.bypass}`);
       } else {
-        skip('admin_bypass', 'IP do servidor Node.js não detectado. Bypass pulado.');
+        skip('admin_bypass', 'IP do servidor Node.js não detectado e modo não é VPS. Bypass pulado.');
       }
     } catch (e: any) {
       warn('admin_bypass', `Erro ao adicionar bypass (não crítico): ${e.message}`);
@@ -605,6 +614,10 @@ export async function POST(request: Request) {
     } else {
 
       // Passo 7: Perfil de Servidor Hotspot
+      // MODO LOCAL:  dns-name = 'hotspot.wifi.local' (resolve via DNS estático MikroTik → IP LAN)
+      // MODO VPS:    dns-name = domínio público (ex: 'app.empresa.com') — clientes acessam direto
+      //              Se PORTAL_PUBLIC_DOMAIN não estiver definido, usa hotspot.wifi.local como fallback
+      const hsDnsName = (deployMode === 'vps' && publicDomain) ? publicDomain : 'hotspot.wifi.local';
       try {
         const profiles = await mk.getHotspotServerProfiles().catch(() => []) as any[];
         const existing = profiles.find((p: any) => p.name === HS_PROF);
@@ -613,16 +626,16 @@ export async function POST(request: Request) {
           await mk.addHotspotServerProfile({
             name: HS_PROF,
             'html-directory': 'hotspot',
-            'dns-name': 'hotspot.wifi.local',
+            'dns-name': hsDnsName,
             'login-by': 'http-chap,http-pap,trial',
             'use-radius': 'no',
           });
-          ok('hs_profile', `Perfil "${HS_PROF}" criado. DNS: hotspot.wifi.local`);
+          ok('hs_profile', `Perfil "${HS_PROF}" criado. DNS: ${hsDnsName} (Modo ${deployMode})`);
         } else {
           let needsUpdate = false;
           const updateParams: any = {};
-          if (existing['dns-name'] !== 'hotspot.wifi.local') {
-            updateParams['dns-name'] = 'hotspot.wifi.local';
+          if (existing['dns-name'] !== hsDnsName) {
+            updateParams['dns-name'] = hsDnsName;
             needsUpdate = true;
           }
           if (existing['html-directory'] !== 'hotspot') {
@@ -636,9 +649,9 @@ export async function POST(request: Request) {
 
           if (needsUpdate) {
             await (mk as any).client?.menu('/ip/hotspot/profile').where('.id', existing.id).update(updateParams);
-            ok('hs_profile', `Perfil "${HS_PROF}" atualizado com os parâmetros corretos.`);
+            ok('hs_profile', `Perfil "${HS_PROF}" atualizado. DNS: ${hsDnsName} (Modo ${deployMode})`);
           } else {
-            skip('hs_profile', `Perfil "${HS_PROF}" já existe e está configurado corretamente.`);
+            skip('hs_profile', `Perfil "${HS_PROF}" já configurado corretamente (DNS: ${existing['dns-name']}).`);
           }
         }
 
@@ -705,8 +718,11 @@ export async function POST(request: Request) {
     } catch (e) { fail('nat', e); }
 
     // Passo 11: Atualizar URL do Servidor com Mascaramento DNS MikroTik nos Templates
+    // MODO LOCAL: usa IP LAN ou portal.wifi.local
+    // MODO VPS:   usa https://domínio_público — NUNCA IP interno Docker
     try {
-      const serverBaseUrl = getMaskedPortalUrl();
+      const reqHost = request.headers.get('host');
+      const serverBaseUrl = getMaskedPortalUrl('', reqHost);
       await prisma.systemConfig.upsert({
         where: { key: 'SYSTEM_URL' },
         update: { value: serverBaseUrl },

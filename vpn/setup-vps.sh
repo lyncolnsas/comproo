@@ -85,7 +85,7 @@ VPS_PUBLIC_KEY=$(cat "$WG_DIR/public.key")
 success "Par de chaves do servidor validado."
 
 # ─── 4. Configuração da Interface wg0 ─────────────────────────────────────────
-log "Passo 4/7: Criando /etc/wireguard/wg0.conf..."
+log "Passo 4/8: Criando /etc/wireguard/wg0.conf..."
 
 cat > "$WG_DIR/$WG_INTERFACE.conf" <<EOF
 [Interface]
@@ -93,9 +93,9 @@ Address = ${VPN_SERVER_IP}/24
 ListenPort = ${WG_PORT}
 PrivateKey = ${VPS_PRIVATE_KEY}
 
-# Regras de roteamento e permissão de tráfego de controle VPN
-PostUp   = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT
-PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT
+# Regras de roteamento e permissão de tráfego de controle VPN (com MASQUERADE para Docker)
+PostUp   = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o %i -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o %i -j MASQUERADE
 EOF
 
 chmod 600 "$WG_DIR/$WG_INTERFACE.conf"
@@ -106,8 +106,14 @@ wg-quick down $WG_INTERFACE >/dev/null 2>&1 || true
 wg-quick up $WG_INTERFACE
 success "Interface WireGuard ${WG_INTERFACE} ativa em ${VPN_SERVER_IP}/24 (porta UDP ${WG_PORT})."
 
-# ─── 5. Instalação do Daemon WireGuard Manager (Python) ───────────────────────
-log "Passo 5/7: Instalando WireGuard Manager Daemon em ${WG_MANAGER_DIR}..."
+# ─── 5. Diretório de Persistência SQLite (Coolify/Docker) ──────────────────────
+log "Passo 5/8: Criando diretório de persistência do banco de dados no host..."
+mkdir -p /data/mikrogestor/prisma
+chmod -R 777 /data/mikrogestor/prisma
+success "Diretório /data/mikrogestor/prisma configurado (garante que o SQLite não seja perdido em redeploys)."
+
+# ─── 6. Instalação do Daemon WireGuard Manager (Python) ───────────────────────
+log "Passo 6/8: Instalando WireGuard Manager Daemon em ${WG_MANAGER_DIR}..."
 
 mkdir -p "$WG_MANAGER_DIR"
 
@@ -150,21 +156,28 @@ systemctl enable mikrogestor-wg-manager >/dev/null 2>&1
 systemctl restart mikrogestor-wg-manager
 success "Daemon wg-manager ativo em 0.0.0.0:${WG_MANAGER_PORT} (serviço systemd habilitado)."
 
-# ─── 6. Configuração do Firewall (UFW / Iptables) ─────────────────────────────
-log "Passo 6/7: Configurando regras de firewall..."
+# ─── 7. Configuração do Firewall (UFW / Iptables) ─────────────────────────────
+log "Passo 7/8: Configurando regras de firewall UFW..."
 
 if command -v ufw >/dev/null 2>&1; then
-    # Porta UDP pública para o túnel
+    # Garantir que portas vitais do sistema nunca sejam bloqueadas
+    ufw allow 22/tcp comment "SSH Server" >/dev/null 2>&1 || true
+    ufw allow 80/tcp comment "HTTP Web" >/dev/null 2>&1 || true
+    ufw allow 443/tcp comment "HTTPS SSL" >/dev/null 2>&1 || true
+    ufw allow 8000/tcp comment "Coolify Dashboard" >/dev/null 2>&1 || true
+    
+    # Porta UDP pública para o túnel WireGuard com MikroTiks
     ufw allow ${WG_PORT}/udp comment "MikroGestor WireGuard UDP" >/dev/null 2>&1 || true
+    
     # Porta TCP do daemon liberada estritamente para subnets Docker (RFC 1918)
     ufw allow from 172.16.0.0/12 to any port ${WG_MANAGER_PORT} proto tcp comment "MikroGestor Docker to WG-Manager" >/dev/null 2>&1 || true
     ufw allow from 10.0.0.0/8 to any port ${WG_MANAGER_PORT} proto tcp comment "MikroGestor Local Subnet" >/dev/null 2>&1 || true
     ufw reload >/dev/null 2>&1 || true
-    success "Firewall UFW ajustado: porta ${WG_PORT}/udp liberada e porta ${WG_MANAGER_PORT}/tcp liberada para Docker."
+    success "Firewall UFW ajustado com segurança (portas 22, 80, 443, 8000, 51820/udp e 51821/tcp liberadas)."
 fi
 
-# ─── 7. Auto-Detecção de IP Público e Testes de Integridade ───────────────────
-log "Passo 7/7: Executando auto-testes de integridade..."
+# ─── 8. Auto-Detecção de IP Público e Testes de Integridade ───────────────────
+log "Passo 8/8: Executando auto-testes de integridade..."
 
 # Detecção resiliente de IP Público
 PUBLIC_IP=$(curl -s4 --max-time 3 https://api.ipify.org || \
@@ -194,23 +207,35 @@ else
     DOCKER_GW="172.17.0.1"
 fi
 
+# Gerar chave aleatória para NEXTAUTH_SECRET se não existir
+NEXTAUTH_GEN_SECRET=$(openssl rand -hex 32)
+
 # ─── Resumo e Variáveis Prontas para Coolify ──────────────────────────────────
 echo ""
 echo -e "${GREEN}${BOLD}═══════════════════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}${BOLD}      🎉 WIREGUARD VPN & DAEMON INSTALADOS COM SUCESSO TOTAL!              ${NC}"
+echo -e "${GREEN}${BOLD}      🎉 VPS CONFIGURADA COM SUCESSO TOTAL PARA O MIKROGESTOR!             ${NC}"
 echo -e "${GREEN}${BOLD}═══════════════════════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "Copie e cole estas variáveis no seu painel ${CYAN}${BOLD}Coolify → Environment Variables${NC}:"
+echo -e "1. ${CYAN}${BOLD}PERSISTENT STORAGE NO COOLIFY (OBRIGATÓRIO):${NC}"
+echo -e "   Vá em: ${BOLD}Application → Persistent Storage → Add Volume${NC}"
+echo -e "   - ${YELLOW}Container Path:${NC} /app/prisma"
+echo -e "   - ${YELLOW}Host Path:     ${NC} /data/mikrogestor/prisma"
+echo -e "   (Ou adicione em Custom Docker Run Options: ${BOLD}-v /data/mikrogestor/prisma:/app/prisma${NC})"
 echo ""
-echo -e "${YELLOW}${BOLD}# --- MIKROGESTOR WIREGUARD VPN CONFIG ---"
-echo "VPS_WG_PUBLIC_KEY=\"${VPS_PUBLIC_KEY}\""
-echo "VPS_PUBLIC_IP=\"${PUBLIC_IP}\""
-echo "WG_MANAGER_SECRET=\"${WG_MANAGER_SECRET}\""
-echo "WG_MANAGER_URL=\"http://${DOCKER_GW}:${WG_MANAGER_PORT}\""
-echo -e "# ----------------------------------------${NC}"
+echo -e "2. ${CYAN}${BOLD}ENVIRONMENT VARIABLES NO COOLIFY (Copie e cole tudo):${NC}"
+echo -e "${YELLOW}---------------------------------------------------------------------------"
+echo "DATABASE_URL=file:/app/prisma/dev.db"
+echo "NEXTAUTH_SECRET=${NEXTAUTH_GEN_SECRET}"
+echo "NEXTAUTH_URL=http://${PUBLIC_IP}"
+echo "PORT=80"
+echo "VPS_PUBLIC_IP=${PUBLIC_IP}"
+echo "VPS_WG_PUBLIC_KEY=${VPS_PUBLIC_KEY}"
+echo "WG_MANAGER_SECRET=${WG_MANAGER_SECRET}"
+echo "WG_MANAGER_URL=http://${DOCKER_GW}:${WG_MANAGER_PORT}"
+echo -e "---------------------------------------------------------------------------${NC}"
 echo ""
 echo -e "Status da Interface WireGuard:"
 wg show
 echo ""
-echo -e "${CYAN}Comando para monitorar logs em tempo real:${NC} journalctl -u mikrogestor-wg-manager -f"
-echo -e "${GREEN}${BOLD}Pronto para conectar qualquer MikroTik sem IP público!${NC}"
+echo -e "${CYAN}Comando de diagnóstico completo:${NC} bash scripts/verificar-deploy-completo.sh"
+echo -e "${GREEN}${BOLD}Pronto para deploy limpo e sem erros!${NC}"

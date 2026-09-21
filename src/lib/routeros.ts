@@ -720,114 +720,162 @@ export class MikrotikAPI {
   }
 
   /**
-   * Registers the admin/system IP in:
-   *   1. /ip/arp  — static ARP entry on the LAN bridge (prevents ARP spoofing / ensures reachability)
-   *   2. /ip/hotspot/ip-binding — type=bypassed (admin never sees captive portal)
+   * Registra o IP/MAC do servidor no MikroTik para garantir acesso administrativo.
+   *
+   * MODO LOCAL (DEPLOYMENT_MODE=local ou não definido):
+   *   1. /ip/arp  — entrada ARP estática na bridge LAN (garante alcançabilidade)
+   *   2. /ip/hotspot/ip-binding — type=bypassed (admin nunca vê captive portal)
+   *   3. /ip/dns/static — portal.wifi.local → IP LAN do servidor
+   *   4. /ip/hotspot/walled-garden — libera IP LAN e portal.wifi.local
+   *
+   * MODO VPS (DEPLOYMENT_MODE=vps):
+   *   • Não cria ARP/IP-binding com IP Docker (inacessível para hotspot)
+   *   • NÃO cria DNS estático portal.wifi.local → IP Docker (causaria bloqueio!)
+   *   • Walled Garden libera o DOMÍNIO PÚBLICO (publicDomain) e o IP VPN (10.8.0.1)
+   *   • Force DNS (redirect porta 53) é mantido em ambos os modos
    */
-  async ensureAdminArpAndBypass(adminIp: string, bridgeName: string, adminMac?: string): Promise<{ arp: string; bypass: string }> {
+  async ensureAdminArpAndBypass(
+    adminIp: string,
+    bridgeName: string,
+    adminMac?: string,
+    opts?: { mode?: 'local' | 'vps'; publicDomain?: string }
+  ): Promise<{ arp: string; bypass: string }> {
     if (!this.client) throw new Error('Not connected');
     const result = { arp: '', bypass: '' };
+    const isVps = opts?.mode === 'vps';
+    const publicDomain = opts?.publicDomain?.trim() || '';
 
-    // ── ARP table ─────────────────────────────────────────────────────────────
-    try {
-      const arpMenu = this.client.menu('/ip/arp');
-      const arpEntries = await arpMenu.get() as any[];
-      const existingArp = arpEntries.find(
-        (e: any) => e.address === adminIp && (e.interface === bridgeName || e.comment?.includes('MikroGestor'))
-      );
-      if (!existingArp) {
-        const arpParams: any = {
-          address: adminIp,
-          interface: bridgeName,
-          comment: 'MikroGestor: Admin System IP'
-        };
-        if (adminMac) {
-          arpParams['mac-address'] = adminMac;
+    // ── ARP + IP Binding: apenas no modo LOCAL ────────────────────────────────
+    // No modo VPS o container Docker não tem IP roteável pelo hotspot dos clientes.
+    // Adicionar o IP Docker à tabela ARP/IP-Binding não tem efeito útil e pode
+    // confundir o diagnóstico de rede.
+    if (!isVps) {
+      // ARP table
+      try {
+        const arpMenu = this.client.menu('/ip/arp');
+        const arpEntries = await arpMenu.get() as any[];
+        const existingArp = arpEntries.find(
+          (e: any) => e.address === adminIp && (e.interface === bridgeName || e.comment?.includes('MikroGestor'))
+        );
+        if (!existingArp) {
+          const arpParams: any = {
+            address: adminIp,
+            interface: bridgeName,
+            comment: 'MikroGestor: Admin System IP'
+          };
+          if (adminMac) arpParams['mac-address'] = adminMac;
+          await arpMenu.add(arpParams);
+          result.arp = `IP ${adminIp} adicionado à tabela ARP na interface ${bridgeName}.`;
+        } else {
+          result.arp = `IP ${adminIp} já presente na tabela ARP.`;
         }
-        await arpMenu.add(arpParams);
-        result.arp = `IP ${adminIp} adicionado à tabela ARP na interface ${bridgeName}.`;
-      } else {
-        result.arp = `IP ${adminIp} já presente na tabela ARP.`;
+      } catch (e: any) {
+        result.arp = `ARP: ${e?.message || 'erro desconhecido (não crítico).'}`;
+        console.warn('Failed to add ARP entry:', e);
       }
-    } catch (e: any) {
-      result.arp = `ARP: ${e?.message || 'erro desconhecido (não crítico).'}`;
-      console.warn('Failed to add ARP entry:', e);
+
+      // Hotspot IP Binding (bypassed)
+      try {
+        const bindMenu = this.client.menu('/ip/hotspot/ip-binding');
+        const bindings = await bindMenu.get() as any[];
+        const existingBind = bindings.find(
+          (b: any) => b.address === adminIp && b.type === 'bypassed'
+        );
+        if (!existingBind) {
+          const bindParams: any = {
+            address: adminIp,
+            type: 'bypassed',
+            comment: 'MikroGestor: Admin System IP — bypass automático'
+          };
+          if (adminMac) bindParams['mac-address'] = adminMac;
+          await bindMenu.add(bindParams);
+          result.bypass = `IP ${adminIp} (MAC: ${adminMac || 'N/A'}) adicionado ao Hotspot como bypassed.`;
+        } else {
+          result.bypass = `IP ${adminIp} já está bypassed no Hotspot.`;
+        }
+      } catch (e: any) {
+        result.bypass = `Bypass: ${e?.message || 'erro desconhecido (não crítico).'}`;
+        console.warn('Failed to add hotspot bypass binding:', e);
+      }
+    } else {
+      result.arp    = 'Modo VPS: ARP estático ignorado (IP Docker não roteável pelo hotspot).';
+      result.bypass = 'Modo VPS: IP Binding ignorado (IP Docker não roteável pelo hotspot).';
     }
 
-    // ── Hotspot IP Binding (bypassed) ─────────────────────────────────────────
-    try {
-      const bindMenu = this.client.menu('/ip/hotspot/ip-binding');
-      const bindings = await bindMenu.get() as any[];
-      const existingBind = bindings.find(
-        (b: any) => b.address === adminIp && b.type === 'bypassed'
-      );
-      if (!existingBind) {
-        const bindParams: any = {
-          address: adminIp,
-          type: 'bypassed',
-          comment: 'MikroGestor: Admin System IP — bypass automático'
-        };
-        if (adminMac) {
-          bindParams['mac-address'] = adminMac;
-        }
-        await bindMenu.add(bindParams);
-        result.bypass = `IP ${adminIp} (MAC: ${adminMac || 'N/A'}) adicionado ao Hotspot como bypassed.`;
-      } else {
-        result.bypass = `IP ${adminIp} já está bypassed no Hotspot.`;
-      }
-    } catch (e: any) {
-      result.bypass = `Bypass: ${e?.message || 'erro desconhecido (não crítico).'}`;
-      console.warn('Failed to add hotspot bypass binding:', e);
-    }
-
-    // ── Walled Garden (allow HTTP access) ──────────────────────────────────────
+    // ── Walled Garden ─────────────────────────────────────────────────────────
+    // LOCAL: libera IP LAN do servidor + portal.wifi.local
+    // VPS:   libera domínio público + IP VPN (10.8.0.1) do servidor
     try {
       const wgMenu = this.client.menu('/ip/hotspot/walled-garden');
       const list = await wgMenu.get() as any[];
-      const exists = list.some((item: any) => item['dst-host'] && item['dst-host'].includes(adminIp));
-      if (!exists) {
-        await wgMenu.add({
-          action: 'allow',
-          'dst-host': `*${adminIp}*`,
-          comment: 'MikroGestor: Auto-Cadastro / API'
-        });
+
+      if (!isVps) {
+        // Libera IP LAN
+        const existsIpHost = list.some((item: any) => item['dst-host']?.includes(adminIp));
+        if (!existsIpHost) {
+          await wgMenu.add({
+            action: 'allow',
+            'dst-host': `*${adminIp}*`,
+            comment: 'MikroGestor: Auto-Cadastro / API'
+          });
+        }
+        // Libera portal.wifi.local
+        const existsPortal = list.some((item: any) => item['dst-host']?.includes('portal.wifi.local'));
+        if (!existsPortal) {
+          await wgMenu.add({
+            action: 'allow',
+            'dst-host': '*portal.wifi.local*',
+            comment: 'MikroGestor: Auto-Cadastro / API DNS'
+          });
+        }
+      } else {
+        // VPS: libera domínio público para unauthenticated access
+        if (publicDomain) {
+          const existsPub = list.some((item: any) => item['dst-host']?.includes(publicDomain));
+          if (!existsPub) {
+            await wgMenu.add({
+              action: 'allow',
+              'dst-host': `*${publicDomain}*`,
+              comment: 'MikroGestor: Portal Público VPS'
+            });
+          }
+        }
+        // IP VPN do servidor como fallback
+        const VPN_SERVER_IP = process.env.VPN_SERVER_IP || '10.8.0.1';
+        const existsVpn = list.some((item: any) => item['dst-host']?.includes(VPN_SERVER_IP));
+        if (!existsVpn) {
+          await wgMenu.add({
+            action: 'allow',
+            'dst-host': `*${VPN_SERVER_IP}*`,
+            comment: 'MikroGestor: IP VPN Servidor (fallback)'
+          });
+        }
       }
     } catch (e: any) {
-      console.warn('Failed to add walled garden bypass during provisioning:', e);
+      console.warn('Failed to configure walled garden during provisioning:', e);
     }
 
-    try {
-      const wgMenu = this.client.menu('/ip/hotspot/walled-garden');
-      const list = await wgMenu.get() as any[];
-      const existsPortal = list.some((item: any) => item['dst-host'] && item['dst-host'].includes('portal.wifi.local'));
-      if (!existsPortal) {
-        await wgMenu.add({
-          action: 'allow',
-          'dst-host': '*portal.wifi.local*',
-          comment: 'MikroGestor: Auto-Cadastro / API DNS'
-        });
-      }
-    } catch (e: any) {
-      console.warn('Failed to add walled garden bypass for portal.wifi.local:', e);
-    }
-
-    // ── Walled Garden IP (allow direct IP access for unauthenticated clients) ──
+    // ── Walled Garden IP ──────────────────────────────────────────────────────
+    // LOCAL: aceita IP LAN diretamente
+    // VPS:   aceita IP VPN do servidor (10.8.0.1)
     try {
       const wgIpMenu = this.client.menu('/ip/hotspot/walled-garden/ip');
       const listIp = await wgIpMenu.get() as any[];
-      const existsIp = listIp.some((item: any) => item['dst-address'] === adminIp && item.action === 'accept');
+
+      const targetIp = isVps ? (process.env.VPN_SERVER_IP || '10.8.0.1') : adminIp;
+      const existsIp = listIp.some((item: any) => item['dst-address'] === targetIp && item.action === 'accept');
       if (!existsIp) {
         await wgIpMenu.add({
           action: 'accept',
-          'dst-address': adminIp,
-          comment: 'MikroGestor: Auto-Cadastro / API IP'
+          'dst-address': targetIp,
+          comment: isVps ? 'MikroGestor: IP VPN Servidor' : 'MikroGestor: Auto-Cadastro / API IP'
         });
       }
     } catch (e: any) {
       console.warn('Failed to add walled garden IP bypass during provisioning:', e);
     }
 
-    // ── Force DNS (Redirect & Block Private DNS) ───────────────────
+    // ── Force DNS (Redirect & Block Private DNS) — ambos os modos ────────────
     try {
       await this.client.menu('/ip/dns').set({ 'allow-remote-requests': 'yes' }).catch(() => null);
 
@@ -852,26 +900,36 @@ export class MikrotikAPI {
       console.warn('Failed to force DNS during provisioning:', e);
     }
 
-    // ── Static DNS (portal.wifi.local -> IP do Servidor) ───────────────────
-    try {
-      const dnsMenu = this.client.menu('/ip/dns/static');
-      const list = await dnsMenu.get() as any[];
-      const exists = list.find((d: any) => d.name === 'portal.wifi.local' && d.address === adminIp);
-      
-      if (!exists) {
-        // Remove IPs antigos se existirem
-        const olds = list.filter((d: any) => d.name === 'portal.wifi.local');
-        for (const old of olds) {
+    // ── Static DNS: portal.wifi.local → IP do Servidor ────────────────────────
+    // MODO LOCAL: cria/atualiza entrada DNS estática apontando para IP LAN
+    // MODO VPS:   NÃO cria DNS estático!
+    //   Razão: no modo VPS, o "adminIp" é um IP Docker interno (172.17.x.x),
+    //   que é completamente inacessível para clientes do hotspot. Criar esse
+    //   DNS faria portal.wifi.local resolver para um IP morto, bloqueando
+    //   todo o acesso ao portal de login do hotspot.
+    //   No modo VPS o hotspot usa o PORTAL_PUBLIC_DOMAIN diretamente.
+    if (!isVps) {
+      try {
+        const dnsMenu = this.client.menu('/ip/dns/static');
+        const list = await dnsMenu.get() as any[];
+        const exists = list.find((d: any) => d.name === 'portal.wifi.local' && d.address === adminIp);
+        if (!exists) {
+          // Remove entradas antigas de portal.wifi.local
+          const olds = list.filter((d: any) => d.name === 'portal.wifi.local');
+          for (const old of olds) {
             await dnsMenu.remove(old.id || old['.id']);
+          }
+          await dnsMenu.add({
+            name: 'portal.wifi.local',
+            address: adminIp,
+            comment: 'MikroGestor: Magic Link DNS'
+          });
         }
-        await dnsMenu.add({
-          name: 'portal.wifi.local',
-          address: adminIp,
-          comment: 'MikroGestor: Magic Link DNS'
-        });
+      } catch (e: any) {
+        console.warn('Failed to add static DNS during provisioning:', e);
       }
-    } catch (e: any) {
-      console.warn('Failed to add static DNS during provisioning:', e);
+    } else {
+      console.log('[Provision VPS] DNS estático portal.wifi.local NÃO criado (modo VPS — usando domínio público).');
     }
 
     return result;
