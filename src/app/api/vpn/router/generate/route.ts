@@ -4,11 +4,12 @@
  * Body: { routerId?: string, routerName?: string, user?: string, password?: string }
  */
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, ensureVpnColumns } from "@/lib/prisma";
 import { wireguardService, isWireGuardAvailable } from "@/services/wireguard";
 
 export async function POST(req: NextRequest) {
   try {
+    await ensureVpnColumns();
     const body = await req.json();
     const { routerId, routerName, user = "admin", password = "" } = body;
 

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, ensureVpnColumns } from '@/lib/prisma';
 
 export async function GET() {
   try {
+    await ensureVpnColumns();
     const routers = await prisma.router.findMany({
       orderBy: { createdAt: 'desc' }
     });

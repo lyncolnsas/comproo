@@ -1,13 +1,14 @@
-﻿/**
+/**
  * GET /api/vpn/status
  * Retorna o status de todos os peers WireGuard + dados dos roteadores VPN no banco.
  */
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, ensureVpnColumns } from "@/lib/prisma";
 import { wireguardService, isWireGuardAvailable } from "@/services/wireguard";
 
 export async function GET() {
   try {
+    await ensureVpnColumns();
     const routers = await prisma.router.findMany({
       where: { vpnEnabled: true },
       select: {

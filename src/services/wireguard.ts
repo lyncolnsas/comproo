@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * WireGuardService — MikroGestor
  *
@@ -20,7 +20,7 @@
  *   - VPS_PUBLIC_IP=<IP público da VPS>
  */
 
-import { prisma } from "@/lib/prisma";
+import { prisma, ensureVpnColumns } from "@/lib/prisma";
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -120,6 +120,7 @@ export class WireGuardService {
    * Reserva .1 para o servidor VPS.
    */
   async allocateVpnIp(): Promise<string> {
+    await ensureVpnColumns();
     const used = await prisma.router.findMany({
       where: { vpnIp: { not: null } },
       select: { vpnIp: true },
