@@ -62,20 +62,47 @@ const CONNECTED_MS      = 3 * 60 * 1000;
 let discoveredManagerUrl: string | null = null;
 
 async function getManagerUrl(): Promise<string> {
-  if (process.env.WG_MANAGER_URL) return process.env.WG_MANAGER_URL;
   if (discoveredManagerUrl) return discoveredManagerUrl;
 
-  const candidates = [
-    "http://172.17.0.1:51821",       // Gateway padrão do bridge Docker (Coolify / Linux)
-    "http://127.0.0.1:51821",       // Host local direto
-    "http://host.docker.internal:51821" // Docker desktop / mac / host-gateway
-  ];
+  const candidates: string[] = [];
+
+  // Se variável de ambiente foi fornecida, testa primeiro
+  if (process.env.WG_MANAGER_URL) {
+    candidates.push(process.env.WG_MANAGER_URL);
+  }
+
+  // Tenta ler o gateway padrão diretamente de /proc/net/route no Linux/Docker
+  try {
+    const fs = await import("fs");
+    if (fs.existsSync("/proc/net/route")) {
+      const routes = fs.readFileSync("/proc/net/route", "utf8").split("\n");
+      for (const line of routes) {
+        const parts = line.trim().split(/\s+/);
+        if (parts[1] === "00000000" && parts[2]) {
+          const hex = parts[2];
+          const b1 = parseInt(hex.substring(6, 8), 16);
+          const b2 = parseInt(hex.substring(4, 6), 16);
+          const b3 = parseInt(hex.substring(2, 4), 16);
+          const b4 = parseInt(hex.substring(0, 2), 16);
+          candidates.push(`http://${b1}.${b2}.${b3}.${b4}:51821`);
+        }
+      }
+    }
+  } catch {}
+
+  // Gateways conhecidos de Docker / Coolify / Localhost
+  candidates.push(
+    "http://172.16.1.1:51821",          // Rede 'coolify' padrão
+    "http://172.17.0.1:51821",          // docker0 padrão
+    "http://127.0.0.1:51821",           // Host local direto
+    "http://host.docker.internal:51821" // Host gateway
+  );
 
   for (const c of candidates) {
     try {
       const res = await fetch(`${c}/health`, {
         headers: { "X-WG-Secret": WG_MANAGER_SECRET },
-        signal: AbortSignal.timeout(1200),
+        signal: AbortSignal.timeout(1500),
       });
       if (res.ok) {
         discoveredManagerUrl = c;
@@ -84,7 +111,7 @@ async function getManagerUrl(): Promise<string> {
     } catch {}
   }
 
-  return candidates[0];
+  return candidates[0] || "http://172.16.1.1:51821";
 }
 
 async function wgFetch(
