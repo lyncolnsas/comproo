@@ -52,19 +52,47 @@ export interface RouterOSScriptParams {
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
 
-const WG_MANAGER_URL    = process.env.WG_MANAGER_URL    ?? "http://127.0.0.1:51821";
 const WG_MANAGER_SECRET = process.env.WG_MANAGER_SECRET ?? "";
 const VPN_SUBNET_BASE   = "10.8.0";
 const VPN_SERVER_OCTET  = 1;
 const CONNECTED_MS      = 3 * 60 * 1000;
 
-// ─── HTTP Client ─────────────────────────────────────────────────────────────
+// ─── HTTP Client com Auto-Discovery de Host Gateway Docker ──────────────────
+
+let discoveredManagerUrl: string | null = null;
+
+async function getManagerUrl(): Promise<string> {
+  if (process.env.WG_MANAGER_URL) return process.env.WG_MANAGER_URL;
+  if (discoveredManagerUrl) return discoveredManagerUrl;
+
+  const candidates = [
+    "http://172.17.0.1:51821",       // Gateway padrão do bridge Docker (Coolify / Linux)
+    "http://127.0.0.1:51821",       // Host local direto
+    "http://host.docker.internal:51821" // Docker desktop / mac / host-gateway
+  ];
+
+  for (const c of candidates) {
+    try {
+      const res = await fetch(`${c}/health`, {
+        headers: { "X-WG-Secret": WG_MANAGER_SECRET },
+        signal: AbortSignal.timeout(1200),
+      });
+      if (res.ok) {
+        discoveredManagerUrl = c;
+        return c;
+      }
+    } catch {}
+  }
+
+  return candidates[0];
+}
 
 async function wgFetch(
   path: string,
   options: { method?: string; body?: unknown } = {}
 ): Promise<{ ok: boolean; data: any; status: number }> {
-  const url = `${WG_MANAGER_URL}${path}`;
+  const baseUrl = await getManagerUrl();
+  const url = `${baseUrl}${path}`;
   try {
     const res = await fetch(url, {
       method:  options.method ?? "GET",
@@ -74,13 +102,12 @@ async function wgFetch(
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
       // Timeout curto — operações locais devem ser rápidas
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(5_000),
     });
     const data = await res.json().catch(() => ({}));
     return { ok: res.ok, data, status: res.status };
   } catch (err: any) {
     // Daemon não disponível (ex: ambiente de dev local sem VPS)
-    console.warn(`[WireGuard] Manager indisponível em ${url}: ${err.message}`);
     return { ok: false, data: { error: err.message }, status: 0 };
   }
 }

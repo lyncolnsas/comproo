@@ -49,7 +49,9 @@ export async function GET() {
       hsProfiles,
       hotspots,
       natRules,
-      firewallRules
+      firewallRules,
+      hotspotDiag,
+      isProvisioned,
     ] = await Promise.all([
       mk.getInterfaces().catch(() => []),
       mk.getIpAddresses().catch(() => []),
@@ -62,16 +64,9 @@ export async function GET() {
       mk.getHotspotServers().catch(() => []),
       mk.getNatRules().catch(() => []),
       mk.getAllFirewallFilterRules().catch(() => []),
+      mk.checkHotspot().catch(() => ({ available: true, version: '' })),
+      mk.isProvisionedByMikroGestor().catch(() => false),
     ]);
-
-
-    // 1. Check if provisioned signature is recorded on the router
-    let isProvisioned = false;
-    try {
-      isProvisioned = await mk.isProvisionedByMikroGestor();
-    } catch {
-      isProvisioned = false;
-    }
 
     // 2. Dynamic Target Bridge/Interface Detection
     // Check if there is an active Hotspot, or a bridge named 'bridge', or any bridge, or fallback to 'bridge'
@@ -240,9 +235,8 @@ export async function GET() {
     }
 
     // Item 8 & 9 Check for Hotspot availability
-    const hotspotDiag = await mk.checkHotspot();
-    if (!hotspotDiag.available) {
-      const hint = `Pacote 'hotspot' não está ativo no RouterOS (${hotspotDiag.version}).`;
+    if (!hotspotDiag || !hotspotDiag.available) {
+      const hint = `Pacote 'hotspot' não está ativo no RouterOS (${hotspotDiag?.version || 'v7'}).`;
       audit.hotspotProfileCreated = { status: 'failed', message: hint };
       audit.hotspotServerRunning = { status: 'failed', message: hint };
     } else {

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DELETE /api/vpn/router/[id]/revoke
  * Revoga o acesso VPN de um roteador.
  */
@@ -25,19 +25,25 @@ export async function DELETE(
       await wireguardService.removePeer(router.vpnPublicKey);
     }
 
-    await prisma.router.update({
-      where: { id },
-      data: {
-        vpnEnabled:   false,
-        vpnIp:        null,
-        vpnPublicKey: null,
-        vpnPrivKey:   null,
-        vpnLastSeen:  null,
-        vpnStatus:    "disconnected",
-      },
-    });
+    // Se o roteador foi criado exclusivamente para a VPN (host == vpnIp), remove do banco
+    if (router.host === router.vpnIp || !router.host) {
+      await prisma.router.delete({ where: { id } });
+    } else {
+      await prisma.router.update({
+        where: { id },
+        data: {
+          vpnEnabled:   false,
+          vpnIp:        null,
+          vpnPublicKey: null,
+          vpnPrivKey:   null,
+          vpnLastSeen:  null,
+          vpnStatus:    "disconnected",
+          active:       false,
+        },
+      });
+    }
 
-    return NextResponse.json({ success: true, message: "Acesso VPN revogado." });
+    return NextResponse.json({ success: true, message: "Acesso VPN revogado com sucesso." });
   } catch (err) {
     console.error("[VPN REVOKE]", err);
     return NextResponse.json({ error: "Erro ao revogar VPN" }, { status: 500 });

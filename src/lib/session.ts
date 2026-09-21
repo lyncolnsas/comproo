@@ -29,12 +29,25 @@ export async function getSessionCredentials(): Promise<{ ip: string; user: strin
     }
   }
 
-  // Fallback to Database: find the active router
+  // Fallback to Database: find the active router (prefer VPN enabled)
   try {
-    const activeRouter = await prisma.router.findFirst({ where: { active: true } });
-    if (activeRouter && activeRouter.host && activeRouter.user) {
+    const activeRouter = await prisma.router.findFirst({
+      where: {
+        OR: [
+          { active: true, vpnEnabled: true },
+          { vpnEnabled: true, vpnIp: { not: null } },
+          { active: true },
+        ],
+      },
+      orderBy: [
+        { vpnEnabled: 'desc' },
+        { updatedAt: 'desc' },
+      ],
+    });
+
+    if (activeRouter && (activeRouter.vpnIp || activeRouter.host) && activeRouter.user) {
       return {
-        ip: activeRouter.host,
+        ip: activeRouter.vpnEnabled && activeRouter.vpnIp ? activeRouter.vpnIp : activeRouter.host,
         user: activeRouter.user,
         pass: activeRouter.password || ''
       };
@@ -50,43 +63,86 @@ export async function getSessionCredentials(): Promise<{ ip: string; user: strin
 export async function getMikrotikClient(overrideIp?: string) {
   const credentials = await getSessionCredentials();
 
-  // Se o roteador tem VPN habilitada, usa o IP VPN (10.8.0.X) em vez do host original.
-  // Isso permite controle total de MikroTiks sem IP público.
-  let targetIp = overrideIp || credentials.ip;
+  if (overrideIp) {
+    const mk = new MikrotikAPI();
+    const connected = await mk.connect(overrideIp, credentials.user, credentials.pass);
+    if (!connected) {
+      throw new MikrotikSessionError(
+        `Não foi possível conectar ao MikroTik em ${overrideIp}.`,
+        'CONNECTION_FAILED'
+      );
+    }
+    return mk;
+  }
 
-  if (!overrideIp) {
-    try {
-      const activeRouter = await prisma.router.findFirst({
-        where: {
-          OR: [
-            { active: true, vpnEnabled: true },
-            { vpnEnabled: true, vpnIp: { not: null } },
-            { active: true }
-          ]
-        },
-        orderBy: { updatedAt: 'desc' },
-        select: { vpnEnabled: true, vpnIp: true, vpnStatus: true },
-      });
+  // 1. Monta lista de roteadores candidatos a conexão
+  const candidates: Array<{ id?: string; ip: string; user: string; pass: string }> = [];
 
-      if (activeRouter?.vpnEnabled && activeRouter.vpnIp) {
-        targetIp = activeRouter.vpnIp;
+  try {
+    const routers = await prisma.router.findMany({
+      where: {
+        OR: [
+          { vpnEnabled: true },
+          { active: true },
+        ],
+      },
+      orderBy: [
+        { vpnEnabled: 'desc' },
+        { updatedAt: 'desc' },
+      ],
+    });
+
+    for (const r of routers) {
+      const ip = (r.vpnEnabled && r.vpnIp) ? r.vpnIp : r.host;
+      if (ip && !candidates.some(c => c.ip === ip)) {
+        candidates.push({
+          id: r.id,
+          ip,
+          user: r.user || credentials.user,
+          pass: r.password !== null && r.password !== undefined && r.password !== '' ? r.password : credentials.pass,
+        });
       }
-    } catch {
-      // Se o banco falhar, usa o IP das credenciais
+    }
+  } catch {}
+
+  // Se o cookie tiver um IP diferente, adiciona como alternativa
+  if (credentials.ip && !candidates.some(c => c.ip === credentials.ip)) {
+    candidates.push({
+      ip: credentials.ip,
+      user: credentials.user,
+      pass: credentials.pass,
+    });
+  }
+
+  if (candidates.length === 0) {
+    throw new MikrotikSessionError('Nenhum roteador configurado.', 'NO_SESSION');
+  }
+
+  // 2. Tenta conectar aos candidatos em sequência
+  let lastError: Error | null = null;
+  for (const cand of candidates) {
+    const mk = new MikrotikAPI();
+    try {
+      const connected = await mk.connect(cand.ip, cand.user, cand.pass);
+      if (connected) {
+        // Promove o roteador que respondeu como ativo no banco
+        if (cand.id) {
+          prisma.router.update({
+            where: { id: cand.id },
+            data: { active: true, vpnStatus: 'connected', vpnLastSeen: new Date() },
+          }).catch(() => {});
+        }
+        return mk;
+      }
+    } catch (err: any) {
+      lastError = err;
     }
   }
 
-  const mk = new MikrotikAPI();
-  const connected = await mk.connect(targetIp, credentials.user, credentials.pass);
-
-  if (!connected) {
-    throw new MikrotikSessionError(
-      `Não foi possível conectar ao MikroTik em ${targetIp}.`,
-      'CONNECTION_FAILED'
-    );
-  }
-
-  return mk;
+  throw new MikrotikSessionError(
+    `Não foi possível conectar ao MikroTik (${candidates.map(c => c.ip).join(', ')}). ${lastError?.message || ''}`,
+    'CONNECTION_FAILED'
+  );
 }
 
 
