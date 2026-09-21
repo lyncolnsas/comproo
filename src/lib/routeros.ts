@@ -12,7 +12,8 @@ export class MikrotikAPI {
       port: port || 8728,
       user,
       password: pass,
-      keepalive: true
+      keepalive: true,
+      timeout: 5000
     });
 
     try {
@@ -60,14 +61,28 @@ export class MikrotikAPI {
 
   async getHotspotActive() {
     if (!this.client) throw new Error('Not connected');
-    const menu = this.client.menu('/ip/hotspot/active');
-    return await menu.get();
+    try {
+      const menu = this.client.menu('/ip/hotspot/active');
+      return await menu.get();
+    } catch (err: any) {
+      if (err?.message && (err.message.includes('!empty') || err.message.includes('empty'))) {
+        return [];
+      }
+      throw err;
+    }
   }
 
   async getHotspotUsers() {
     if (!this.client) throw new Error('Not connected');
-    const menu = this.client.menu('/ip/hotspot/user');
-    return await menu.get();
+    try {
+      const menu = this.client.menu('/ip/hotspot/user');
+      return await menu.get();
+    } catch (err: any) {
+      if (err?.message && (err.message.includes('!empty') || err.message.includes('empty'))) {
+        return [];
+      }
+      throw err;
+    }
   }
 
   async getHotspotProfiles() {

@@ -57,7 +57,14 @@ export async function getMikrotikClient(overrideIp?: string) {
   if (!overrideIp) {
     try {
       const activeRouter = await prisma.router.findFirst({
-        where: { active: true },
+        where: {
+          OR: [
+            { active: true, vpnEnabled: true },
+            { vpnEnabled: true, vpnIp: { not: null } },
+            { active: true }
+          ]
+        },
+        orderBy: { updatedAt: 'desc' },
         select: { vpnEnabled: true, vpnIp: true, vpnStatus: true },
       });
 

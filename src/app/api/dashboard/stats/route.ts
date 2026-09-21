@@ -31,39 +31,44 @@ export async function GET() {
   try {
     mk = await getMikrotikClient();
     
-    // Sequencial para evitar colisões de socket no RouterOS
-    const identity = await mk.getIdentity();
-    const resources = await mk.getSystemResources();
-    const routerboard = await mk.getRouterboard();
-    const clock = await mk.getSystemClock();
-    const activeUsers = await mk.getHotspotActive();
-    const allUsers = await mk.getHotspotUsers();
-    const rawLogs = await mk.getLogs();
+    // Consultas paralelas com Promise.all para máxima velocidade e tolerância a falhas individuais
+    const [identity, resources, routerboard, clock, activeUsers, allUsers, rawLogs] = await Promise.all([
+      mk.getIdentity().catch(() => [{ name: 'MikroTik' }]),
+      mk.getSystemResources().catch(() => [{}]),
+      mk.getRouterboard().catch(() => [{}]),
+      mk.getSystemClock().catch(() => [{}]),
+      mk.getHotspotActive().catch(() => []),
+      mk.getHotspotUsers().catch(() => []),
+      mk.getLogs().catch(() => []),
+    ]);
 
-    try {
-      isProvisioned = await mk.isProvisionedByMikroGestor();
-    } catch {
-      isProvisioned = false;
-    }
+    isProvisioned = false;
 
+    const res = resources[0] || {};
     identityName = identity[0]?.name || 'MikroTik';
-    cpuLoad = parseInt(resources[0]?.['cpu-load'] || '0');
-    uptime = resources[0]?.uptime || 'N/A';
-    boardName = resources[0]?.['board-name'] || 'N/A';
-    version = resources[0]?.version || 'N/A';
-    freeMemory = parseInt(resources[0]?.['free-memory'] || '0');
-    totalMemory = parseInt(resources[0]?.['total-memory'] || '0');
-    freeHdd = parseInt(resources[0]?.['free-hdd-space'] || '0');
-    totalHdd = parseInt(resources[0]?.['total-hdd-space'] || '0');
-    model = routerboard[0]?.model || 'N/A';
-    isRouterboard = routerboard[0]?.routerboard === 'true' || routerboard[0]?.routerboard === true;
-    clockTime = clock[0]?.time || 'N/A';
-    clockDate = clock[0]?.date || 'N/A';
-    clockTimeZone = clock[0]?.['time-zone-name'] || 'N/A';
-    activeUsersCount = activeUsers.length || 0;
-    totalUsersCount = allUsers.length || 0;
+    cpuLoad = parseInt(res.cpuLoad ?? res['cpu-load'] ?? '0') || 0;
+    uptime = res.uptime || 'N/A';
+    boardName = res.boardName ?? res['board-name'] ?? 'N/A';
+    version = res.version || 'N/A';
+    freeMemory = parseInt(res.freeMemory ?? res['free-memory'] ?? '0') || 0;
+    totalMemory = parseInt(res.totalMemory ?? res['total-memory'] ?? '1') || 1;
+    freeHdd = parseInt(res.freeHddSpace ?? res['free-hdd-space'] ?? '0') || 0;
+    totalHdd = parseInt(res.totalHddSpace ?? res['total-hdd-space'] ?? '1') || 1;
 
-    formattedLogs = rawLogs
+    const rb = routerboard[0] || {};
+    model = rb.model || 'N/A';
+    isRouterboard = rb.routerboard === 'true' || rb.routerboard === true;
+
+    const clk = clock[0] || {};
+    clockTime = clk.time || 'N/A';
+    clockDate = clk.date || 'N/A';
+    clockTimeZone = clk.timeZoneName ?? clk['time-zone-name'] ?? 'N/A';
+
+    activeUsersCount = Array.isArray(activeUsers) ? activeUsers.length : 0;
+    totalUsersCount = Array.isArray(allUsers) ? allUsers.length : 0;
+
+    const logsArray = Array.isArray(rawLogs) ? rawLogs : [];
+    formattedLogs = logsArray
       .slice(-15)
       .reverse()
       .map((l: any) => ({
