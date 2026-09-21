@@ -13,7 +13,7 @@ export class MikrotikAPI {
       user,
       password: pass,
       keepalive: true,
-      timeout: 5000
+      timeout: 2500
     });
 
     try {

@@ -17,9 +17,6 @@ export async function DELETE(
     if (!router) {
       return NextResponse.json({ error: "Roteador nao encontrado" }, { status: 404 });
     }
-    if (!router.vpnEnabled) {
-      return NextResponse.json({ error: "VPN nao habilitada neste roteador" }, { status: 400 });
-    }
 
     if (router.vpnPublicKey && (await isWireGuardAvailable())) {
       await wireguardService.removePeer(router.vpnPublicKey);

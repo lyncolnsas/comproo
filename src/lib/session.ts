@@ -29,19 +29,18 @@ export async function getSessionCredentials(): Promise<{ ip: string; user: strin
     }
   }
 
-  // Fallback to Database: find the active router (prefer VPN enabled)
+  // Fallback to Database: find the active router (prefer VPN enabled with valid vpnIp)
   try {
     const activeRouter = await prisma.router.findFirst({
       where: {
         OR: [
-          { active: true, vpnEnabled: true },
-          { vpnEnabled: true, vpnIp: { not: null } },
+          { active: true, vpnEnabled: true, vpnIp: { not: null } },
           { active: true },
         ],
       },
       orderBy: [
         { vpnEnabled: 'desc' },
-        { updatedAt: 'desc' },
+        { createdAt: 'desc' },
       ],
     });
 
@@ -82,13 +81,13 @@ export async function getMikrotikClient(overrideIp?: string) {
     const routers = await prisma.router.findMany({
       where: {
         OR: [
-          { vpnEnabled: true },
+          { vpnEnabled: true, vpnIp: { not: null } },
           { active: true },
         ],
       },
       orderBy: [
         { vpnEnabled: 'desc' },
-        { updatedAt: 'desc' },
+        { createdAt: 'desc' },
       ],
     });
 
@@ -118,29 +117,44 @@ export async function getMikrotikClient(overrideIp?: string) {
     throw new MikrotikSessionError('Nenhum roteador configurado.', 'NO_SESSION');
   }
 
-  // 2. Tenta conectar aos candidatos em sequência
-  let lastError: Error | null = null;
-  for (const cand of candidates) {
-    const mk = new MikrotikAPI();
-    try {
-      const connected = await mk.connect(cand.ip, cand.user, cand.pass);
-      if (connected) {
-        // Promove o roteador que respondeu como ativo no banco
-        if (cand.id) {
-          prisma.router.update({
-            where: { id: cand.id },
-            data: { active: true, vpnStatus: 'connected', vpnLastSeen: new Date() },
-          }).catch(() => {});
+  // 2. Tenta conectar a todos os candidatos em PARALELO — o mais rápido a responder vence.
+  // Isso elimina a lentidão de esperar N×timeout se houver IPs mortos na lista.
+  const winner = await new Promise<{ mk: MikrotikAPI; cand: typeof candidates[0] } | null>((resolve) => {
+    let resolved = false;
+    let pending = candidates.length;
+
+    candidates.forEach(async (cand) => {
+      const mk = new MikrotikAPI();
+      try {
+        const connected = await mk.connect(cand.ip, cand.user, cand.pass);
+        if (connected && !resolved) {
+          resolved = true;
+          resolve({ mk, cand });
+        } else {
+          mk.disconnect?.();
         }
-        return mk;
+      } catch {
+        // ignore
+      } finally {
+        pending--;
+        if (pending === 0 && !resolved) resolve(null);
       }
-    } catch (err: any) {
-      lastError = err;
+    });
+  });
+
+  if (winner) {
+    const { mk, cand } = winner;
+    if (cand.id) {
+      prisma.router.update({
+        where: { id: cand.id },
+        data: { active: true, vpnStatus: 'connected', vpnLastSeen: new Date() },
+      }).catch(() => {});
     }
+    return mk;
   }
 
   throw new MikrotikSessionError(
-    `Não foi possível conectar ao MikroTik (${candidates.map(c => c.ip).join(', ')}). ${lastError?.message || ''}`,
+    `Não foi possível conectar ao MikroTik (${candidates.map(c => c.ip).join(', ')}).`,
     'CONNECTION_FAILED'
   );
 }
