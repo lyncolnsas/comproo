@@ -15,6 +15,7 @@ Personas com competências e instruções específicas para cada área do sistem
 | **Depurador** | [`depurador.md`](agentes/depurador.md) | Investigação sistemática de bugs, logs e falhas de runtime |
 | **Auditor de Segurança** | [`auditor-seguranca.md`](agentes/auditor-seguranca.md) | Metodologia Cloudflare, segurança RouterOS, JWT e Vouchers |
 | **Especialista MikroTik Hotspot** | [`especialista-mikrotik-hotspot.md`](agentes/especialista-mikrotik-hotspot.md) | RouterOS API, provisionamento, firewall, Walled Garden |
+| **Especialista WireGuard VPN** | [`especialista-wireguard-vpn.md`](agentes/especialista-wireguard-vpn.md) | Túneis WireGuard (RouterOS v7), Split-Tunneling, Coolify e VPS |
 | **Arquiteto do Portal** | [`arquiteto-portal.md`](agentes/arquiteto-portal.md) | Editor visual do Portal Studio (`/dashboard/portal`) |
 | **Engenheiro DevOps** | [`engenheiro-devops.md`](agentes/engenheiro-devops.md) | Docker ARM64, Raspberry Pi, deploy, Linux, rede |
 | **Planejador de Projetos** | [`planejador-projetos.md`](agentes/planejador-projetos.md) | Roadmap, divisão de fases e especificação de tarefas |
@@ -46,12 +47,13 @@ Personas com competências e instruções específicas para cada área do sistem
 
 ---
 
-## 📚 2. `/habilidades` — As 11 Prateleiras de Conhecimento (58 Habilidades)
+## 📚 2. `/habilidades` — As 11 Prateleiras de Conhecimento (59 Habilidades)
 
 ### 🎯 Prateleira `00-mikrogestor/` (Específico do Projeto)
 - [`conhecimento-hotspot-mikrotik/`](habilidades/00-mikrogestor/conhecimento-hotspot-mikrotik) — RouterOS API (8728), Walled Garden e provisionamento automático.
 - [`conhecimento-portal-studio/`](habilidades/00-mikrogestor/conhecimento-portal-studio) — Arquitetura de componentes do Portal Studio, layouts e temas.
 - [`sistema-contraste-ui/`](habilidades/00-mikrogestor/sistema-contraste-ui) — Diretrizes de contraste e temas escuro/claro para dashboards.
+- [`wireguard-vpn/`](habilidades/00-mikrogestor/wireguard-vpn) — Base de conhecimento completa WireGuard (RouterOS v7, Linux VPS, daemon wg-manager, Docker Coolify).
 
 ### 🧠 Prateleira `01-orquestracao-ia/` (Coordenação de Agentes)
 - [`agentes-paralelos/`](habilidades/01-orquestracao-ia/agentes-paralelos) — Decomposição e execução concorrente de tarefas.
@@ -133,14 +135,14 @@ Personas com competências e instruções específicas para cada área do sistem
 ## 🛠️ 3. `/scripts` — Utilitários de Execução Rápida
 
 - **`banco-de-dados/`** — Gerenciamento de permissões do SQLite e testes de persistência.
-- **`implantacao/`** — Empacotamento standalone e upload direto para o Raspberry Pi.
+- **`implantacao/`** — Empacotamento standalone, instalador universal WireGuard (`setup-vpn.sh`) e deploy para Raspberry Pi.
 - **`manutencao/`** — Verificação geral (`verify_all.py`), checklist de auditoria, motor de regras hookify e segurança de hooks.
 - **`raspberry/`** — Provisionamento da arquitetura 64-bit, reinicialização e serviço do MikroGestor no Raspberry Pi.
-- **`testes/`** — Scripts de validação da API RouterOS, testes de geração de voucher e validadores de agentes/hooks.
+- **`testes/`** — Validação da API RouterOS, teste completo de túnel WireGuard (`verificar_vpn.js`) e validadores.
 
 ---
 
-## 🔄 4. `/fluxos` — Comandos Rápidos (Slash Commands - 20 Comandos)
+## 🔄 4. `/fluxos` — Comandos Rápidos (Slash Commands - 21 Comandos)
 
 - `concepcao.md` — Sessão de ideação com perguntas socráticas.
 - `coordenar.md` — Orquestração de tarefas distribuídas.
@@ -162,11 +164,13 @@ Personas com competências e instruções específicas para cada área do sistem
 - `testar.md` — Execução automatizada de baterias de teste.
 - `verificar.md` — Checagem de integridade antes da entrega.
 - `ui-ux-pro-max.md` — Assistente de consulta de paletas e estilos visuais.
+- `vpn-wireguard.md` — Provisionamento e diagnóstico de túneis WireGuard VPN.
 
 ---
 
 ## 📋 5. `/regras` — Diretrizes Obrigatórias
 - `GEMINI.md` — Regras mestras de orquestração, checagem pré-código e proibições de estilo.
 - `PORTAL_RULES.md` — Regras arquiteturais específicas do Captive Portal do MikroGestor.
+- `WIREGUARD_RULES.md` — Regras de ouro de split-tunneling, scripts em linha única para Winbox e isolamento VPN.
 - `DIRETRIZES_REGRAS_HOOKS.md` — Padrões de escrita para guardrails e interceptadores de IA.
 - `LAYOUT_REMODELING.md` / `LAYOUT_RESPONSIVENESS.md` — Regras de layout, responsividade e viewport móvel.
