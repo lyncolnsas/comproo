@@ -211,6 +211,8 @@ export class WireGuardService {
   /**
    * Gera o script RouterOS (.rsc) para configurar o WireGuard no MikroTik.
    * O script é idempotente — pode ser executado múltiplas vezes sem duplicar.
+   * Em conformidade com as regras do RouterOS v7 e mikrotik-script-specialist:
+   * comandos em linha única sem barras invertidas (\) para evitar syntax error no Winbox.
    */
   generateRouterOSScript(params: RouterOSScriptParams): string {
     const {
@@ -222,8 +224,14 @@ export class WireGuardService {
       vpsPort = 51820,
     } = params;
 
+    if (!vpsPublicKey || vpsPublicKey.trim() === "") {
+      throw new Error(
+        "A chave pública da VPS (VPS_WG_PUBLIC_KEY) não está configurada. Configure a chave nas variáveis de ambiente antes de gerar o script."
+      );
+    }
+
     return `# ============================================================
-# MikroGestor VPN — Configuração WireGuard
+# MikroGestor VPN — Configuração WireGuard (RouterOS v7)
 # Roteador : ${routerName}
 # IP VPN   : ${vpnIp}
 # Gerado em: ${new Date().toISOString()}
@@ -234,84 +242,41 @@ export class WireGuardService {
 #   3. O roteador se conectará automaticamente ao MikroGestor
 # ============================================================
 
-# Remover configuração anterior (se existir)
-:do { /interface wireguard remove [find name=wg-mikrogestor] } on-error={}
+# --- 1. LIMPEZA PREVENTIVA ---
+:do { /interface wireguard peers remove [find interface=wg-mikrogestor] } on-error={}
 :do { /ip address remove [find interface=wg-mikrogestor] } on-error={}
+:do { /ip address remove [find network=10.8.0.0] } on-error={}
 :do { /ip route remove [find comment="MikroGestor VPN route"] } on-error={}
+:do { /interface wireguard remove [find name=wg-mikrogestor] } on-error={}
 
-# 1. Criar interface WireGuard
-/interface wireguard add \\
-  name=wg-mikrogestor \\
-  private-key="${mikrotikPrivKey}" \\
-  listen-port=13231 \\
-  comment="MikroGestor VPN - NAO MODIFICAR"
+# --- 2. INTERFACE E IP ---
+/interface wireguard add name=wg-mikrogestor private-key="${mikrotikPrivKey}" listen-port=13231 comment="MikroGestor VPN - NAO MODIFICAR"
+/ip address add address=${vpnIp}/24 interface=wg-mikrogestor network=10.8.0.0 comment="MikroGestor VPN IP"
 
-# 2. Configurar IP na interface VPN
-/ip address add \\
-  address=${vpnIp}/24 \\
-  interface=wg-mikrogestor \\
-  network=10.8.0.0
+# --- 3. PEER VPS ---
+/interface wireguard peers add interface=wg-mikrogestor public-key="${vpsPublicKey}" endpoint-address=${vpsIp} endpoint-port=${vpsPort} allowed-address=10.8.0.0/24 persistent-keepalive=25 comment="MikroGestor VPS"
 
-# 3. Adicionar peer — VPS MikroGestor
-/interface wireguard peers add \\
-  interface=wg-mikrogestor \\
-  public-key="${vpsPublicKey}" \\
-  endpoint-address=${vpsIp} \\
-  endpoint-port=${vpsPort} \\
-  allowed-address=10.8.0.0/24 \\
-  persistent-keepalive=25 \\
-  comment="MikroGestor VPS"
+# --- 4. ROTA DE CONTROLE ---
+/ip route add dst-address=10.8.0.0/24 gateway=wg-mikrogestor comment="MikroGestor VPN route"
 
-# 4. Rota para a rede de controle VPN
-/ip route add \\
-  dst-address=10.8.0.0/24 \\
-  gateway=wg-mikrogestor \\
-  comment="MikroGestor VPN route"
+# --- 5. FIREWALL DE SEGURANÇA ---
+:local ruleApi [/ip firewall filter find comment="MikroGestor: API access"]
+:if ([:len $ruleApi] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=10.8.0.1 dst-port=8728,8729 protocol=tcp action=accept place-before=0 comment="MikroGestor: API access" }
 
-# 5. Firewall — Aceitar API RouterOS apenas da VPS
-:local ruleExists [/ip firewall filter find comment="MikroGestor: API access"]
-:if ([:len $ruleExists] = 0) do={
-  /ip firewall filter add \\
-    chain=input \\
-    in-interface=wg-mikrogestor \\
-    src-address=10.8.0.1 \\
-    dst-port=8728,8729 \\
-    protocol=tcp \\
-    action=accept \\
-    place-before=0 \\
-    comment="MikroGestor: API access"
-}
+:local ruleBlock [/ip firewall filter find comment="MikroGestor: block non-VPS via VPN"]
+:if ([:len $ruleBlock] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=!10.8.0.1 action=drop comment="MikroGestor: block non-VPS via VPN" }
 
-# 6. Firewall — Bloquear acesso VPN de fontes não autorizadas
-:local rule2Exists [/ip firewall filter find comment="MikroGestor: block non-VPS via VPN"]
-:if ([:len $rule2Exists] = 0) do={
-  /ip firewall filter add \\
-    chain=input \\
-    in-interface=wg-mikrogestor \\
-    src-address=!10.8.0.1 \\
-    action=drop \\
-    comment="MikroGestor: block non-VPS via VPN"
-}
-
-# 7. Firewall — Impedir hotspot de usar VPN (split tunnel)
 :do {
-  :local r3 [/ip firewall filter find comment="MikroGestor: block hotspot thru VPN"]
-  :if ([:len $r3] = 0) do={
-    /ip firewall filter add \\
-      chain=forward \\
-      in-interface=bridge-hotspot \\
-      out-interface=wg-mikrogestor \\
-      action=drop \\
-      comment="MikroGestor: block hotspot thru VPN"
-  }
+  :local ruleHs [/ip firewall filter find comment="MikroGestor: block hotspot thru VPN"]
+  :if ([:len $ruleHs] = 0) do={ /ip firewall filter add chain=forward in-interface=bridge-hotspot out-interface=wg-mikrogestor action=drop comment="MikroGestor: block hotspot thru VPN" }
 } on-error={}
 
 :log info "MikroGestor VPN: configuracao concluida (${vpnIp})"
 :put "============================================================"
-:put "Configuracao concluida!"
+:put "Configuracao concluida com sucesso!"
 :put "Roteador : ${routerName}"
 :put "IP VPN   : ${vpnIp}"
-:put "O roteador aparecera como Online no MikroGestor."
+:put "Status   : Conectado a VPS MikroGestor (${vpsIp})"
 :put "============================================================"
 `;
   }
