@@ -18,8 +18,14 @@ export async function DELETE(
       return NextResponse.json({ error: "Roteador nao encontrado" }, { status: 404 });
     }
 
-    if (router.vpnPublicKey && (await isWireGuardAvailable())) {
-      await wireguardService.removePeer(router.vpnPublicKey);
+    if (await isWireGuardAvailable()) {
+      if (router.vpnPublicKey) {
+        await wireguardService.removePeer(router.vpnPublicKey);
+      }
+      if (router.subdomain) {
+        const slug = router.subdomain.split('.')[0];
+        await wireguardService.removeSubdomainProxy(slug);
+      }
     }
 
     // Se o roteador foi criado exclusivamente para a VPN (host == vpnIp), remove do banco

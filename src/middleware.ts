@@ -12,7 +12,8 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/portal') || 
     path.startsWith('/api/portal/') || 
     path.startsWith('/api/webhook') ||
-    path.startsWith('/uploads/');
+    path.startsWith('/uploads/') ||
+    (path.startsWith('/api/vpn/router/') && path.includes('/cert-file'));
   
   const token = request.cookies.get('system_auth')?.value;
   

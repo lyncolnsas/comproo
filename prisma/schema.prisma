@@ -35,6 +35,11 @@ model Router {
   vpnPrivKey   String?   // Chave privada WireGuard gerada para o MikroTik
   vpnLastSeen  DateTime? // Timestamp do último handshake detectado
   vpnStatus    String    @default("disconnected") // connected | disconnected | pending
+
+  // ─── Subdomínio Dedicado & SSL ────────────────────────────────
+  subdomain    String?   // Subdomínio dedicado, ex: "mkroca.mikrogestor.com"
+  sslActive    Boolean   @default(false)
+  sslExpiresAt DateTime? // Data de expiração do certificado
 }
 
 model FinanceLog {

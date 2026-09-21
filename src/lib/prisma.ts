@@ -41,6 +41,15 @@ export async function ensureVpnColumns(): Promise<void> {
         if (!colNames.includes('vpnStatus')) {
           await prisma.$executeRawUnsafe(`ALTER TABLE "Router" ADD COLUMN "vpnStatus" TEXT NOT NULL DEFAULT 'disconnected';`).catch(() => {});
         }
+        if (!colNames.includes('subdomain')) {
+          await prisma.$executeRawUnsafe(`ALTER TABLE "Router" ADD COLUMN "subdomain" TEXT;`).catch(() => {});
+        }
+        if (!colNames.includes('sslActive')) {
+          await prisma.$executeRawUnsafe(`ALTER TABLE "Router" ADD COLUMN "sslActive" BOOLEAN NOT NULL DEFAULT 0;`).catch(() => {});
+        }
+        if (!colNames.includes('sslExpiresAt')) {
+          await prisma.$executeRawUnsafe(`ALTER TABLE "Router" ADD COLUMN "sslExpiresAt" DATETIME;`).catch(() => {});
+        }
       }
       migrationDone = true;
     } catch (e) {

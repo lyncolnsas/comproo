@@ -48,6 +48,9 @@ export interface RouterOSScriptParams {
   vpsPublicKey: string;
   vpsIp: string;
   vpsPort?: number;
+  subdomain?: string;
+  routerId?: string;
+  slug?: string;
 }
 
 // ─── Constantes ─────────────────────────────────────────────────────────────
@@ -263,6 +266,48 @@ export class WireGuardService {
   }
 
   /**
+   * Adiciona configuração dinâmica de proxy reverso no Traefik (Coolify)
+   * para apontar o subdomínio HTTPS diretamente para a porta 80 do MikroTik via VPN.
+   */
+  async addSubdomainProxy(subdomain: string, vpnIp: string, slug: string): Promise<{ ok: boolean; error?: string }> {
+    const res = await wgFetch("/traefik/subdomain/add", {
+      method: "POST",
+      body: { subdomain, vpnIp, slug },
+    });
+    if (!res.ok) {
+      console.warn(`[WireGuard] Falha ao registrar proxy no Traefik: ${res.data?.error}`);
+      return { ok: false, error: res.data?.error };
+    }
+    return { ok: true };
+  }
+
+  /**
+   * Remove configuração de proxy reverso do Traefik ao deletar ou desvincular o roteador.
+   */
+  async removeSubdomainProxy(slug: string): Promise<{ ok: boolean; error?: string }> {
+    const res = await wgFetch("/traefik/subdomain/remove", {
+      method: "POST",
+      body: { slug },
+    });
+    return { ok: res.ok, error: res.data?.error };
+  }
+
+  /**
+   * Extrai o certificado Let's Encrypt gerado pelo Traefik em /data/coolify/proxy/acme.json
+   */
+  async getDomainCert(subdomain: string): Promise<{ ok: boolean; certificate?: string; privateKey?: string; error?: string }> {
+    const res = await wgFetch(`/cert/extract?domain=${encodeURIComponent(subdomain)}`);
+    if (!res.ok) {
+      return { ok: false, error: res.data?.error || "Certificado não encontrado no acme.json" };
+    }
+    return {
+      ok: true,
+      certificate: res.data.certificate,
+      privateKey: res.data.privateKey,
+    };
+  }
+
+  /**
    * Gera o script RouterOS (.rsc) para configurar o WireGuard no MikroTik.
    * O script é idempotente — pode ser executado múltiplas vezes sem duplicar.
    * Em conformidade com as regras do RouterOS v7 e mikrotik-script-specialist:
@@ -276,6 +321,9 @@ export class WireGuardService {
       vpsPublicKey,
       vpsIp,
       vpsPort = 51820,
+      subdomain,
+      routerId,
+      slug,
     } = params;
 
     if (!vpsPublicKey || vpsPublicKey.trim() === "") {
@@ -284,11 +332,26 @@ export class WireGuardService {
       );
     }
 
+    const sslBlock = subdomain && routerId
+      ? `
+# --- 6. CERTIFICADO SSL E AUTO-RENOVACAO (SUBDOMINIO ${subdomain}) ---
+:do { /system scheduler remove [find name=mg-renew-ssl] } on-error={}
+:do { /system script remove [find name=mg-sync-ssl] } on-error={}
+
+/system script add name=mg-sync-ssl policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon comment="MikroGestor: Sincroniza e renova SSL para ${subdomain}" source=":do { :log info \\"[MikroGestor] Baixando certificado SSL para ${subdomain}...\\"; /tool fetch url=\\"https://www.mikrogestor.com/api/vpn/router/${routerId}/cert-file?type=cert\\" dst-path=\\"mg-cert.pem\\" check-certificate=no; :delay 2s; /tool fetch url=\\"https://www.mikrogestor.com/api/vpn/router/${routerId}/cert-file?type=key\\" dst-path=\\"mg-key.pem\\" check-certificate=no; :delay 2s; :do { /certificate remove [find name=\\"mg-ssl-${slug || 'cert'}\\"] } on-error={}; /certificate import file-name=mg-cert.pem passphrase=\\"\\" name=\\"mg-ssl-${slug || 'cert'}\\"; :delay 2s; /certificate import file-name=mg-key.pem passphrase=\\"\\" name=\\"mg-ssl-${slug || 'cert'}\\"; :delay 2s; :do { /file remove [find name=\\"mg-cert.pem\\"] } on-error={}; :do { /file remove [find name=\\"mg-key.pem\\"] } on-error={}; :do { /ip service set www-ssl certificate=\\"mg-ssl-${slug || 'cert'}\\" disabled=no port=443 } on-error={}; :do { /ip hotspot profile set [find name=hsprof_hotspot] ssl-certificate=\\"mg-ssl-${slug || 'cert'}\\" https=yes dns-name=\\"${subdomain}\\" } on-error={}; :log info \\"[MikroGestor] Certificado SSL ${subdomain} importado com sucesso!\\"; } on-error={ :log warning \\"[MikroGestor] Falha na sincronizacao SSL (pode estar aguardando emissao). Tentando novamente no proximo ciclo.\\"; }"
+
+/system scheduler add name=mg-renew-ssl interval=15d start-time=startup policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon on-event=mg-sync-ssl comment="MikroGestor: Renovacao automatica de SSL a cada 15 dias"
+
+:do { /system scheduler remove [find name=mg-ssl-init] } on-error={}
+/system scheduler add name=mg-ssl-init interval=0s start-time=(/system clock get time + 10s) policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon on-event=":do { /system script run mg-sync-ssl; /system scheduler remove [find name=mg-ssl-init]; } on-error={}" comment="MikroGestor: Disparo inicial de SSL"
+`
+      : "";
+
     return `# ============================================================
 # MikroGestor VPN — Configuração WireGuard (RouterOS v7)
 # Roteador : ${routerName}
 # IP VPN   : ${vpnIp}
-# Gerado em: ${new Date().toISOString()}
+${subdomain ? `# Subdomínio: ${subdomain}\n` : ""}# Gerado em: ${new Date().toISOString()}
 # ============================================================
 # INSTRUÇÕES:
 #   1. Abra o Terminal no Winbox ou acesse via SSH
@@ -315,7 +378,7 @@ export class WireGuardService {
 
 # --- 5. FIREWALL DE SEGURANÇA ---
 :local ruleApi [/ip firewall filter find comment="MikroGestor: API access"]
-:if ([:len $ruleApi] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=10.8.0.1 dst-port=8728,8729 protocol=tcp action=accept place-before=0 comment="MikroGestor: API access" }
+:if ([:len $ruleApi] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=10.8.0.1 dst-port=80,443,8291,8728,8729 protocol=tcp action=accept place-before=0 comment="MikroGestor: API access" } else={ /ip firewall filter set $ruleApi dst-port=80,443,8291,8728,8729 }
 
 :local ruleBlock [/ip firewall filter find comment="MikroGestor: block non-VPS via VPN"]
 :if ([:len $ruleBlock] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=!10.8.0.1 action=drop comment="MikroGestor: block non-VPS via VPN" }
@@ -324,13 +387,13 @@ export class WireGuardService {
   :local ruleHs [/ip firewall filter find comment="MikroGestor: block hotspot thru VPN"]
   :if ([:len $ruleHs] = 0) do={ /ip firewall filter add chain=forward in-interface=bridge-hotspot out-interface=wg-mikrogestor action=drop comment="MikroGestor: block hotspot thru VPN" }
 } on-error={}
-
+${sslBlock}
 :log info "MikroGestor VPN: configuracao concluida (${vpnIp})"
 :put "============================================================"
 :put "Configuracao concluida com sucesso!"
 :put "Roteador : ${routerName}"
 :put "IP VPN   : ${vpnIp}"
-:put "Status   : Conectado a VPS MikroGestor (${vpsIp})"
+${subdomain ? `:put "Subdominio: https://${subdomain}"\n` : ""}:put "Status   : Conectado a VPS MikroGestor (${vpsIp})"
 :put "============================================================"
 `;
   }

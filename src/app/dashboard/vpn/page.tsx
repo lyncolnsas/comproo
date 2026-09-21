@@ -21,6 +21,8 @@ import {
   ExternalLink,
   AlertTriangle,
   ArrowRight,
+  Lock,
+  Globe,
 } from "lucide-react";
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
@@ -31,6 +33,9 @@ interface VpnRouter {
   vpnIp: string | null;
   vpnStatus: string;
   vpnLastSeen: string | null;
+  subdomain?: string | null;
+  sslActive?: boolean;
+  sslExpiresAt?: string | null;
   peer: {
     endpoint: string | null;
     lastHandshake: string | null;
@@ -138,6 +143,7 @@ function CreateTunnelModal({
     routerName: string;
     vpnIp: string;
     script: string;
+    subdomain?: string;
   } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -164,6 +170,7 @@ function CreateTunnelModal({
         routerName: data.routerName || routerName || "MikroTik",
         vpnIp: data.vpnIp,
         script: data.script,
+        subdomain: data.subdomain,
       });
       onSuccess();
     } catch (err: any) {
@@ -368,6 +375,20 @@ function CreateTunnelModal({
                   <p className="text-xs text-emerald-800 font-medium mt-0.5">
                     IP Alocado na VPN: <strong className="font-mono">{scriptResult.vpnIp}</strong>
                   </p>
+                  {scriptResult.subdomain && (
+                    <p className="text-xs text-blue-900 font-medium mt-1 flex items-center gap-1.5">
+                      Subdomínio Seguro:{" "}
+                      <a
+                        href={`https://${scriptResult.subdomain}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-mono text-blue-700 underline font-bold inline-flex items-center gap-1"
+                      >
+                        https://{scriptResult.subdomain}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <CopyButton text={scriptResult.script} />
@@ -469,6 +490,28 @@ export default function VpnPage() {
       await loadStatus();
     } finally {
       setRevoking(null);
+    }
+  };
+
+  const [syncingSsl, setSyncingSsl] = useState<string | null>(null);
+
+  const syncSsl = async (routerId: string, routerName: string) => {
+    setSyncingSsl(routerId);
+    try {
+      const res = await fetch(`/api/vpn/router/${routerId}/sync-ssl`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.message || "Erro ao sincronizar certificado SSL.");
+      } else {
+        alert(data.message || "SSL sincronizado com sucesso!");
+        await loadStatus();
+      }
+    } catch (e: any) {
+      alert("Falha na comunicação ao sincronizar SSL: " + (e?.message || e));
+    } finally {
+      setSyncingSsl(null);
     }
   };
 
@@ -584,7 +627,32 @@ export default function VpnPage() {
                     <Wifi className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-black text-slate-900 text-sm">{r.name}</h4>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="font-black text-slate-900 text-sm">{r.name}</h4>
+                      {r.subdomain && (
+                        <a
+                          href={`https://${r.subdomain}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
+                          title="Acessar painel do roteador via HTTPS"
+                        >
+                          <Globe className="w-2.5 h-2.5" />
+                          <span>{r.subdomain}</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      )}
+                      {r.sslActive ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <Lock className="w-2.5 h-2.5 text-emerald-600" />
+                          SSL Ativo
+                        </span>
+                      ) : r.subdomain ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                          Aguardando SSL
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="text-xs text-slate-500 font-mono mt-0.5">
                       IP VPN: <strong className="text-slate-800">{r.vpnIp ?? "—"}</strong>
                       {r.peer?.endpoint && (
@@ -609,6 +677,16 @@ export default function VpnPage() {
                   <StatusBadge status={r.vpnStatus} />
 
                   <div className="flex items-center gap-1.5">
+                    {r.subdomain && (
+                      <button
+                        onClick={() => syncSsl(r.id, r.name)}
+                        disabled={syncingSsl === r.id}
+                        className="p-2 hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-emerald-200 disabled:opacity-40"
+                        title="Sincronizar Certificado SSL no MikroTik"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${syncingSsl === r.id ? "animate-spin" : ""}`} />
+                      </button>
+                    )}
                     <a
                       href={`/api/vpn/router/${r.id}/script`}
                       download

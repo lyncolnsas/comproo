@@ -51,6 +51,9 @@ export async function GET() {
         vpnPublicKey: true,
         vpnStatus: true,
         vpnLastSeen: true,
+        subdomain: true,
+        sslActive: true,
+        sslExpiresAt: true,
       },
     });
 

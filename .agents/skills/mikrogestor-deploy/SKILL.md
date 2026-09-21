@@ -45,6 +45,21 @@ Configuração no Coolify:
 4. **Daemon WG-Manager**: Escuta em `0.0.0.0:51821`, protegido por header `X-WG-Secret`.
 5. **UFW**: Deve liberar porta 51820/udp para o mundo e porta 51821/tcp para a rede Docker (`172.16.0.0/12`).
 
+### 1.4 Subdomínio Dedicado & SSL Automático (Traefik + Let's Encrypt)
+Para que todo roteador conectado responda em um subdomínio próprio (ex: `mkroca.mikrogestor.com`) com certificado SSL válido:
+1. **Apontamento DNS Wildcard Obrigatório no Registro (Hostinger / Cloudflare)**:
+   - **Tipo**: `A`
+   - **Nome / Host**: `*` (ou `*.mikrogestor.com`)
+   - **Valor / IP**: IP público da VPS (`2.25.168.82`)
+   *Sem este registro wildcard, o Let's Encrypt falha no desafio HTTP-01 e os subdomínios não resolvem para a VPS.*
+2. **Diretório Dinâmico do Traefik no Coolify**:
+   - `/data/coolify/proxy/dynamic/` no host VPS é monitorado pelo Traefik (`--providers.file.watch=true`).
+   - O daemon `wg-manager` cria arquivos `router-<slug>.yaml` nesse diretório automaticamente ao gerar uma nova VPN.
+3. **Certificados Let's Encrypt (`acme.json`)**:
+   - Traefik salva os certificados em `/data/coolify/proxy/acme.json`.
+   - O daemon extrai certificado e chave em `/cert/extract?domain=<subdomain>`.
+   - O MikroTik baixa os arquivos via `/tool fetch` e renova a cada 15 dias via `/system scheduler`.
+
 ---
 
 ## 2. Deploy em Nova VPS do Zero (Checklist Rápido)

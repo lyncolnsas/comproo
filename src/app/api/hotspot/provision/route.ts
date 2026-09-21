@@ -3,7 +3,7 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import { prisma } from '@/lib/prisma';
-import { getMikrotikClient, getSessionCredentials, MikrotikSessionError } from '@/lib/session';
+import { getMikrotikClient, getSessionCredentials, getActiveRouterRecord, MikrotikSessionError } from '@/lib/session';
 import { MikrotikAPI } from '@/lib/routeros';
 import { routerErrorResponse } from '@/lib/api-error';
 import { getMaskedPortalUrl, isVpsMode, getPublicDomain } from '@/lib/domain';
@@ -362,6 +362,7 @@ export async function POST(request: Request) {
     { name: 'hs_profile',    label: '[ FIREWALL ] Perfil do Servidor Hotspot',                 status: 'pending', message: '' },
     { name: 'hs_server',     label: '[ HOTSPOT ] Servidor Hotspot',                            status: 'pending', message: '' },
     { name: 'user_profile',  label: '[ PERFIL ] Perfil de Usuário Padrão',                   status: 'pending', message: '' },
+    { name: 'walled_garden', label: '[ SEGURANÇA ] Walled Garden & SSL Bypass',                status: 'pending', message: '' },
     { name: 'nat',           label: '[ NAT ] NAT Masquerade via WAN',                      status: 'pending', message: '' },
     { name: 'update_media_urls', label: '[ MÍDIA ] Atualizar IP do Servidor nos Templates', status: 'pending', message: '' },
     { name: 'provision_signature', label: '[ LOG ] Gravar Assinatura MikroGestor',        status: 'pending', message: '' },
@@ -614,25 +615,44 @@ export async function POST(request: Request) {
     } else {
 
       // Passo 7: Perfil de Servidor Hotspot
-      // REGRA CRÍTICA: No modo VPS, dns-name no perfil de Hotspot NUNCA deve ser o domínio público da VPS (ex: mikrogestor.com)!
-      // Se dns-name for mikrogestor.com, o MikroTik intercepta todas as consultas DNS de mikrogestor.com
-      // e aponta para o próprio roteador (192.168.88.1), servindo o login.html do MikroTik em loop e impedindo
-      // os clientes de acessarem o sistema real na VPS!
-      // O dns-name deve ser SEMPRE um hostname do captive portal local (ex: 'hotspot.wifi' ou 'hotspot.wifi.local').
-      const hsDnsName = deployMode === 'vps' ? 'hotspot.wifi' : 'hotspot.wifi.local';
+      // Se o roteador possui subdomínio dedicado configurado (ex: mkroca.mikrogestor.com),
+      // utiliza o subdomínio com certificado SSL para eliminar avisos e telas de segurança no Captive Portal!
+      const activeRouter = await getActiveRouterRecord();
+      const routerSubdomain = activeRouter?.subdomain;
+      const routerSlug = routerSubdomain ? routerSubdomain.split('.')[0] : null;
+      const certName = routerSlug ? `mg-ssl-${routerSlug}` : null;
+
+      const hsDnsName = routerSubdomain
+        ? routerSubdomain
+        : (deployMode === 'vps' ? 'hotspot.wifi' : 'hotspot.wifi.local');
+
+      // Verifica se o certificado SSL já está importado no RouterOS
+      let hasSslCert = false;
+      if (certName) {
+        try {
+          const certs = await (mk as any).client?.menu('/certificate').where('name', certName).get() || [];
+          hasSslCert = certs.length > 0;
+        } catch {}
+      }
+
       try {
         const profiles = await mk.getHotspotServerProfiles().catch(() => []) as any[];
         const existing = profiles.find((p: any) => p.name === HS_PROF);
 
         if (!existing) {
-          await mk.addHotspotServerProfile({
+          const profileData: any = {
             name: HS_PROF,
             'html-directory': 'hotspot',
             'dns-name': hsDnsName,
             'login-by': 'http-chap,http-pap,trial',
             'use-radius': 'no',
-          });
-          ok('hs_profile', `Perfil "${HS_PROF}" criado. DNS: ${hsDnsName} (Modo ${deployMode})`);
+          };
+          if (hasSslCert && certName) {
+            profileData['ssl-certificate'] = certName;
+            profileData['https'] = 'yes';
+          }
+          await mk.addHotspotServerProfile(profileData);
+          ok('hs_profile', `Perfil "${HS_PROF}" criado. DNS: ${hsDnsName}${hasSslCert ? ' [SSL ATIVO]' : ''} (Modo ${deployMode})`);
         } else {
           let needsUpdate = false;
           const updateParams: any = {};
@@ -648,10 +668,15 @@ export async function POST(request: Request) {
             updateParams['login-by'] = 'http-chap,http-pap,trial';
             needsUpdate = true;
           }
+          if (hasSslCert && certName && existing['ssl-certificate'] !== certName) {
+            updateParams['ssl-certificate'] = certName;
+            updateParams['https'] = 'yes';
+            needsUpdate = true;
+          }
 
           if (needsUpdate) {
             await (mk as any).client?.menu('/ip/hotspot/profile').where('.id', existing.id).update(updateParams);
-            ok('hs_profile', `Perfil "${HS_PROF}" atualizado. DNS: ${hsDnsName} (Modo ${deployMode})`);
+            ok('hs_profile', `Perfil "${HS_PROF}" atualizado. DNS: ${hsDnsName}${hasSslCert ? ' [SSL ATIVO]' : ''} (Modo ${deployMode})`);
           } else {
             skip('hs_profile', `Perfil "${HS_PROF}" já configurado corretamente (DNS: ${existing['dns-name']}).`);
           }
@@ -712,6 +737,27 @@ export async function POST(request: Request) {
           skip('user_profile', `Perfil "default" já existe${existing['rate-limit'] ? `: ${existing['rate-limit']}` : ''}.`);
         }
       } catch (e: any) { warn('user_profile', e?.message || String(e)); }
+
+      // Passo 9.1: Walled Garden & SSL Bypass para Domínio e Subdomínio
+      try {
+        const publicDomain = getPublicDomain();
+        if (publicDomain) {
+          await mk.addWalledGarden('allow', `*${publicDomain}*`, 'MikroGestor Public Domain');
+          await mk.addWalledGardenIp('accept', publicDomain, 'MikroGestor Public IP HTTPS');
+          await mk.addWalledGardenIp('accept', `www.${publicDomain}`, 'MikroGestor WWW HTTPS');
+        }
+        if (routerSubdomain) {
+          await mk.addWalledGarden('allow', routerSubdomain, 'MikroGestor Router Subdomain');
+          await mk.addWalledGardenIp('accept', routerSubdomain, 'MikroGestor Router Subdomain HTTPS');
+        }
+        const vpsIp = process.env.VPS_PUBLIC_IP || '2.25.168.82';
+        if (vpsIp) {
+          await mk.addWalledGardenIp('accept', vpsIp, 'MikroGestor VPS Host IP');
+        }
+        ok('walled_garden', `Walled Garden configurado para ${publicDomain || 'VPS'}${routerSubdomain ? ' e ' + routerSubdomain : ''}.`);
+      } catch (e: any) {
+        warn('walled_garden', `Walled Garden: ${e?.message || e}`);
+      }
     }
 
     // Passo 10: NAT Masquerade (Bypass)

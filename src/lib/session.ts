@@ -58,6 +58,26 @@ export async function getSessionCredentials(): Promise<{ ip: string; user: strin
   throw new MikrotikSessionError('Sessão não encontrada e nenhum roteador ativo configurado.', 'NO_SESSION');
 }
 
+/** Retorna o registro completo do roteador ativo no banco */
+export async function getActiveRouterRecord() {
+  try {
+    return await prisma.router.findFirst({
+      where: {
+        OR: [
+          { active: true, vpnEnabled: true, vpnIp: { not: null } },
+          { active: true },
+        ],
+      },
+      orderBy: [
+        { vpnEnabled: 'desc' },
+        { createdAt: 'desc' },
+      ],
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** Connect to MikroTik — optionally override the IP (for reconnection to new IP) */
 export async function getMikrotikClient(overrideIp?: string) {
   const credentials = await getSessionCredentials();

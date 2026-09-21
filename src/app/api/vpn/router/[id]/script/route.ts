@@ -25,13 +25,18 @@ export async function GET(
       );
     }
 
+    const slug = router.subdomain ? router.subdomain.split(".")[0] : undefined;
+
     const script = wireguardService.generateRouterOSScript({
       routerName: router.name,
       vpnIp: router.vpnIp,
       mikrotikPrivKey: router.vpnPrivKey,
       vpsPublicKey: process.env.VPS_WG_PUBLIC_KEY ?? "CONFIGURE_VPS_WG_PUBLIC_KEY",
-      vpsIp: process.env.VPS_PUBLIC_IP ?? "SEU_IP_VPS",
+      vpsIp: process.env.VPS_PUBLIC_IP ?? "2.25.168.82",
       vpsPort: 51820,
+      subdomain: router.subdomain ?? undefined,
+      routerId: router.id,
+      slug,
     });
 
     const filename = ("mikrogestor-vpn-" + router.name.replace(/\s+/g, "-").toLowerCase() + ".rsc");

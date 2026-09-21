@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ensureVpnColumns } from "@/lib/prisma";
 import { wireguardService, isWireGuardAvailable } from "@/services/wireguard";
+import { generateUniqueSubdomain } from "@/lib/subdomain";
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,7 +60,15 @@ export async function POST(req: NextRequest) {
       await wireguardService.addPeer(keyPair.publicKey, vpnIp);
     }
 
-    // Persistir no banco — host passa a ser o IP VPN (10.8.0.X)
+    // 1. Gera subdomínio dedicado único (ex: mkroca.mikrogestor.com)
+    const { subdomain, slug } = await generateUniqueSubdomain(targetRouter.name, targetRouter.id);
+
+    // 2. Registra proxy reverso no Traefik na VPS (Coolify)
+    if (wgAvailable) {
+      await wireguardService.addSubdomainProxy(subdomain, vpnIp, slug);
+    }
+
+    // Persistir no banco — host passa a ser o IP VPN (10.8.0.X) e salva o subdomínio
     const updatedRouter = await prisma.router.update({
       where: { id: targetRouter.id },
       data: {
@@ -69,11 +78,12 @@ export async function POST(req: NextRequest) {
         vpnPrivKey:   keyPair.privateKey,
         vpnStatus:    "pending",
         host:         vpnIp,
+        subdomain,
         active:       true,
       },
     });
 
-    // Gerar script RouterOS (.rsc)
+    // Gerar script RouterOS (.rsc) com automação de SSL
     const script = wireguardService.generateRouterOSScript({
       routerName:     updatedRouter.name,
       vpnIp,
@@ -81,6 +91,9 @@ export async function POST(req: NextRequest) {
       vpsPublicKey:   process.env.VPS_WG_PUBLIC_KEY ?? "CONFIGURE_VPS_WG_PUBLIC_KEY_NO_ENV",
       vpsIp:          process.env.VPS_PUBLIC_IP ?? "2.25.168.82",
       vpsPort:        51820,
+      subdomain,
+      routerId:       updatedRouter.id,
+      slug,
     });
 
     return NextResponse.json({
@@ -88,8 +101,9 @@ export async function POST(req: NextRequest) {
       routerId: updatedRouter.id,
       routerName: updatedRouter.name,
       vpnIp,
+      subdomain,
       script,
-      message: "VPN configurada com sucesso. Execute o script no MikroTik para ativar o túnel.",
+      message: `VPN configurada com sucesso. Subdomínio criado: ${subdomain}. Execute o script no MikroTik para ativar o túnel e o SSL.`,
     });
   } catch (err) {
     console.error("[VPN GENERATE]", err);
