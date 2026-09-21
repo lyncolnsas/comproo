@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { getNicheEffectMarkup } from '@/lib/niche-effects';
 import { getBrandEffectsStyles } from '@/lib/brand-effects-styles';
 import { getTemplatePaths, normalizeHtmlStructure } from '@/lib/portal-template-utils';
-import { getMaskedPortalDomain, getMaskedPortalUrl } from '@/lib/domain';
+import { getMaskedPortalDomain, getMaskedPortalUrl, isVpsMode } from '@/lib/domain';
 
 const DEFAULT_HOTSPOT_DIR = path.join(process.cwd(), 'hotspot', 'default');
 
@@ -1831,7 +1831,7 @@ ${newConfig.enabled !== false ? `.actions { display: grid !important; grid-templ
       const dbSystemUrl = await prisma.systemConfig.findUnique({ where: { key: 'SYSTEM_URL' } });
       const fallbackUrl = getMaskedPortalUrl();
       let systemUrl = newConfig.systemUrl || dbSystemUrl?.value || fallbackUrl;
-      if (/^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?/i.test(systemUrl) || systemUrl.includes('localhost')) {
+      if (isVpsMode() || /^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?/i.test(systemUrl) || systemUrl.includes('localhost') || systemUrl.includes('portal.wifi.local')) {
         systemUrl = fallbackUrl;
       }
       const MG_SERVER_BASE = systemUrl.replace(/\/$/, '');

@@ -65,6 +65,9 @@ export async function POST(request: Request) {
     }
 
     await api.addWalledGarden('allow', dstHost, comment || 'Portal MikroStudio');
+    try {
+      await api.addWalledGardenIp('accept', dstHost, comment || 'Portal MikroStudio (HTTPS)');
+    } catch (e) {}
     await api.close();
 
     return NextResponse.json({ success: true, message: 'Domínio adicionado ao Walled Garden' });

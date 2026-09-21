@@ -58,6 +58,7 @@ export async function POST(request: Request) {
         let html = fs.readFileSync(loginHtmlPath, 'utf8');
         html = html.replace(/http:\/\/192\.168\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
         html = html.replace(/http:\/\/10\.\d+\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
+        html = html.replace(/http:\/\/portal\.wifi\.local(:\d+)?/gi, serverBaseUrl);
         // Ensure relative media endpoints have absolute server base URL
         html = html.replace(/(src|href|poster|url\(['"]?)\/(api\/portal\/(bg|logo)|uploads\/[^'"]+)/gi, `$1${serverBaseUrl}/$2`);
         fs.writeFileSync(loginHtmlPath, html, 'utf8');

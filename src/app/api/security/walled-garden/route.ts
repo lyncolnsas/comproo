@@ -32,33 +32,30 @@ export async function POST(request: Request) {
     // 1. Add Walled Garden rule (for domains)
     await mk.addWalledGarden(action, host, comment);
 
-    // 2. If it's an IP address, also add to Walled Garden IP List and Hotspot IP Binding (bypassed)
-    const isIp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host);
-    if (isIp) {
-      // Walled Garden IP List (bypasses server directly)
-      try {
-        const wgAction = action === 'allow' ? 'accept' : 'reject';
-        await mk.addWalledGardenIp(wgAction, host, comment);
-      } catch (wgIpErr) {
-        console.warn('Failed to auto-create Walled Garden IP list entry:', wgIpErr);
-      }
+    // 2. Also add to Walled Garden IP List (for HTTPS 443 & direct IP bypass)
+    try {
+      const wgAction = action === 'allow' ? 'accept' : 'reject';
+      await mk.addWalledGardenIp(wgAction, host, comment);
+    } catch (wgIpErr) {
+      console.warn('Failed to auto-create Walled Garden IP list entry:', wgIpErr);
+    }
 
-      // Hotspot IP Binding (bypasses client directly, optional fallback)
-      if (action === 'allow') {
-        try {
-          const bindings = await mk.getHotspotIpBindings() as any[];
-          const exists = bindings.some((b: any) => b.address === host);
-          if (!exists) {
-            await mk.addHotspotIpBinding(
-              host, 
-              'bypassed', 
-              `Bypass Auto-Cadastro (${comment || 'API'})`, 
-              mac || undefined
-            );
-          }
-        } catch (bindErr) {
-          console.warn('Failed to auto-create IP Binding whitelist:', bindErr);
+    // 3. If it's an IP address and allowed, also add Hotspot IP Binding (bypassed)
+    const isIp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host);
+    if (isIp && action === 'allow') {
+      try {
+        const bindings = await mk.getHotspotIpBindings() as any[];
+        const exists = bindings.some((b: any) => b.address === host);
+        if (!exists) {
+          await mk.addHotspotIpBinding(
+            host, 
+            'bypassed', 
+            `Bypass Auto-Cadastro (${comment || 'API'})`, 
+            mac || undefined
+          );
         }
+      } catch (bindErr) {
+        console.warn('Failed to auto-create IP Binding whitelist:', bindErr);
       }
     }
 

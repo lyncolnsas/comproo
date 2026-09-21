@@ -614,10 +614,12 @@ export async function POST(request: Request) {
     } else {
 
       // Passo 7: Perfil de Servidor Hotspot
-      // MODO LOCAL:  dns-name = 'hotspot.wifi.local' (resolve via DNS estático MikroTik → IP LAN)
-      // MODO VPS:    dns-name = domínio público (ex: 'app.empresa.com') — clientes acessam direto
-      //              Se PORTAL_PUBLIC_DOMAIN não estiver definido, usa hotspot.wifi.local como fallback
-      const hsDnsName = (deployMode === 'vps' && publicDomain) ? publicDomain : 'hotspot.wifi.local';
+      // REGRA CRÍTICA: No modo VPS, dns-name no perfil de Hotspot NUNCA deve ser o domínio público da VPS (ex: mikrogestor.com)!
+      // Se dns-name for mikrogestor.com, o MikroTik intercepta todas as consultas DNS de mikrogestor.com
+      // e aponta para o próprio roteador (192.168.88.1), servindo o login.html do MikroTik em loop e impedindo
+      // os clientes de acessarem o sistema real na VPS!
+      // O dns-name deve ser SEMPRE um hostname do captive portal local (ex: 'hotspot.wifi' ou 'hotspot.wifi.local').
+      const hsDnsName = deployMode === 'vps' ? 'hotspot.wifi' : 'hotspot.wifi.local';
       try {
         const profiles = await mk.getHotspotServerProfiles().catch(() => []) as any[];
         const existing = profiles.find((p: any) => p.name === HS_PROF);
@@ -748,6 +750,7 @@ export async function POST(request: Request) {
               let html = fs.readFileSync(loginHtmlPath, 'utf8');
               html = html.replace(/http:\/\/192\.168\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
               html = html.replace(/http:\/\/10\.\d+\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
+              html = html.replace(/http:\/\/portal\.wifi\.local(:\d+)?/gi, serverBaseUrl);
               fs.writeFileSync(loginHtmlPath, html, 'utf8');
             } catch (err) {}
           }
