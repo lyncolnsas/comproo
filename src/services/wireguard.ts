@@ -95,24 +95,26 @@ export async function isWireGuardAvailable(): Promise<boolean> {
 
 export class WireGuardService {
   /**
-   * Gera um par de chaves WireGuard via daemon.
+   * Gera um par de chaves WireGuard Curve25519 (X25519) de forma nativa.
+   * Não depende de binário externo nem de rede, executando 100% no Node.js.
    */
   async generateKeyPair(): Promise<WireGuardKeyPair> {
-    const res = await wgFetch("/keygen", { method: "POST" });
+    try {
+      const crypto = await import("crypto");
+      const { privateKey, publicKey } = crypto.generateKeyPairSync("x25519");
+      const privDer = privateKey.export({ type: "pkcs8", format: "der" });
+      const rawPriv = privDer.subarray(privDer.length - 32);
+      const pubDer = publicKey.export({ type: "spki", format: "der" });
+      const rawPub = pubDer.subarray(pubDer.length - 32);
 
-    if (!res.ok) {
-      // Fallback em dev: gerar placeholder
-      if (process.env.NODE_ENV !== "production") {
-        const id = Math.random().toString(36).slice(2, 10);
-        return {
-          privateKey: `DEV-PRIVKEY-${id}`,
-          publicKey:  `DEV-PUBKEY-${id}`,
-        };
-      }
-      throw new Error(`Falha ao gerar chaves: ${res.data?.error ?? "daemon indisponível"}`);
+      return {
+        privateKey: rawPriv.toString("base64"),
+        publicKey:  rawPub.toString("base64"),
+      };
+    } catch (err: any) {
+      console.error("[WireGuard] Erro ao gerar chaves x25519:", err);
+      throw new Error(`Falha ao gerar chaves criptográficas: ${err.message}`);
     }
-
-    return { privateKey: res.data.privateKey, publicKey: res.data.publicKey };
   }
 
   /**
@@ -143,14 +145,15 @@ export class WireGuardService {
 
   /**
    * Adiciona um peer ao WireGuard server via daemon.
+   * Se o daemon ainda não estiver ativo na VPS, registra no banco e avisa sem bloquear o script.
    */
   async addPeer(publicKey: string, vpnIp: string): Promise<void> {
     const res = await wgFetch("/peer/add", {
       method: "POST",
       body: { publicKey, vpnIp },
     });
-    if (!res.ok && process.env.NODE_ENV === "production") {
-      throw new Error(`Falha ao adicionar peer: ${res.data?.error}`);
+    if (!res.ok) {
+      console.warn(`[WireGuard] Daemon do kernel não respondeu em /peer/add: ${res.data?.error}. O peer está salvo no banco e o script foi gerado.`);
     }
   }
 
