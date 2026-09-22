@@ -1,0 +1,195 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  name      String?
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+}
+
+model Router {
+  id        String   @id @default(uuid())
+  name      String
+  host      String
+  user      String
+  password  String
+  port      Int      @default(8728)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  // ─── WireGuard VPN ────────────────────────────────────────────
+  // Quando habilitado, a conexão usa vpnIp em vez de host
+  vpnEnabled   Boolean   @default(false)
+  vpnIp        String?   // IP alocado na subnet de controle, ex: "10.8.0.2"
+  vpnPublicKey String?   // Chave pública WireGuard do MikroTik (para o server)
+  vpnPrivKey   String?   // Chave privada WireGuard gerada para o MikroTik
+  vpnLastSeen  DateTime? // Timestamp do último handshake detectado
+  vpnStatus    String    @default("disconnected") // connected | disconnected | pending
+
+  // ─── Subdomínio Dedicado & SSL ────────────────────────────────
+  subdomain    String?   // Subdomínio dedicado, ex: "mkroca.mikrogestor.com"
+  sslActive    Boolean   @default(false)
+  sslExpiresAt DateTime? // Data de expiração do certificado
+}
+
+model FinanceLog {
+  id           String   @id @default(uuid())
+  batchComment String
+  totalRevenue Float
+  qty          Int
+  createdAt    DateTime @default(now())
+}
+
+model Voucher {
+  id        String   @id @default(uuid())
+  code      String
+  profile   String
+  price     Float?
+  routerId  String?
+  createdAt DateTime @default(now())
+}
+
+model HotspotLead {
+  id               String    @id @default(uuid())
+  name             String
+  phone            String?
+  birthDate        DateTime?
+  email            String?
+  cpf              String?
+  gender           String?
+  password         String?   // The custom password chosen by the user
+  customFieldValue String?
+  hotspotUser      String    @unique // The generated username in MikroTik
+  whatsappNumber   String?   // Used for Baileys messaging
+  avatarUrl        String?   // WhatsApp profile picture downloaded locally
+  optInCourses     Boolean   @default(true) // Consent to receive course info
+  drawnInRaffle    Boolean   @default(false) // Flag to prevent duplicate drawing
+  trialBlocked     Boolean   @default(false) // Bloqueado por expiração ou tentativa de burla
+  trialGrantedAt   DateTime? // Momento em que recebeu os 15m de carência
+  createdAt        DateTime  @default(now())
+  payments         Payment[]
+}
+
+model Payment {
+  id               String      @id @default(uuid())
+  leadId           String
+  lead             HotspotLead @relation(fields: [leadId], references: [id])
+  pixId            String?     // Mercado Pago Payment ID
+  pixPayload       String?     // PIX Copy Paste
+  pixQrCodeBase64  String?     // QR Code Image
+  status           String      @default("pending") // pending, approved, rejected
+  amount           Float
+  voucherCode      String?     // The generated voucher after payment
+  profile          String?     // The selected profile/plan for WhatsApp flows
+  macAddress       String?     // The MAC address used to drop IP Binding after payment
+  isVoucher        Boolean     @default(false) // True = stand-alone voucher (not hotspot session)
+  giftTo           String?     // Name of the friend if bought as a gift
+  voucherActivatedAt DateTime? // Set on first use; drives continuous countdown
+  uptimeLimit      String?     // e.g. "01:00:00" or "1d 00:00:00"
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model WhatsappPlan {
+  id          String   @id @default(uuid())
+  title       String   // e.g. "1 Hora", "1 Dia"
+  profile     String   // MikroTik Profile exactly as typed
+  price       Float
+  uptimeLimit String?  @default("none") // MikroTik limit-uptime format, e.g. "01:00:00", "1d 00:00:00"
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model SystemConfig {
+  key   String @id
+  value String
+}
+
+model WhatsappInstance {
+  id            String        @id @default(uuid())
+  name          String        @default("WhatsApp")
+  number        String?       // O número em si após conectar
+  engine        String        @default("baileys") // 'baileys' | 'meta'
+  phoneId       String?       // Meta Graph Phone ID
+  token         String?       // Meta Permanent Token
+  status        String        @default("disconnected") // connected, disconnected, waiting_qr, suspended, reconnecting
+  active        Boolean       @default(true) // Controle de ativação independente
+  authFolder    String?       // Diretório isolado da sessão Baileys
+  qrCode        String?       // QR Code individual em base64/texto
+  lastSeen      DateTime?     // Último batimento de heartbeat/conexão
+  dailyCount    Int           @default(0) // Contador de mensagens do dia
+  profilePicUrl String?
+  createdAt     DateTime      @default(now())
+  routings      LeadRouting[]
+}
+
+model LeadRouting {
+  id                 String   @id @default(uuid())
+  customerPhone      String   @unique
+  whatsappInstanceId String
+  whatsappInstance   WhatsappInstance @relation(fields: [whatsappInstanceId], references: [id])
+  lastInteraction    DateTime @default(now())
+}
+
+model DailyConversation {
+  id                 String   @id @default(uuid())
+  whatsappInstanceId String
+  date               String   // YYYY-MM-DD
+  count              Int      @default(0)
+
+  @@unique([whatsappInstanceId, date])
+}
+
+model WaitingList {
+  id        String    @id @default(uuid())
+  whatsapp  String
+  status    String    @default("pending") // pending, notified, expired, connected
+  createdAt DateTime  @default(now())
+  notifiedAt DateTime?
+}
+
+model BaileysAuth {
+  id         String   @id
+  instanceId String
+  key        String
+  value      String
+  updatedAt  DateTime @updatedAt
+
+  @@unique([instanceId, key])
+  @@index([instanceId])
+}
+
+model VpnPeer {
+  id           String    @id @default(uuid())
+  name         String
+  deviceType   String    @default("windows") // windows | android | ios | macos | linux
+  vpnIp        String    @unique
+  publicKey    String
+  privateKey   String
+  presharedKey String?
+  status       String    @default("disconnected") // connected | disconnected
+  lastSeen     DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model BlockedClient {
+  id        String   @id @default(uuid())
+  mac       String?  @unique
+  cpf       String?
+  phone     String?
+  reason    String
+  blockedAt DateTime @default(now())
+  active    Boolean  @default(true)
+}
+

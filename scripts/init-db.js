@@ -13,6 +13,43 @@ async function main() {
   } catch (pragmaErr) {
     console.warn('Aviso ao configurar PRAGMA SQLite:', pragmaErr.message);
   }
+
+  // Auto-correção e migração defensiva de colunas críticas no SQLite
+  try {
+    const tables = await prisma.$queryRawUnsafe("SELECT name FROM sqlite_master WHERE type='table';");
+    const tableNames = tables.map(t => t.name);
+
+    if (tableNames.includes('HotspotLead')) {
+      const leadCols = await prisma.$queryRawUnsafe('PRAGMA table_info(HotspotLead);');
+      const colNames = leadCols.map(c => c.name);
+
+      if (!colNames.includes('trialBlocked')) {
+        console.log('[MikroGestor] Migrando: adicionando HotspotLead.trialBlocked...');
+        await prisma.$executeRawUnsafe('ALTER TABLE HotspotLead ADD COLUMN trialBlocked BOOLEAN NOT NULL DEFAULT 0;');
+      }
+      if (!colNames.includes('trialGrantedAt')) {
+        console.log('[MikroGestor] Migrando: adicionando HotspotLead.trialGrantedAt...');
+        await prisma.$executeRawUnsafe('ALTER TABLE HotspotLead ADD COLUMN trialGrantedAt DATETIME;');
+      }
+    }
+
+    if (!tableNames.includes('BlockedClient')) {
+      console.log('[MikroGestor] Criando tabela BlockedClient...');
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS BlockedClient (
+          id TEXT PRIMARY KEY,
+          mac TEXT UNIQUE,
+          cpf TEXT,
+          phone TEXT,
+          reason TEXT NOT NULL,
+          blockedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          active BOOLEAN NOT NULL DEFAULT 1
+        );
+      `);
+    }
+  } catch (schemaErr) {
+    console.warn('[MikroGestor] Aviso na validação defensiva de schema:', schemaErr.message);
+  }
   
   // Verifica se já existe algum usuário
   const userCount = await prisma.user.count();
