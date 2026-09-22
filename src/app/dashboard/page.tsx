@@ -109,21 +109,21 @@ export default function Dashboard() {
       {/* ── TOP GREETING BAR ────────────────────────────────────────────── */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Olá, Bem-vindo de volta! 👋
           </h1>
-          <p className="text-xs md:text-sm text-slate-500 mt-1 font-medium">
+          <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">
             Monitoramento e controle de vendas e telemetria MikroTik em tempo real
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           {stats && (
-            <div className="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 shadow-sm text-xs font-semibold text-slate-700">
+            <div className="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-[#111726] border border-slate-200 dark:border-slate-800 shadow-sm text-xs font-semibold text-slate-700 dark:text-slate-200">
               <span className={`w-2 h-2 rounded-full ${stats.offline ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
               <span>{stats.identity}</span>
-              <span className="text-slate-300">|</span>
-              <span className="font-mono text-slate-500">
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <span className="font-mono text-slate-500 dark:text-slate-400">
                 {stats.offline ? 'Offline' : (stats.clockTime || '00:00')}
               </span>
             </div>
@@ -141,7 +141,7 @@ export default function Dashboard() {
 
       {/* ── ERROR BANNER ──────────────────────────────────────────────── */}
       {error && !stats && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-3 text-sm font-semibold">
+        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 flex items-center gap-3 text-sm font-semibold">
           <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
           <span>Erro no sistema: {error}</span>
         </div>
@@ -149,21 +149,21 @@ export default function Dashboard() {
 
       {/* ── OFFLINE / VPN NOTICE BANNER ───────────────────────────────── */}
       {stats?.offline && (
-        <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-amber-50/80 border border-amber-200/90 text-amber-900 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
+        <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-amber-50/80 dark:from-amber-950/30 dark:via-orange-950/20 dark:to-amber-950/30 border border-amber-200/90 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
           <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-600 mt-0.5 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400 mt-0.5 shadow-sm">
               <Wifi className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-black text-sm text-slate-900">
+                <h3 className="font-black text-sm text-slate-900 dark:text-white">
                   MikroTik Desconectado ou sem IP Público ({stats.targetHost || '192.168.88.1'})
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-200/80 text-amber-900 border border-amber-300">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700/80">
                   Túnel Remoto Necessário
                 </span>
               </div>
-              <p className="text-xs text-slate-600 mt-1 max-w-2xl font-medium leading-relaxed">
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl font-medium leading-relaxed">
                 A VPS não conseguiu comunicação direta com o roteador. Se o seu MikroTik está em uma rede local, CGNAT ou Starlink (sem IP público), configure a <strong>VPN WireGuard</strong> para que o painel tenha controle total remoto sem consumir dados da sua VPS.
               </p>
             </div>
@@ -179,7 +179,7 @@ export default function Dashboard() {
             </Link>
             <Link
               href="/dashboard/admin"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm"
             >
               <span>⚙️</span>
               <span>Roteadores</span>
@@ -190,14 +190,14 @@ export default function Dashboard() {
 
       {/* ── NOT CONNECTED BANNER ──────────────────────────────────────── */}
       {notConnected ? (
-        <div className="saas-card p-8 flex flex-col sm:flex-row items-center gap-6">
-          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-3xl shrink-0 text-amber-600">
+        <div className="saas-card p-8 flex flex-col sm:flex-row items-center gap-6 bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center text-3xl shrink-0 text-amber-600 dark:text-amber-400">
             🔌
           </div>
           <div className="flex-1">
             <span className="saas-pill saas-pill-warning mb-2">Desconectado</span>
-            <h3 className="text-xl font-bold text-slate-900 mt-1">Nenhum Roteador Conectado</h3>
-            <p className="text-sm text-slate-500 mt-1 mb-4">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-1">Nenhum Roteador Conectado</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-4">
               Conecte o sistema à sua Routerboard MikroTik para ativar o monitoramento em tempo real ou provisione o acesso remoto via VPN WireGuard.
             </p>
             <div className="flex items-center gap-3">
@@ -209,7 +209,7 @@ export default function Dashboard() {
               </Link>
               <Link
                 href="/dashboard/vpn"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs uppercase tracking-wider hover:bg-indigo-100 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs uppercase tracking-wider hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
               >
                 🛡️ Conectar via VPN
               </Link>
@@ -221,12 +221,12 @@ export default function Dashboard() {
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-28 rounded-2xl bg-slate-200/60 animate-pulse" />
+              <div key={i} className="h-28 rounded-2xl bg-slate-200/60 dark:bg-slate-800/60 animate-pulse" />
             ))}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 h-80 rounded-2xl bg-slate-200/60 animate-pulse" />
-            <div className="h-80 rounded-2xl bg-slate-200/60 animate-pulse" />
+            <div className="lg:col-span-2 h-80 rounded-2xl bg-slate-200/60 dark:bg-slate-800/60 animate-pulse" />
+            <div className="h-80 rounded-2xl bg-slate-200/60 dark:bg-slate-800/60 animate-pulse" />
           </div>
         </div>
       ) : stats ? (
@@ -368,19 +368,19 @@ export default function Dashboard() {
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             {/* LEFT: LARGE SPLINE AREA CHART (FATURAMENTO & TENDÊNCIA) */}
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-6 lg:col-span-2 flex flex-col justify-between">
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-6 lg:col-span-2 flex flex-col justify-between">
               <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 dark:border-slate-800 gap-2">
                   <div>
-                    <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
                       Faturamento & Vendas
                     </h3>
-                    <p className="text-xs font-semibold text-slate-700 mt-0.5">
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-400 mt-0.5">
                       Volume financeiro e emissão de vouchers ao longo do período
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800/60">
                       <ArrowUp className="w-3.5 h-3.5" /> +18.4%
                     </span>
                   </div>
@@ -389,34 +389,34 @@ export default function Dashboard() {
                 {/* 4 SUMMARY STATS IN A ROW */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                   <div>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400 block mb-0.5">
                       Receita Hoje
                     </span>
-                    <p className="text-xl font-black text-slate-900">
+                    <p className="text-xl font-black text-slate-900 dark:text-white">
                       R$ {stats.finance.todayIncome.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400 block mb-0.5">
                       Vendas Hoje
                     </span>
-                    <p className="text-xl font-black text-slate-900">
+                    <p className="text-xl font-black text-slate-900 dark:text-white">
                       {stats.finance.todayCount} unid.
                     </p>
                   </div>
                   <div>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400 block mb-0.5">
                       Receita Mês
                     </span>
-                    <p className="text-xl font-black text-slate-900">
+                    <p className="text-xl font-black text-slate-900 dark:text-white">
                       R$ {stats.finance.monthIncome.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400 block mb-0.5">
                       Vouchers Mês
                     </span>
-                    <p className="text-xl font-black text-slate-900">
+                    <p className="text-xl font-black text-slate-900 dark:text-white">
                       {stats.finance.monthCount} unid.
                     </p>
                   </div>
@@ -438,8 +438,8 @@ export default function Dashboard() {
                           <stop offset="95%" stopColor="#0084ff" stopOpacity={0.0} />
                         </linearGradient>
                       </defs>
-                      <XAxis dataKey="name" stroke="#334155" fontSize={12} fontWeight={700} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#334155" fontSize={12} fontWeight={700} tickLine={false} axisLine={false} />
+                      <XAxis dataKey="name" stroke="#64748b" fontSize={12} fontWeight={700} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#64748b" fontSize={12} fontWeight={700} tickLine={false} axisLine={false} />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: '#ffffff',
@@ -478,18 +478,18 @@ export default function Dashboard() {
             <div className="flex flex-col gap-6">
 
               {/* CARD: USERS & MEMORY SPARKLINES */}
-              <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 grid grid-cols-2 gap-4">
+              <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 grid grid-cols-2 gap-4">
                 {/* User Sparkline */}
                 <div className="flex flex-col justify-between">
                   <div>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400 block mb-0.5">
                       Total Usuários
                     </span>
                     <div className="flex items-baseline gap-1 mt-0.5">
-                      <span className="text-xl font-black text-slate-900">{stats.totalUsersCount}</span>
-                      <span className="text-xs font-bold text-emerald-700">+2.12%</span>
+                      <span className="text-xl font-black text-slate-900 dark:text-white">{stats.totalUsersCount}</span>
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">+2.12%</span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-600">cadastrados</span>
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">cadastrados</span>
                   </div>
                   <div className="h-12 w-full mt-2">
                     {mounted && (
@@ -503,15 +503,15 @@ export default function Dashboard() {
                 </div>
 
                 {/* RAM Sparkline */}
-                <div className="flex flex-col justify-between border-l border-slate-200 pl-4">
+                <div className="flex flex-col justify-between border-l border-slate-200 dark:border-slate-800 pl-4">
                   <div>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 block mb-0.5">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400 block mb-0.5">
                       RAM Livre
                     </span>
                     <div className="flex items-baseline gap-1 mt-0.5">
-                      <span className="text-xl font-black text-slate-900">{formatBytes(stats.freeMemory)}</span>
+                      <span className="text-xl font-black text-slate-900 dark:text-white">{formatBytes(stats.freeMemory)}</span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-600">de {formatBytes(stats.totalMemory)}</span>
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">de {formatBytes(stats.totalMemory)}</span>
                   </div>
                   <div className="h-12 w-full mt-2">
                     {mounted && (
@@ -526,12 +526,12 @@ export default function Dashboard() {
               </div>
 
               {/* CARD: CIRCULAR PROGRESS DONUT (ONLINE VS OFFLINE) */}
-              <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex-1 flex flex-col justify-between">
+              <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex-1 flex flex-col justify-between">
                 <div>
-                  <h4 className="text-sm font-black text-slate-900 tracking-tight">
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">
                     Conexões & Consumo
                   </h4>
-                  <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-0.5">
                     Clientes conectados e ocupação de hardware
                   </p>
                 </div>
@@ -542,7 +542,7 @@ export default function Dashboard() {
                     <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
                       <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                         <path
-                          className="text-slate-200"
+                          className="text-slate-200 dark:text-slate-800"
                           strokeWidth="3.5"
                           stroke="currentColor"
                           fill="none"
@@ -561,10 +561,10 @@ export default function Dashboard() {
                       <Wifi className="w-4 h-4 text-rose-500 absolute" />
                     </div>
                     <div>
-                      <span className="text-[11px] uppercase font-black text-slate-700 block leading-tight">
+                      <span className="text-[11px] uppercase font-black text-slate-700 dark:text-slate-400 block leading-tight">
                         Online
                       </span>
-                      <span className="text-lg font-black text-slate-900">{stats.activeUsersCount}</span>
+                      <span className="text-lg font-black text-slate-900 dark:text-white">{stats.activeUsersCount}</span>
                     </div>
                   </div>
 
@@ -573,7 +573,7 @@ export default function Dashboard() {
                     <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
                       <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                         <path
-                          className="text-slate-200"
+                          className="text-slate-200 dark:text-slate-800"
                           strokeWidth="3.5"
                           stroke="currentColor"
                           fill="none"
@@ -592,17 +592,17 @@ export default function Dashboard() {
                       <Cpu className="w-4 h-4 text-amber-500 absolute" />
                     </div>
                     <div>
-                      <span className="text-[11px] uppercase font-black text-slate-700 block leading-tight">
+                      <span className="text-[11px] uppercase font-black text-slate-700 dark:text-slate-400 block leading-tight">
                         RAM Uso
                       </span>
-                      <span className="text-lg font-black text-slate-900">{memUsedPercent}%</span>
+                      <span className="text-lg font-black text-slate-900 dark:text-white">{memUsedPercent}%</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
                   <span>Storage: {formatBytes(stats.freeHdd)} livres</span>
-                  <Link href="/dashboard/traffic" className="text-blue-600 hover:text-blue-800 flex items-center gap-1 font-bold">
+                  <Link href="/dashboard/traffic" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 font-bold">
                     Ver tráfego <ExternalLink className="w-3 h-3" />
                   </Link>
                 </div>
@@ -618,19 +618,19 @@ export default function Dashboard() {
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             {/* LEFT: RECENT CLIENTS & TICKETS TABLE (WITH COLORFUL AVATARS) */}
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl lg:col-span-2 overflow-hidden flex flex-col justify-between">
-              <div className="p-5 pb-3 flex items-center justify-between border-b border-slate-200">
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl lg:col-span-2 overflow-hidden flex flex-col justify-between">
+              <div className="p-5 pb-3 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
                     Atividades Recentes do Hotspot
                   </h3>
-                  <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-0.5">
                     Conexões, cadastros e vouchers emitidos recentemente
                   </p>
                 </div>
                 <Link
                   href="/dashboard/users"
-                  className="text-xs font-black text-blue-600 hover:text-blue-800 transition-colors"
+                  className="text-xs font-black text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                 >
                   Ver todos →
                 </Link>
@@ -658,22 +658,22 @@ export default function Dashboard() {
                     ].map((row, idx) => {
                       const initials = row.name.split(' ').map(n => n[0]).join('').toUpperCase();
                       return (
-                        <tr key={idx} className="group">
+                        <tr key={idx} className="group hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
                           <td>
                             <div className="flex items-center gap-3">
                               <div className={`w-9 h-9 rounded-full ${row.color} text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0`}>
                                 {initials}
                               </div>
                               <div>
-                                <div className="font-black text-slate-900 text-xs leading-tight">{row.name}</div>
-                                <div className="text-xs font-mono font-bold text-slate-700">{row.code}</div>
+                                <div className="font-black text-slate-900 dark:text-white text-xs leading-tight">{row.name}</div>
+                                <div className="text-xs font-mono font-bold text-slate-700 dark:text-slate-400">{row.code}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="text-xs font-bold text-slate-800 whitespace-nowrap">
+                          <td className="text-xs font-bold text-slate-800 dark:text-slate-300 whitespace-nowrap">
                             {row.date}
                           </td>
-                          <td className="text-xs font-black text-slate-900 whitespace-nowrap">
+                          <td className="text-xs font-black text-slate-900 dark:text-white whitespace-nowrap">
                             {row.plan}
                           </td>
                           <td className="whitespace-nowrap">
@@ -686,7 +686,7 @@ export default function Dashboard() {
                           <td className="text-center whitespace-nowrap">
                             <button
                               type="button"
-                              className="w-8 h-8 rounded-lg hover:bg-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors cursor-pointer mx-auto font-bold"
+                              className="w-8 h-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer mx-auto font-bold"
                             >
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
@@ -698,22 +698,22 @@ export default function Dashboard() {
                 </table>
               </div>
 
-              <div className="p-3.5 border-t border-slate-200 bg-slate-100/70 flex items-center justify-between text-xs font-bold text-slate-700">
+              <div className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/60 flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
                 <span>Exibindo 5 registros mais recentes</span>
-                <Link href="/dashboard/leads" className="font-black text-blue-600 hover:text-blue-800">
+                <Link href="/dashboard/leads" className="font-black text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
                   Gerenciar Leads & Cadastros →
                 </Link>
               </div>
             </div>
 
             {/* RIGHT: UPDATES / LIVE MIKROTIK EVENT LOGS */}
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
-              <div className="pb-3 border-b border-slate-200 flex items-center justify-between">
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+              <div className="pb-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
                     Eventos do Roteador
                   </h3>
-                  <p className="text-xs font-semibold text-slate-600 mt-0.5">
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-0.5">
                     Telemetria e logs em tempo real
                   </p>
                 </div>
@@ -725,7 +725,7 @@ export default function Dashboard() {
               {/* TIMELINE LIST */}
               <div className="flex-1 overflow-y-auto max-h-[320px] custom-scrollbar py-3 space-y-4">
                 {stats.logs?.length === 0 ? (
-                  <p className="text-xs text-slate-600 font-bold text-center py-8">Nenhum evento registrado</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-bold text-center py-8">Nenhum evento registrado</p>
                 ) : (
                   stats.logs?.slice(0, 6).map((l: any, i: number) => {
                     const isLogin = l.message?.includes('logged in');
@@ -736,13 +736,13 @@ export default function Dashboard() {
                           isLogin ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : isLogout ? 'bg-amber-500' : 'bg-blue-500'
                         }`} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-black text-slate-900 leading-tight">
+                          <p className="text-xs font-black text-slate-900 dark:text-white leading-tight">
                             {isLogin ? 'Usuário Conectado' : isLogout ? 'Usuário Desconectado' : l.topics || 'Sistema'}
                           </p>
-                          <p className="text-xs font-mono font-bold text-slate-800 truncate mt-0.5">
+                          <p className="text-xs font-mono font-bold text-slate-800 dark:text-slate-300 truncate mt-0.5">
                             {l.message}
                           </p>
-                          <span className="text-[11px] font-bold text-slate-600 block mt-1">
+                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mt-1">
                             {l.time}
                           </span>
                         </div>
@@ -752,11 +752,11 @@ export default function Dashboard() {
                 )}
               </div>
 
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">Status: {stats.isProvisioned ? 'Provisionado' : 'Pronto'}</span>
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Status: {stats.isProvisioned ? 'Provisionado' : 'Pronto'}</span>
                 <Link
                   href="/dashboard/portal"
-                  className="text-xs font-black text-blue-600 hover:text-blue-800"
+                  className="text-xs font-black text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                 >
                   Editor do Portal →
                 </Link>
@@ -771,12 +771,12 @@ export default function Dashboard() {
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
             {/* CARD 1: DISTRIBUTION (70% DONUT) */}
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
                   Distribuição de Tráfego
                 </h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                   Proporção de uso por categoria de rede
                 </p>
               </div>
@@ -786,7 +786,7 @@ export default function Dashboard() {
                 <div className="relative w-28 h-28 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                     <path
-                      className="text-slate-100"
+                      className="text-slate-100 dark:text-slate-800"
                       strokeWidth="3.8"
                       stroke="currentColor"
                       fill="none"
@@ -803,7 +803,7 @@ export default function Dashboard() {
                     />
                   </svg>
                   <div className="absolute text-center">
-                    <span className="text-xl font-black text-slate-900">70%</span>
+                    <span className="text-xl font-black text-slate-900 dark:text-white">70%</span>
                   </div>
                 </div>
 
@@ -811,34 +811,34 @@ export default function Dashboard() {
                 <div className="flex items-center justify-center gap-4 mt-3 text-xs">
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
-                    <span className="text-slate-600 font-medium">Hotspot</span>
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">Hotspot</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    <span className="text-slate-600 font-medium">Vouchers</span>
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">Vouchers</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                    <span className="text-slate-600 font-medium">Outros</span>
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">Outros</span>
                   </div>
                 </div>
               </div>
 
               <button
                 type="button"
-                className="w-full py-2 px-3 border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                className="w-full py-2 px-3 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
               >
                 Ver Detalhes
               </button>
             </div>
 
             {/* CARD 2: SALE REPORT (BAR CHART) */}
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
                   Relatório de Vendas
                 </h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                   Evolução mensal de receitas arrecadadas
                 </p>
               </div>
@@ -848,8 +848,8 @@ export default function Dashboard() {
                 {mounted && (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={BAR_CHART_DATA} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
-                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}k`} />
+                      <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}k`} />
                       <Tooltip
                         cursor={{ fill: 'rgba(0, 132, 255, 0.05)' }}
                         contentStyle={{
@@ -866,19 +866,19 @@ export default function Dashboard() {
                 )}
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <span>Período: Últimos 6 meses</span>
-                <span className="text-emerald-600 font-bold">+24.5% média</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">+24.5% média</span>
               </div>
             </div>
 
             {/* CARD 3: SALES REPORT OVERVIEW */}
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
               <div>
-                <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
                   Visão Geral Financeira
                 </h3>
-                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
                   Consolidação de transações, campanhas promocionais e cadastros de visitantes.
                 </p>
               </div>
@@ -886,33 +886,33 @@ export default function Dashboard() {
               {/* 3 Metrics in a row */}
               <div className="grid grid-cols-3 gap-2 my-4">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                     Vouchers
                   </span>
-                  <p className="text-base font-black text-slate-900 mt-0.5">13,956</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">13,956</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                     Vendas (R$)
                   </span>
-                  <p className="text-base font-black text-slate-900 mt-0.5">55,123</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">55,123</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                     Usuários
                   </span>
-                  <p className="text-base font-black text-slate-900 mt-0.5">29,829</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">29,829</p>
                 </div>
               </div>
 
               {/* Trend Tag */}
-              <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold mb-4">
+              <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold mb-4">
                 <ArrowUp className="w-3.5 h-3.5" />
                 <span>+15% a mais que a semana anterior</span>
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={fetchStats}
@@ -922,7 +922,7 @@ export default function Dashboard() {
                 </button>
                 <Link
                   href="/dashboard/finance"
-                  className="py-2 px-3 border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors text-center block"
+                  className="py-2 px-3 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors text-center block"
                 >
                   Relatório
                 </Link>
@@ -934,20 +934,20 @@ export default function Dashboard() {
           {/* ═══════════════════════════════════════════════════════════════
              5. FIFTH SECTION: FULL-WIDTH OPEN INVOICES / FATURAS TABLE
              ═══════════════════════════════════════════════════════════════ */}
-          <section className="bg-white border border-slate-200/80 shadow-sm rounded-2xl overflow-hidden">
-            <div className="p-5 pb-3 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <section className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden">
+            <div className="p-5 pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
                   Faturas & Vouchers Emitidos
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Registro de transações comerciais, ativações de planos e provisionamentos no MikroTik.
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <Link
                   href="/dashboard/finance"
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                 >
                   Exportar CSV
                 </Link>
@@ -975,20 +975,20 @@ export default function Dashboard() {
                     { id: '50018', client: 'Stella Johnson', router: 'AP-Externo', fullPrice: 'R$ 15.00', paidPrice: 'R$ 15.00', status: 'Open', statusColor: 'bg-amber-500 text-white' },
                     { id: '50019', client: 'David Grey', router: 'Hotspot-Principal', fullPrice: 'R$ 30.00', paidPrice: 'R$ 30.00', status: 'Progress', statusColor: 'bg-emerald-500 text-white' },
                   ].map((inv, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="font-mono font-bold text-slate-800 text-xs">
+                    <tr key={idx} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                      <td className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs">
                         #{inv.id}
                       </td>
-                      <td className="font-semibold text-slate-800 text-xs">
+                      <td className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
                         {inv.client}
                       </td>
-                      <td className="text-xs text-slate-500">
+                      <td className="text-xs text-slate-500 dark:text-slate-400">
                         {inv.router}
                       </td>
-                      <td className="font-bold text-slate-700 text-xs">
+                      <td className="font-bold text-slate-700 dark:text-slate-300 text-xs">
                         {inv.fullPrice}
                       </td>
-                      <td className="font-bold text-emerald-600 text-xs">
+                      <td className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
                         {inv.paidPrice}
                       </td>
                       <td>
@@ -1002,9 +1002,9 @@ export default function Dashboard() {
               </table>
             </div>
 
-            <div className="p-3.5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500">
+            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>Mostrando 6 faturas recentes sincronizadas</span>
-              <Link href="/dashboard/finance" className="font-semibold text-blue-600 hover:text-blue-700">
+              <Link href="/dashboard/finance" className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                 Ver Histórico Completo de Faturas →
               </Link>
             </div>

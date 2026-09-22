@@ -9,7 +9,8 @@ import {
   Clock, 
   Layers, 
   ExternalLink,
-  Sparkles
+  Sparkles,
+  FolderOpen
 } from 'lucide-react';
 
 interface AdsStudioPanelProps {
@@ -21,6 +22,7 @@ interface AdsStudioPanelProps {
   onSlotClear: (slot: number) => void;
   adUploadLoading: boolean;
   onPreviewAd: () => void;
+  onOpenMediaPicker?: (target: { type: 'ad_single' | 'ad_slot'; slot?: number; title: string }) => void;
 }
 
 export default function AdsStudioPanel({
@@ -32,6 +34,7 @@ export default function AdsStudioPanel({
   onSlotClear,
   adUploadLoading,
   onPreviewAd,
+  onOpenMediaPicker,
 }: AdsStudioPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -138,28 +141,55 @@ export default function AdsStudioPanel({
                   ) : (
                     <img src={ad.mediaUrl} alt="Ad Preview" className="w-full h-full object-contain" />
                   )}
-                  <button
-                    type="button"
-                    onClick={() => setAd((prev: any) => ({ ...prev, mediaUrl: '' }))}
-                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/70 text-white hover:bg-black/90 cursor-pointer z-10"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+                    {onOpenMediaPicker && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenMediaPicker({ type: 'ad_single', title: 'Alterar Banner Principal' })}
+                        title="Trocar Mídia da Galeria"
+                        className="p-1.5 rounded-lg bg-black/70 text-white hover:bg-black/90 cursor-pointer"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5 text-blue-400" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setAd((prev: any) => ({ ...prev, mediaUrl: '' }))}
+                      className="p-1.5 rounded-lg bg-black/70 text-white hover:bg-black/90 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center p-5 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 rounded-xl cursor-pointer bg-white dark:bg-slate-900 transition-all text-center">
-                  <Upload className="w-5 h-5 text-amber-500 mb-1" />
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    {adUploadLoading ? 'Enviando...' : 'Enviar Mídia do Banner'}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*,video/mp4"
-                    onChange={onAdUpload}
-                    disabled={adUploadLoading}
-                    className="hidden"
-                  />
-                </label>
+                onOpenMediaPicker ? (
+                  <div
+                    onClick={() => onOpenMediaPicker({ type: 'ad_single', title: 'Selecionar Mídia para o Banner Único' })}
+                    className="flex flex-col items-center justify-center p-5 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 rounded-xl cursor-pointer bg-white dark:bg-slate-900 transition-all text-center group"
+                  >
+                    <FolderOpen className="w-6 h-6 text-amber-500 mb-1 group-hover:scale-110 transition-transform" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Escolher da Galeria ou Enviar Novo
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">
+                      Imagens PNG, JPG, WEBP ou Vídeo MP4
+                    </span>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center p-5 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 rounded-xl cursor-pointer bg-white dark:bg-slate-900 transition-all text-center">
+                    <Upload className="w-5 h-5 text-amber-500 mb-1" />
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {adUploadLoading ? 'Enviando...' : 'Enviar Mídia do Banner'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*,video/mp4"
+                      onChange={onAdUpload}
+                      disabled={adUploadLoading}
+                      className="hidden"
+                    />
+                  </label>
+                )
               )}
 
               <div className="space-y-1">
@@ -198,19 +228,33 @@ export default function AdsStudioPanel({
                         Slot #{slot}
                       </span>
                       {hasMedia && (
-                        <button
-                          type="button"
-                          onClick={() => onSlotClear(slot)}
-                          className="text-[11px] text-red-600 hover:text-red-700 font-semibold cursor-pointer"
-                        >
-                          Limpar
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {onOpenMediaPicker && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenMediaPicker({ type: 'ad_slot', slot, title: `Trocar Mídia do Slot #${slot}` })}
+                              className="text-[11px] text-blue-600 hover:text-blue-700 font-semibold cursor-pointer"
+                            >
+                              Trocar
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onSlotClear(slot)}
+                            className="text-[11px] text-red-600 hover:text-red-700 font-semibold cursor-pointer"
+                          >
+                            Limpar
+                          </button>
+                        </div>
                       )}
                     </div>
 
                     {hasMedia ? (
                       <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 rounded-lg bg-black overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700 flex items-center justify-center">
+                        <div 
+                          onClick={() => onOpenMediaPicker?.({ type: 'ad_slot', slot, title: `Trocar Mídia do Slot #${slot}` })}
+                          className="w-14 h-14 rounded-lg bg-black overflow-hidden shrink-0 border border-slate-300 dark:border-slate-700 flex items-center justify-center cursor-pointer hover:opacity-85 transition-opacity"
+                        >
                           {(item.type === 'video' || /\.(mp4|webm|mov)(\?.*)?$/i.test(item.url)) ? (
                             <video src={item.url} muted playsInline autoPlay loop className="w-full h-full object-cover" />
                           ) : (
@@ -226,17 +270,27 @@ export default function AdsStudioPanel({
                         />
                       </div>
                     ) : (
-                      <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 rounded-lg cursor-pointer bg-white dark:bg-slate-900 text-xs font-semibold text-slate-600 dark:text-slate-400">
-                        <Upload className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Enviar imagem para Slot #{slot}</span>
-                        <input
-                          type="file"
-                          accept="image/*,video/mp4"
-                          onChange={(e) => onSlotUpload(e, slot)}
-                          disabled={adUploadLoading}
-                          className="hidden"
-                        />
-                      </label>
+                      onOpenMediaPicker ? (
+                        <div
+                          onClick={() => onOpenMediaPicker({ type: 'ad_slot', slot, title: `Selecionar Mídia para Slot #${slot}` })}
+                          className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 rounded-lg cursor-pointer bg-white dark:bg-slate-900 text-xs font-semibold text-slate-600 dark:text-slate-400 group transition-all"
+                        >
+                          <FolderOpen className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
+                          <span>Escolher da Galeria para Slot #{slot}</span>
+                        </div>
+                      ) : (
+                        <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 rounded-lg cursor-pointer bg-white dark:bg-slate-900 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                          <Upload className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Enviar imagem para Slot #{slot}</span>
+                          <input
+                            type="file"
+                            accept="image/*,video/mp4"
+                            onChange={(e) => onSlotUpload(e, slot)}
+                            disabled={adUploadLoading}
+                            className="hidden"
+                          />
+                        </label>
+                      )
                     )}
                   </div>
                 );

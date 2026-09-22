@@ -4,6 +4,14 @@ import path from 'path';
 import { exec } from 'child_process';
 import { resolveTemplateDir } from '@/lib/portal-template-utils';
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
 function optimizeVideoAndGeneratePoster(filePath: string) {
   const isVideo = filePath.toLowerCase().match(/\.(mp4|webm|mov)$/);
   if (!isVideo) return;
@@ -206,18 +214,227 @@ export async function POST(request: Request) {
   }
 }
 
+export async function GET(request: Request) {
+  try {
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // 1. Coleta mídias atualmente ativas em todos os templates de Hotspot
+    const activeMediaMap = new Map<string, string[]>(); // fileName -> [templateNames]
+    const hotspotDir = path.join(process.cwd(), 'hotspot');
+    if (fs.existsSync(hotspotDir)) {
+      const templates = fs.readdirSync(hotspotDir);
+      templates.forEach(tpl => {
+        const cfgPath = path.join(hotspotDir, tpl, 'config.json');
+        if (fs.existsSync(cfgPath)) {
+          try {
+            const tplConfig = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+            const checkAndAdd = (urlStr: string) => {
+              if (!urlStr) return;
+              const fName = path.basename(urlStr.split('?')[0]);
+              if (fName) {
+                const current = activeMediaMap.get(fName) || [];
+                if (!current.includes(tpl)) current.push(tpl);
+                activeMediaMap.set(fName, current);
+              }
+            };
+            if (tplConfig.ad?.mediaUrl) checkAndAdd(tplConfig.ad.mediaUrl);
+            if (Array.isArray(tplConfig.ad?.items)) {
+              tplConfig.ad.items.forEach((item: any) => checkAndAdd(item?.url));
+            }
+            if (tplConfig.bg?.url) checkAndAdd(tplConfig.bg.url);
+          } catch (e) {}
+        }
+      });
+    }
+
+    // 2. Varrer arquivos na pasta public/uploads
+    const entries = fs.readdirSync(uploadDir);
+    let totalBytes = 0;
+    let bannerAndMediaCount = 0;
+    const files: any[] = [];
+
+    entries.forEach(name => {
+      // Ignora arquivos ocultos e posters de vídeo da contagem principal
+      if (name.startsWith('.') || name.endsWith('_poster.jpg')) return;
+
+      const filePath = path.join(uploadDir, name);
+      try {
+        const stat = fs.statSync(filePath);
+        if (!stat.isFile()) return;
+
+        const ext = path.extname(name).toLowerCase();
+        const isVideo = ['.mp4', '.webm', '.mov'].includes(ext);
+        const isImage = ['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif'].includes(ext);
+        if (!isVideo && !isImage) return;
+
+        totalBytes += stat.size;
+        bannerAndMediaCount++;
+
+        let category: 'banner' | 'bg' | 'logo' | 'avatar' | 'other' = 'other';
+        if (name.startsWith('ad_')) category = 'banner';
+        else if (name.startsWith('bg_')) category = 'bg';
+        else if (name.startsWith('logo_')) category = 'logo';
+        else if (name.startsWith('avatar_')) category = 'avatar';
+
+        const usedInTemplates = activeMediaMap.get(name) || [];
+
+        const posterName = isVideo ? name.replace(/\.[^.]+$/, '_poster.jpg') : null;
+        const hasPoster = posterName ? fs.existsSync(path.join(uploadDir, posterName)) : false;
+
+        files.push({
+          name,
+          url: `/uploads/${name}`,
+          posterUrl: hasPoster ? `/uploads/${posterName}` : null,
+          size: stat.size,
+          sizeFormatted: formatBytes(stat.size),
+          type: isVideo ? 'video' : 'image',
+          category,
+          createdAt: stat.birthtime || stat.mtime,
+          isUsed: usedInTemplates.length > 0,
+          usedInTemplates
+        });
+      } catch (err) {}
+    });
+
+    // Ordena arquivos mais recentes primeiro
+    files.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const MAX_FILES = 50; // Quota recomendada de arquivos para Hotspot leve na VPS
+    const MAX_BYTES = 100 * 1024 * 1024; // 100 MB Quota recomendada de armazenamento
+
+    const percentUsed = Math.min(100, Math.round((totalBytes / MAX_BYTES) * 100));
+    const percentFiles = Math.min(100, Math.round((bannerAndMediaCount / MAX_FILES) * 100));
+
+    return NextResponse.json({
+      success: true,
+      stats: {
+        totalFiles: bannerAndMediaCount,
+        maxFiles: MAX_FILES,
+        percentFiles,
+        totalBytes,
+        totalFormatted: formatBytes(totalBytes),
+        maxBytes: MAX_BYTES,
+        maxFormatted: formatBytes(MAX_BYTES),
+        freeBytes: Math.max(0, MAX_BYTES - totalBytes),
+        freeFormatted: formatBytes(Math.max(0, MAX_BYTES - totalBytes)),
+        percentUsed,
+        isNearLimit: percentUsed >= 80 || bannerAndMediaCount >= 40
+      },
+      files
+    });
+  } catch (error: any) {
+    console.error('Error listing media:', error);
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const template = searchParams.get('template') || 'default';
     const type = searchParams.get('type');
+    const specificFile = searchParams.get('file');
+    const clearAll = searchParams.get('all') === 'true' || type === 'all_banners';
+    const unusedOnly = searchParams.get('unused') === 'true';
     const safeName = template.replace(/[^a-zA-Z0-9_-]/g, '');
     const hDir = resolveTemplateDir(template);
     const configPath = path.join(hDir, 'config.json');
 
     const uploadDir = path.join(process.cwd(), 'public', 'uploads');
 
-    // Specific deletion for Background media
+    // 1. EXCLUSÃO DE UM ARQUIVO ESPECÍFICO
+    if (specificFile) {
+      const safeFileName = path.basename(specificFile);
+      const targetPath = path.join(uploadDir, safeFileName);
+      let deleted = false;
+      let freedBytes = 0;
+
+      if (fs.existsSync(targetPath)) {
+        try {
+          const stat = fs.statSync(targetPath);
+          freedBytes = stat.size;
+          fs.unlinkSync(targetPath);
+          deleted = true;
+
+          // Se for vídeo, apagar também o poster gerado
+          const posterPath = targetPath.replace(/\.[^.]+$/, '_poster.jpg');
+          if (fs.existsSync(posterPath)) {
+            try { fs.unlinkSync(posterPath); } catch (e) {}
+          }
+        } catch (err: any) {
+          console.error(`Erro ao apagar arquivo ${safeFileName}:`, err);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: deleted ? `Arquivo ${safeFileName} excluído com sucesso.` : 'Arquivo não encontrado no servidor.',
+        deleted,
+        freedBytes,
+        freedFormatted: formatBytes(freedBytes)
+      });
+    }
+
+    // 2. LIMPEZA TOTAL DE BANNERS & MÍDIAS DA PLATAFORMA (DESAFOGAR VPS)
+    if (clearAll) {
+      let deletedCount = 0;
+      let freedBytes = 0;
+
+      if (fs.existsSync(uploadDir)) {
+        try {
+          const entries = fs.readdirSync(uploadDir);
+          entries.forEach(name => {
+            // Remove ad_*, bg_*, logo_* e posters (mantém avatars intactos)
+            if (name.startsWith('ad_') || name.startsWith('bg_') || name.startsWith('logo_') || name.includes('_poster.jpg')) {
+              try {
+                const filePath = path.join(uploadDir, name);
+                const stat = fs.statSync(filePath);
+                freedBytes += stat.size;
+                fs.unlinkSync(filePath);
+                deletedCount++;
+              } catch (e) {}
+            }
+          });
+        } catch (e) {}
+      }
+
+      // Resetar referências nos templates de hotspot para evitar links quebrados
+      const hotspotDir = path.join(process.cwd(), 'hotspot');
+      if (fs.existsSync(hotspotDir)) {
+        try {
+          const templates = fs.readdirSync(hotspotDir);
+          templates.forEach(tpl => {
+            const cfgPath = path.join(hotspotDir, tpl, 'config.json');
+            if (fs.existsSync(cfgPath)) {
+              try {
+                const tplConfig = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+                if (tplConfig.ad) {
+                  tplConfig.ad.mediaUrl = '';
+                  tplConfig.ad.items = [];
+                }
+                if (tplConfig.bg) {
+                  tplConfig.bg = { type: 'default', url: '' };
+                }
+                fs.writeFileSync(cfgPath, JSON.stringify(tplConfig, null, 2), 'utf8');
+              } catch (e) {}
+            }
+          });
+        } catch (e) {}
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Limpeza geral concluída! ${deletedCount} arquivo(s) de banner/mídia removidos e ${formatBytes(freedBytes)} liberados na VPS.`,
+        deletedCount,
+        freedBytes,
+        freedFormatted: formatBytes(freedBytes)
+      });
+    }
+
+    // 3. EXCLUSÃO ESPECÍFICA DE PLANO DE FUNDO DO TEMPLATE
     if (type === 'bg') {
       let deletedCount = 0;
       if (fs.existsSync(uploadDir)) {
@@ -248,7 +465,7 @@ export async function DELETE(request: Request) {
         } catch (e) {}
       }
 
-      // Update config.json to reset bg
+      // Atualiza config.json para resetar fundo
       if (fs.existsSync(configPath)) {
         try {
           const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -257,7 +474,7 @@ export async function DELETE(request: Request) {
         } catch (e) {}
       }
 
-      // Clean login.html to immediately strip background video / image
+      // Limpa login.html para remover vídeo ou imagem injetada
       const loginHtmlPath = path.join(hDir, 'login.html');
       if (fs.existsSync(loginHtmlPath)) {
         try {
@@ -280,9 +497,8 @@ export async function DELETE(request: Request) {
       });
     }
 
+    // 4. EXCLUSÃO APENAS DE ARQUIVOS NÃO UTILIZADOS
     const activeUrls = new Set<string>();
-    
-    // Helper to safely extract absolute path from any url variant
     const getSafePath = (urlStr: string) => {
       if (!urlStr) return '';
       let u = urlStr.split('?')[0];
@@ -292,7 +508,6 @@ export async function DELETE(request: Request) {
       return u;
     };
 
-    // Gather ALL active urls from ALL templates to prevent cross-template deletion
     const hotspotDir = path.join(process.cwd(), 'hotspot');
     if (fs.existsSync(hotspotDir)) {
       const templates = fs.readdirSync(hotspotDir);

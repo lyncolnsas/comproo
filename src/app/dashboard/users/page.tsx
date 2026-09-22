@@ -349,29 +349,29 @@ export default function Users() {
   return (
     <main className="w-full p-4 md:p-6 max-w-7xl mx-auto space-y-6 animate-fade-in relative pb-24">
       {/* Header */}
-      <header className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <header className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-blue-600 shadow-[0_0_8px_#2563eb]" />
-            <span className="text-[11px] font-black text-blue-700 uppercase tracking-widest">
+            <span className="text-[11px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">
               HOTSPOT // CENTRAL DE ACESSO & VOUCHERS
             </span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-950 dark:text-white tracking-tight">
             Central de Vouchers
           </h1>
-          <p className="text-xs font-semibold text-slate-700 mt-0.5">
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-400 mt-0.5">
             Geração, gerenciamento e monitoramento de vouchers de acesso no MikroTik.
           </p>
         </div>
         
-        <div className="flex items-center bg-slate-200/80 p-1.5 rounded-xl border border-slate-300 shrink-0 gap-1">
+        <div className="flex items-center bg-slate-200/80 dark:bg-slate-800/80 p-1.5 rounded-xl border border-slate-300 dark:border-slate-700 shrink-0 gap-1">
           <button 
             onClick={() => { setActiveTab('list'); setError(''); }}
             className={`text-xs font-black py-2 px-3.5 rounded-lg transition-all cursor-pointer ${
               activeTab === 'list'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-800 hover:text-black hover:bg-white'
+                : 'text-slate-800 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-white dark:hover:bg-slate-700'
             }`}
           >
             📋 Lista de Vouchers
@@ -381,7 +381,7 @@ export default function Users() {
             className={`text-xs font-black py-2 px-3.5 rounded-lg transition-all cursor-pointer ${
               activeTab === 'batch'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-800 hover:text-black hover:bg-white'
+                : 'text-slate-800 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-white dark:hover:bg-slate-700'
             }`}
           >
             ⚡ Gerar em Lote
@@ -391,7 +391,7 @@ export default function Users() {
             className={`text-xs font-black py-2 px-3.5 rounded-lg transition-all cursor-pointer ${
               activeTab === 'single'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-800 hover:text-black hover:bg-white'
+                : 'text-slate-800 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-white dark:hover:bg-slate-700'
             }`}
           >
             👤 Criar Avulso
@@ -415,27 +415,27 @@ export default function Users() {
           {/* Control Cards (Search, Print Batch, Delete Batch) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Search */}
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 md:col-span-2 lg:col-span-2 space-y-2">
-              <span className="block text-xs font-black text-slate-800">Buscar Usuário</span>
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 md:col-span-2 lg:col-span-2 space-y-2">
+              <span className="block text-xs font-black text-slate-800 dark:text-slate-200">Buscar Usuário</span>
               <input 
                 type="text" 
                 placeholder="Buscar por nome ou lote..." 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-white border-2 border-slate-400 focus:border-blue-600 text-slate-950 font-bold rounded-xl px-3.5 py-2 text-xs outline-none transition-all shadow-xs placeholder:text-slate-500"
+                className="w-full bg-white dark:bg-[#0e1524] border-2 border-slate-400 dark:border-slate-700 focus:border-blue-600 dark:focus:border-blue-500 text-slate-950 dark:text-slate-100 font-bold rounded-xl px-3.5 py-2 text-xs outline-none transition-all shadow-xs placeholder:text-slate-500 dark:placeholder:text-slate-500"
               />
             </div>
 
             {/* Print Batch */}
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 space-y-2">
-              <span className="block text-xs font-black text-emerald-800">Imprimir Lote (Comentário)</span>
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 space-y-2">
+              <span className="block text-xs font-black text-emerald-800 dark:text-emerald-400">Imprimir Lote (Comentário)</span>
               <form onSubmit={handlePrintBatch} className="flex gap-2 w-full">
                 <input 
                   type="text" 
                   placeholder="Ex: dez-2023" 
                   value={batchPrintComment}
                   onChange={(e) => setBatchPrintComment(e.target.value)}
-                  className="bg-white border-2 border-slate-400 focus:border-emerald-600 text-slate-950 font-bold rounded-xl px-3 py-1.5 text-xs flex-1 outline-none transition-all shadow-xs placeholder:text-slate-500"
+                  className="bg-white dark:bg-[#0e1524] border-2 border-slate-400 dark:border-slate-700 focus:border-emerald-600 dark:focus:border-emerald-500 text-slate-950 dark:text-slate-100 font-bold rounded-xl px-3 py-1.5 text-xs flex-1 outline-none transition-all shadow-xs placeholder:text-slate-500 dark:placeholder:text-slate-500"
                 />
                 <button 
                   disabled={!batchPrintComment} 
@@ -448,15 +448,15 @@ export default function Users() {
             </div>
 
             {/* Delete Batch */}
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 space-y-2">
-              <span className="block text-xs font-black text-rose-800">Excluir Lote (Comentário)</span>
+            <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 space-y-2">
+              <span className="block text-xs font-black text-rose-800 dark:text-rose-400">Excluir Lote (Comentário)</span>
               <form onSubmit={handleBatchDelete} className="flex gap-2 w-full">
                 <input 
                   type="text" 
                   placeholder="Ex: dez-2023" 
                   value={batchDeleteComment}
                   onChange={(e) => setBatchDeleteComment(e.target.value)}
-                  className="bg-white border-2 border-slate-400 focus:border-rose-600 text-slate-950 font-bold rounded-xl px-3 py-1.5 text-xs flex-1 outline-none transition-all shadow-xs placeholder:text-slate-500"
+                  className="bg-white dark:bg-[#0e1524] border-2 border-slate-400 dark:border-slate-700 focus:border-rose-600 dark:focus:border-rose-500 text-slate-950 dark:text-slate-100 font-bold rounded-xl px-3 py-1.5 text-xs flex-1 outline-none transition-all shadow-xs placeholder:text-slate-500 dark:placeholder:text-slate-500"
                 />
                 <button 
                   disabled={!batchDeleteComment} 
@@ -470,13 +470,13 @@ export default function Users() {
           </div>
 
           {/* Users Table */}
-          <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-sm font-black text-slate-900 tracking-tight">Vouchers Registrados no Roteador</h2>
-                <p className="text-xs font-semibold text-slate-600 mt-0.5">Exibindo registros correspondentes aos filtros ativos</p>
+                <h2 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">Vouchers Registrados no Roteador</h2>
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-0.5">Exibindo registros correspondentes aos filtros ativos</p>
               </div>
-              <span className="text-xs font-black px-3 py-1 rounded-full border border-blue-300 bg-blue-100 text-blue-900 tracking-wider uppercase self-start sm:self-auto shrink-0">
+              <span className="text-xs font-black px-3 py-1 rounded-full border border-blue-300 dark:border-blue-800/60 bg-blue-100 dark:bg-blue-950/50 text-blue-900 dark:text-blue-400 tracking-wider uppercase self-start sm:self-auto shrink-0">
                 {filteredUsers.length} VOUCHERS
               </span>
             </div>
@@ -484,7 +484,7 @@ export default function Users() {
             <div className="p-0">
               <div className="overflow-x-auto w-full max-h-[500px] custom-scrollbar">
                 <table className="w-full text-left text-xs border-collapse whitespace-nowrap">
-                  <thead className="sticky top-0 bg-slate-200 border-b-2 border-slate-300 text-slate-900 font-black" style={{ zIndex: 10 }}>
+                  <thead className="sticky top-0 bg-slate-200 dark:bg-slate-800 border-b-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-200 font-black" style={{ zIndex: 10 }}>
                     <tr>
                       <th className="px-6 py-3.5 w-12 text-center">
                         <input 
@@ -494,24 +494,24 @@ export default function Users() {
                           className="w-4 h-4 rounded border-slate-400 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                       </th>
-                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-slate-950">Servidor</th>
-                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-slate-950">Nome (Voucher)</th>
-                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-slate-950">Perfil</th>
-                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-slate-950">Uptime</th>
-                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-slate-950">Comentário / Lote</th>
-                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-right text-slate-950">Ações</th>
+                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-slate-950 dark:text-slate-200">Servidor</th>
+                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-slate-950 dark:text-slate-200">Nome (Voucher)</th>
+                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-slate-950 dark:text-slate-200">Perfil</th>
+                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-slate-950 dark:text-slate-200">Uptime</th>
+                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-slate-950 dark:text-slate-200">Comentário / Lote</th>
+                      <th className="px-6 py-3.5 font-black uppercase tracking-wider text-right text-slate-950 dark:text-slate-200">Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 text-slate-800 font-medium">
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-800 dark:text-slate-200 font-medium">
                     {loading ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-slate-600 font-bold italic">
+                        <td colSpan={7} className="px-6 py-8 text-center text-slate-600 dark:text-slate-400 font-bold italic">
                           <div className="inline-block animate-pulse">Carregando base de vouchers do Mikrotik...</div>
                         </td>
                       </tr>
                     ) : filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-8 text-center text-slate-600 font-bold italic">
+                        <td colSpan={7} className="px-6 py-8 text-center text-slate-600 dark:text-slate-400 font-bold italic">
                           Nenhum voucher localizado.
                         </td>
                       </tr>
@@ -520,7 +520,7 @@ export default function Users() {
                         const isChecked = selectedIds.includes(user.id || user.name);
                         
                         return (
-                          <tr key={`${user.id || user.name}-${index}`} className="hover:bg-slate-100 transition-colors">
+                          <tr key={`${user.id || user.name}-${index}`} className="hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
                             <td className="px-6 py-3.5 text-center">
                               <input 
                                 type="checkbox"
@@ -529,19 +529,19 @@ export default function Users() {
                                 className="w-4 h-4 rounded border-slate-400 text-blue-600 focus:ring-blue-500 cursor-pointer"
                               />
                             </td>
-                            <td className="px-6 py-4 text-slate-800 uppercase font-black text-xs">{user.server}</td>
-                            <td className="px-6 py-4 font-black text-slate-950 text-sm tracking-wide">{user.name}</td>
+                            <td className="px-6 py-4 text-slate-800 dark:text-slate-300 uppercase font-black text-xs">{user.server}</td>
+                            <td className="px-6 py-4 font-black text-slate-950 dark:text-white text-sm tracking-wide">{user.name}</td>
                             <td className="px-6 py-4">
-                              <span className="text-xs font-black px-2.5 py-0.5 rounded-md border border-blue-300 bg-blue-100 text-blue-900">
+                              <span className="text-xs font-black px-2.5 py-0.5 rounded-md border border-blue-300 dark:border-blue-800/60 bg-blue-100 dark:bg-blue-950/50 text-blue-900 dark:text-blue-400">
                                 {user.profile}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-slate-800 font-bold text-xs">{user.uptime}</td>
-                            <td className="px-6 py-4 text-slate-800 font-bold text-xs">{user.comment || '-'}</td>
+                            <td className="px-6 py-4 text-slate-800 dark:text-slate-300 font-bold text-xs">{user.uptime}</td>
+                            <td className="px-6 py-4 text-slate-800 dark:text-slate-300 font-bold text-xs">{user.comment || '-'}</td>
                             <td className="px-6 py-4 text-right">
                               <button 
                                 onClick={() => handleDeleteUser(user.id, user.name)} 
-                                className="py-1.5 px-3 text-xs font-black text-rose-700 hover:text-rose-900 hover:bg-rose-100 border border-rose-300 rounded-lg transition-colors cursor-pointer"
+                                className="py-1.5 px-3 text-xs font-black text-rose-700 dark:text-rose-400 hover:text-rose-900 dark:hover:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-950/50 border border-rose-300 dark:border-rose-800/60 rounded-lg transition-colors cursor-pointer"
                               >
                                 Excluir
                               </button>
@@ -558,17 +558,17 @@ export default function Users() {
         </div>
       ) : activeTab === 'batch' ? (
         /* ==================== TAB 2: BATCH GENERATION ==================== */
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm max-w-3xl overflow-hidden animate-fade-in">
-          <div className="px-6 py-5 border-b border-slate-100 bg-white">
-            <h2 className="text-sm font-bold text-slate-900 tracking-tight">Gerador de Vouchers em Lote</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Crie múltiplos vouchers de forma automatizada e sincronizada com o MikroTik</p>
+        <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm max-w-3xl overflow-hidden animate-fade-in">
+          <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#111726]">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">Gerador de Vouchers em Lote</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Crie múltiplos vouchers de forma automatizada e sincronizada com o MikroTik</p>
           </div>
 
           <div className="p-6">
             {batchMessage && (
-              <div className={`p-4 mb-6 rounded-xl border flex flex-col sm:flex-row justify-between items-center gap-4 ${batchMessage.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
+              <div className={`p-4 mb-6 rounded-xl border flex flex-col sm:flex-row justify-between items-center gap-4 ${batchMessage.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-300'}`}>
                 <div>
-                  <span className="block text-[10px] uppercase font-bold tracking-wider mb-0.5 text-slate-500">Status da Operação:</span>
+                  <span className="block text-[10px] uppercase font-bold tracking-wider mb-0.5 text-slate-500 dark:text-slate-400">Status da Operação:</span>
                   <span className="font-bold text-xs">{batchMessage.text}</span>
                 </div>
                 {generatedBatchList.length > 0 && (
@@ -584,31 +584,31 @@ export default function Users() {
 
             {loadingOptions ? (
               <div className="animate-pulse space-y-4 py-6">
-                <div className="h-10 bg-slate-100 rounded-xl border border-slate-200"></div>
-                <div className="h-10 bg-slate-100 rounded-xl border border-slate-200"></div>
-                <div className="h-10 bg-slate-100 rounded-xl border border-slate-200"></div>
+                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"></div>
+                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"></div>
+                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"></div>
               </div>
             ) : (
               <form onSubmit={handleGenerateBatch} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Quantidade de Vouchers</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Quantidade de Vouchers</label>
                     <input 
                       type="number" 
                       min="1" 
                       max="1000" 
                       value={qty} 
                       onChange={(e) => setQty(Number(e.target.value))} 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-bold focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all" 
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-bold focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all" 
                       required 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Servidor Hotspot</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Servidor Hotspot</label>
                     <select 
                       value={genServer} 
                       onChange={(e) => setGenServer(e.target.value)} 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all"
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-medium focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all"
                     >
                       <option value="all">Todos os Servidores (all)</option>
                       {servers.map((s, idx) => <option key={`${s.id || s.name}-${idx}`} value={s.name}>{s.name}</option>)}
@@ -616,45 +616,45 @@ export default function Users() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Modo de Login</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Modo de Login</label>
                     <select 
                       value={mode} 
                       onChange={(e) => setMode(e.target.value)} 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all"
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-medium focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all"
                     >
                       <option value="up">Usuário = Senha</option>
                       <option value="vc">Usuário e Senha Diferentes</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Tamanho do Código</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Tamanho do Código</label>
                     <input 
                       type="number" 
                       min="3" 
                       max="12" 
                       value={userLen} 
                       onChange={(e) => setUserLen(Number(e.target.value))} 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-bold focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all" 
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-bold focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all" 
                       required 
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Prefixo do Código (Opcional)</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Prefixo do Código (Opcional)</label>
                     <input 
                       type="text" 
                       value={prefix} 
                       onChange={(e) => setPrefix(e.target.value)} 
                       placeholder="Ex: VIP-" 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all" 
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-medium focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all" 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Tipo de Caracteres</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Tipo de Caracteres</label>
                     <select 
                       value={charset} 
                       onChange={(e) => setCharset(e.target.value)} 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all"
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-medium focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all"
                     >
                       <option value="low">Letras Minúsculas (a-z)</option>
                       <option value="upp">Letras Maiúsculas (A-Z)</option>
@@ -664,29 +664,29 @@ export default function Users() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Perfil de Velocidade (Profile)</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Perfil de Velocidade (Profile)</label>
                     <select 
                       value={genProfile} 
                       onChange={(e) => setGenProfile(e.target.value)} 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all"
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-medium focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all"
                     >
                       {profiles.map((p, idx) => <option key={`${p.id || p.name}-${idx}`} value={p.name}>{p.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Lote / Comentário Identificador</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Lote / Comentário Identificador</label>
                     <input 
                       type="text" 
                       value={genComment} 
                       onChange={(e) => setGenComment(e.target.value)} 
                       placeholder="Ex: dez-2023" 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all" 
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-medium focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all" 
                       required 
                     />
                   </div>
                   
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Preço de Venda Unitário (R$) - Opcional</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Preço de Venda Unitário (R$) - Opcional</label>
                     <input 
                       type="number" 
                       step="0.01" 
@@ -694,13 +694,13 @@ export default function Users() {
                       value={genPrice} 
                       onChange={(e) => setGenPrice(Number(e.target.value))} 
                       placeholder="Ex: 5.00" 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-bold focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all" 
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-bold focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all" 
                     />
-                    <p className="text-[10px] text-slate-500 mt-1.5 leading-none">Este valor será utilizado no financeiro para o cálculo de faturamento.</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 leading-none">Este valor será utilizado no financeiro para o cálculo de faturamento.</p>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                   <button 
                     type="submit" 
                     disabled={generatingBatch}
@@ -715,17 +715,17 @@ export default function Users() {
         </div>
       ) : (
         /* ==================== TAB 3: SINGLE CREATION ==================== */
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm max-w-3xl overflow-hidden animate-fade-in">
-          <div className="px-6 py-5 border-b border-slate-100 bg-white">
-            <h2 className="text-sm font-bold text-slate-900 tracking-tight">Criar Voucher Avulso</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Provisione uma credencial individual no Hotspot</p>
+        <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm max-w-3xl overflow-hidden animate-fade-in">
+          <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#111726]">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">Criar Voucher Avulso</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Provisione uma credencial individual no Hotspot</p>
           </div>
 
           <div className="p-6">
             {singleMessage && (
-              <div className={`p-4 mb-6 rounded-xl border flex flex-col sm:flex-row justify-between items-center gap-4 ${singleMessage.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
+              <div className={`p-4 mb-6 rounded-xl border flex flex-col sm:flex-row justify-between items-center gap-4 ${singleMessage.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-300'}`}>
                 <div>
-                  <span className="block text-[10px] uppercase font-bold tracking-wider mb-0.5 text-slate-500">Status da Criação:</span>
+                  <span className="block text-[10px] uppercase font-bold tracking-wider mb-0.5 text-slate-500 dark:text-slate-400">Status da Criação:</span>
                   <span className="font-bold text-xs">{singleMessage.text}</span>
                 </div>
                 {newlyCreatedUser && (
@@ -741,69 +741,69 @@ export default function Users() {
 
             {loadingOptions ? (
               <div className="animate-pulse space-y-4 py-6">
-                <div className="h-10 bg-slate-100 rounded-xl border border-slate-200"></div>
-                <div className="h-10 bg-slate-100 rounded-xl border border-slate-200"></div>
-                <div className="h-10 bg-slate-100 rounded-xl border border-slate-200"></div>
+                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"></div>
+                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"></div>
+                <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700"></div>
               </div>
             ) : (
               <form onSubmit={handleCreateSingle} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Nome de Usuário (Login)</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Nome de Usuário (Login)</label>
                     <input 
                       type="text" 
                       value={singleName} 
                       onChange={(e) => setSingleName(e.target.value)} 
                       placeholder="Ex: pedro ou vip-cliente" 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-bold focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all" 
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-bold focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all" 
                       required 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Senha (Opcional)</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Senha (Opcional)</label>
                     <input 
                       type="text" 
                       value={singlePass} 
                       onChange={(e) => setSinglePass(e.target.value)} 
                       placeholder="Igual ao login se em branco" 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all" 
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-medium focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all" 
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Servidor Hotspot</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Servidor Hotspot</label>
                     <select 
                       value={singleServer} 
                       onChange={(e) => setSingleServer(e.target.value)} 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all"
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-medium focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all"
                     >
                       <option value="all">Todos os Servidores (all)</option>
                       {servers.map((s, idx) => <option key={`${s.id || s.name}-${idx}`} value={s.name}>{s.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Perfil de Velocidade (Profile)</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Perfil de Velocidade (Profile)</label>
                     <select 
                       value={singleProfile} 
                       onChange={(e) => setSingleProfile(e.target.value)} 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all"
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-medium focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all"
                     >
                       {profiles.map((p, idx) => <option key={`${p.id || p.name}-${idx}`} value={p.name}>{p.name}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Comentário / Lote Identificador</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Comentário / Lote Identificador</label>
                     <input 
                       type="text" 
                       value={singleComment} 
                       onChange={(e) => setSingleComment(e.target.value)} 
                       placeholder="Ex: VIP-Ana ou avulso" 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-medium focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all" 
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-medium focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all" 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Preço de Venda (R$) - Opcional</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Preço de Venda (R$) - Opcional</label>
                     <input 
                       type="number" 
                       step="0.01" 
@@ -811,12 +811,12 @@ export default function Users() {
                       value={singlePrice} 
                       onChange={(e) => setSinglePrice(Number(e.target.value))} 
                       placeholder="Ex: 10.00" 
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 text-xs font-bold focus:border-blue-600 focus:bg-white outline-none shadow-xs transition-all" 
+                      className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-slate-100 text-xs font-bold focus:border-blue-600 focus:bg-white dark:focus:bg-[#0e1524] outline-none shadow-xs transition-all" 
                     />
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100">
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                   <button 
                     type="submit" 
                     disabled={creatingSingle}
@@ -834,9 +834,9 @@ export default function Users() {
       {/* Floating Sticky Print Bar */}
       {selectedIds.length > 0 && activeTab === 'list' && (
         <div 
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 p-4 rounded-2xl flex items-center justify-between gap-6 shadow-2xl z-50 animate-scale-up max-w-[90vw] md:max-w-xl w-full bg-white border border-slate-200/80 shadow-slate-900/10"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 p-4 rounded-2xl flex items-center justify-between gap-6 shadow-2xl z-50 animate-scale-up max-w-[90vw] md:max-w-xl w-full bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-slate-900/10 dark:shadow-black/40"
         >
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse shrink-0" />
             <span>
               {selectedIds.length} {selectedIds.length === 1 ? 'voucher selecionado' : 'vouchers selecionados'}
@@ -845,7 +845,7 @@ export default function Users() {
           <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setSelectedIds([])}
-              className="py-2 px-3.5 text-xs font-bold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs cursor-pointer transition-colors"
+              className="py-2 px-3.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 shadow-xs cursor-pointer transition-colors"
             >
               Limpar
             </button>

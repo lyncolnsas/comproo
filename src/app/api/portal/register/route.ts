@@ -6,7 +6,7 @@ import { MercadoPagoService } from '@/services/mercadopago';
 import fs from 'fs';
 import path from 'path';
 import { resolveTemplateDir } from '@/lib/portal-template-utils';
-import { getMaskedPortalDomain } from '@/lib/domain';
+import { getMaskedPortalDomain, getMaskedPortalUrl } from '@/lib/domain';
 import { getCustomTemplate, applyTemplateTags, getFlowConfig } from '@/services/whatsapp-custom-messages';
 
 interface PortalConfig {
@@ -398,9 +398,107 @@ export async function POST(request: Request) {
       passwordStr = rawPhone || hotspotUser || '123456';
     }
 
+    // Extrai o MAC do cliente (corpo do form, query string ou cabeçalho HTTP)
+    const clientMac = (body.mac || searchParams.get('mac') || request.headers.get('x-client-mac') || '').trim().toUpperCase();
+
+    // 3.5. Verificação de Blacklist / Clientes Bloqueados
+    try {
+      const orClauses: any[] = [];
+      if (clientMac) orClauses.push({ mac: clientMac });
+      if (rawCpf) orClauses.push({ cpf: rawCpf });
+      if (rawPhone) orClauses.push({ phone: rawPhone });
+
+      if (orClauses.length > 0) {
+        const blocked = await prisma.blockedClient.findFirst({
+          where: { active: true, OR: orClauses }
+        });
+        if (blocked) {
+          logEvent('BLOCKED_CLIENT_REJECTED', { reason: blocked.reason, clientMac, rawCpf, rawPhone });
+          return createResponse({
+            success: false,
+            message: `Acesso Bloqueado: Este dispositivo ou documento possui restrição na plataforma (${blocked.reason}). Regularize sua situação com o administrador.`
+          }, isForm, 403);
+        }
+      }
+    } catch (bErr) {
+      console.warn('[Anti-Fraud] Erro ao consultar BlockedClient:', bErr);
+    }
+
+    // 3.6. Verificação Anti-Burla de Carência (15 Minutos)
+    // Se o cliente já utilizou os 15 minutos e não efetuou o pagamento, ele é categoricamente bloqueado
+    const planId = body.planId || searchParams.get('planId');
+    let isFreeWifi = false;
+    try {
+      const freeWifiRec = await prisma.systemConfig.findUnique({ where: { key: 'free_wifi_mode' } });
+      isFreeWifi = freeWifiRec?.value === 'true';
+    } catch (fwErr) {
+      console.warn('Erro ao checar free_wifi_mode:', fwErr);
+    }
+
+    if (!isFreeWifi && planId) {
+      try {
+        const leadSearchClauses: any[] = [];
+        if (rawCpf) leadSearchClauses.push({ cpf: rawCpf });
+        if (rawPhone) {
+          leadSearchClauses.push({ phone: rawPhone });
+          leadSearchClauses.push({ whatsappNumber: rawPhone });
+        }
+
+        if (leadSearchClauses.length > 0) {
+          const prevLead = await prisma.hotspotLead.findFirst({
+            where: { OR: leadSearchClauses },
+            include: { payments: true }
+          });
+
+          if (prevLead) {
+            const hasApproved = prevLead.payments.some((p: any) => p.status === 'approved');
+            const hasTrialUsed = Boolean(prevLead.trialGrantedAt) || Boolean(prevLead.trialBlocked);
+
+            if (hasTrialUsed && !hasApproved) {
+              logEvent('TRIAL_RETRY_PREVENTED', { leadId: prevLead.id, rawCpf, rawPhone, clientMac });
+
+              // Se o MAC for conhecido, bloqueia categoricamente no MikroTik e na Blacklist
+              if (clientMac) {
+                try {
+                  await prisma.blockedClient.upsert({
+                    where: { mac: clientMac },
+                    update: { active: true, reason: 'Tentativa de re-cadastro sem pagar carência anterior' },
+                    create: {
+                      mac: clientMac,
+                      cpf: rawCpf,
+                      phone: rawPhone,
+                      reason: 'Tentativa de re-cadastro sem pagar carência anterior'
+                    }
+                  });
+                  const activeRouter = await prisma.router.findFirst({ where: { active: true } });
+                  if (activeRouter) {
+                    const mk = new MikrotikAPI();
+                    if (await mk.connect(activeRouter.host, activeRouter.user, activeRouter.password, activeRouter.port)) {
+                      await mk.blockHotspotMac(clientMac, 'Bloqueado re-cadastro sem pagar').catch(() => null);
+                      mk.disconnect();
+                    }
+                  }
+                } catch (mkBlockErr) {
+                  console.warn('[Anti-Fraud] Erro ao aplicar bloqueio MikroTik:', mkBlockErr);
+                }
+              }
+
+              return createResponse({
+                success: false,
+                message: 'Você já utilizou sua carência de 15 minutos para este cadastro e o pagamento pendente não foi confirmado. Efetue o pagamento do plano pendente para restabelecer a navegação.'
+              }, isForm, 403);
+            }
+          }
+        }
+      } catch (antiFraudErr) {
+        console.warn('[Anti-Fraud] Erro ao verificar histórico de carência:', antiFraudErr);
+      }
+    }
+
     // 4. Save lead in Database
     let lead;
     try {
+      const isGrantingTrial = !isFreeWifi && Boolean(planId);
       lead = await prisma.hotspotLead.upsert({
         where: { hotspotUser },
         update: {
@@ -413,7 +511,8 @@ export async function POST(request: Request) {
           gender: gender || null,
           password: passwordStr,
           customFieldValue: customFieldValue || null,
-          optInCourses: isOptedIn
+          optInCourses: isOptedIn,
+          trialGrantedAt: isGrantingTrial ? new Date() : undefined,
         },
         create: {
           name: finalName,
@@ -426,7 +525,8 @@ export async function POST(request: Request) {
           password: passwordStr,
           customFieldValue: customFieldValue || null,
           optInCourses: isOptedIn,
-          hotspotUser
+          hotspotUser,
+          trialGrantedAt: isGrantingTrial ? new Date() : null,
         }
       });
       logEvent('DB_SAVE_SUCCESS', { leadId: lead.id, hotspotUser });
@@ -445,15 +545,6 @@ export async function POST(request: Request) {
     }
 
     // 4.5. Processar compra de plano Pix (se selecionado e se NÃO for modo Wi-Fi Gratuito)
-    let isFreeWifi = false;
-    try {
-      const freeWifiRec = await prisma.systemConfig.findUnique({ where: { key: 'free_wifi_mode' } });
-      isFreeWifi = freeWifiRec?.value === 'true';
-    } catch (fwErr) {
-      console.warn('Erro ao checar free_wifi_mode:', fwErr);
-    }
-
-    const planId = body.planId || searchParams.get('planId');
     let selectedPlan: any = null;
     let pixData: any = null;
 
@@ -510,7 +601,8 @@ export async function POST(request: Request) {
                   pixQrCodeBase64,
                   amount: selectedPlan.price,
                   profile: selectedPlan.profile,
-                  status: 'pending'
+                  status: 'pending',
+                  macAddress: clientMac || null
                 }
               });
               
@@ -545,7 +637,8 @@ export async function POST(request: Request) {
                   pixQrCodeBase64: '',
                   amount: selectedPlan.price,
                   profile: selectedPlan.profile,
-                  status: 'pending'
+                  status: 'pending',
+                  macAddress: clientMac || null
                 }
               });
             }
@@ -679,6 +772,7 @@ export async function POST(request: Request) {
                   officialNumbersSection = `\n\n🛡️ *Aviso de Segurança & Canais Oficiais:*\nNossa rede opera com múltiplos números autorizados de atendimento e recarga:\n${formattedList}\nAo renovar seu acesso, solicitar vouchers ou receber chaves PIX, as mensagens poderão ser enviadas por qualquer um destes canais oficiais acima.`;
                 }
 
+                const portalUrl = getMaskedPortalUrl('', request.headers.get('host'));
                 const rawTemplate = await getCustomTemplate(step.key);
                 const msgBody = applyTemplateTags(rawTemplate, {
                   cliente: finalName,
@@ -687,7 +781,7 @@ export async function POST(request: Request) {
                   cortesia: '15 minutos',
                   rede_wifi: wifiName,
                   canais_oficiais: officialNumbersSection,
-                  link_portal: `http://${portalDomain}/portal/planos`,
+                  link_portal: `${portalUrl}/portal/planos`,
                 });
 
                 const res = await whatsappService.sendWhatsAppMessage('admin', targetPhone, msgBody, {
@@ -726,10 +820,9 @@ export async function POST(request: Request) {
 
     const finalDst = config?.redirectUrl || linkOrig || 'https://www.google.com';
     
-    // Obter domínio mascarado MikroTik DNS para construir a URL do safari-bypass
-    const portalDomain = getMaskedPortalDomain(request.headers.get('host'));
-    const protocol = 'http'; // Forçar HTTP para evitar erros de HTTPS não configurado no roteador
-    const bypassUrl = `${protocol}://${portalDomain}/api/portal/safari-bypass?url=${encodeURIComponent(finalDst)}`;
+    // Obter URL do portal para construir a URL do safari-bypass
+    const portalUrl = getMaskedPortalUrl('', request.headers.get('host'));
+    const bypassUrl = `${portalUrl}/api/portal/safari-bypass?url=${encodeURIComponent(finalDst)}`;
 
     const userAgent = request.headers.get('user-agent') || '';
     return createResponse({ 

@@ -13,8 +13,20 @@ import WalledGardenStudioPanel from '@/components/portal/studio/panels/WalledGar
 import CssProStudioPanel from '@/components/portal/studio/panels/CssProStudioPanel';
 import ProvisioningStudioPanel from '@/components/portal/studio/panels/ProvisioningStudioPanel';
 import DeployStudioModal from '@/components/portal/studio/panels/DeployStudioModal';
+import MediaLibraryModal, { MediaFile } from '@/components/portal/studio/panels/MediaLibraryModal';
 import { BrandConfig } from '@/components/portal/DynamicLogoEditor';
 import { FieldsConfig } from '@/components/portal/RegistrationInspector';
+import { 
+  Eye, 
+  Sliders, 
+  Palette, 
+  KeyRound, 
+  FileSpreadsheet, 
+  Megaphone, 
+  Globe, 
+  Code2, 
+  Cpu 
+} from 'lucide-react';
 
 interface Colors {
   brand: string;
@@ -247,6 +259,12 @@ export default function PortalEditor() {
   const [viewportMode, setViewportMode] = useState<'mobile' | 'tablet' | 'desktop'>('mobile');
   const [previewZoom, setPreviewZoom] = useState(100);
 
+  // NavRail collapse state
+  const [isNavRailCollapsed, setIsNavRailCollapsed] = useState(false);
+
+  // Mobile View Mode: 'preview' (Canvas) vs 'editor' (Inspector)
+  const [mobileViewMode, setMobileViewMode] = useState<'preview' | 'editor'>('preview');
+
   // Router connection state
   const [isRouterConnected, setIsRouterConnected] = useState(true);
 
@@ -262,6 +280,52 @@ export default function PortalEditor() {
   const [logoUploadLoading, setLogoUploadLoading] = useState(false);
   const [bgUploadLoading, setBgUploadLoading] = useState(false);
   const [adUploadLoading, setAdUploadLoading] = useState(false);
+
+  // Media Library & VPS Quota Modal
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [mediaModalTarget, setMediaModalTarget] = useState<{
+    type: 'ad_single' | 'ad_slot' | 'bg' | 'logo' | 'general';
+    slot?: number;
+    title: string;
+  }>({ type: 'general', title: 'Gerenciador de Mídias' });
+
+  const handleOpenMediaPicker = (target: {
+    type: 'ad_single' | 'ad_slot' | 'bg' | 'logo' | 'general';
+    slot?: number;
+    title: string;
+  }) => {
+    setMediaModalTarget(target);
+    setIsMediaModalOpen(true);
+  };
+
+  const handleSelectMedia = (file: MediaFile) => {
+    if (mediaModalTarget.type === 'ad_single') {
+      setAd((prev: any) => ({
+        ...prev,
+        mediaUrl: file.url,
+        type: prev.type === 'carousel' ? 'carousel' : file.type
+      }));
+    } else if (mediaModalTarget.type === 'ad_slot' && mediaModalTarget.slot) {
+      const slot = mediaModalTarget.slot;
+      setAd((prev: any) => {
+        const items = Array.isArray(prev.items) ? [...prev.items] : [];
+        while (items.length < slot) items.push({ url: '', type: 'image', targetUrl: '' });
+        items[slot - 1] = {
+          url: file.url,
+          type: file.type,
+          targetUrl: items[slot - 1]?.targetUrl || ''
+        };
+        return { ...prev, items };
+      });
+    } else if (mediaModalTarget.type === 'bg') {
+      setBg({
+        type: file.type === 'video' ? 'video' : 'image',
+        url: file.url
+      });
+    } else if (mediaModalTarget.type === 'logo') {
+      setLogoPreviewUrl(file.url + '?t=' + Date.now());
+    }
+  };
 
   // Core settings states
   const [businessName, setBusinessName] = useState('Super Wi-Fi');
@@ -1021,7 +1085,7 @@ export default function PortalEditor() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-h-screen bg-slate-100 dark:bg-slate-950 overflow-hidden select-none">
+    <div className="flex flex-col h-[calc(100dvh-52px)] md:h-screen max-h-screen bg-slate-100 dark:bg-slate-950 overflow-hidden select-none relative">
       {/* 1. Top Bar */}
       <StudioTopBar
         businessName={businessName}
@@ -1045,32 +1109,71 @@ export default function PortalEditor() {
         template={template}
         setTemplate={setTemplate}
         availableTemplates={availableTemplates}
+        onOpenMediaLibrary={() => handleOpenMediaPicker({ type: 'general', title: 'Gerenciador de Mídias & Limpeza da VPS' })}
       />
 
       {/* 2. Workspace Body: Rail + Canvas + Inspector */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Left Navigation Rail */}
-        <StudioNavRail
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          hasRegistrationEnabled={enabled}
-        />
+        {/* Left Navigation Rail (Visível apenas em desktop md:) */}
+        <div className="hidden md:flex shrink-0">
+          <StudioNavRail
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            hasRegistrationEnabled={enabled}
+            isCollapsed={isNavRailCollapsed}
+            onToggleCollapse={() => setIsNavRailCollapsed(v => !v)}
+          />
+        </div>
 
-        {/* Center Live Canvas */}
-        <StudioCanvas
-          template={template}
-          viewportMode={viewportMode}
-          previewZoom={previewZoom}
-          previewScreen={previewScreen}
-          ad={ad}
-          showSimulatedAd={showSimulatedAd}
-          setShowSimulatedAd={setShowSimulatedAd}
-          onRefreshIframe={handleRefreshIframe}
-          onIframeLoad={broadcastLivePreview}
-        />
+        {/* Center Live Canvas (Visível sempre em desktop, e no mobile quando mobileViewMode === 'preview') */}
+        <div className={`flex-1 min-w-0 ${mobileViewMode === 'preview' ? 'flex' : 'hidden md:flex'}`}>
+          <StudioCanvas
+            template={template}
+            viewportMode={viewportMode}
+            previewZoom={previewZoom}
+            previewScreen={previewScreen}
+            ad={ad}
+            showSimulatedAd={showSimulatedAd}
+            setShowSimulatedAd={setShowSimulatedAd}
+            onRefreshIframe={handleRefreshIframe}
+            onIframeLoad={broadcastLivePreview}
+          />
+        </div>
 
-        {/* Right Contextual Inspector */}
-        <aside className="w-96 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shrink-0 overflow-hidden shadow-xs">
+        {/* Right Contextual Inspector (Visível sempre em desktop como sidebar, e no mobile quando mobileViewMode === 'editor' em tela cheia) */}
+        <aside className={`bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 flex flex-col shrink-0 overflow-hidden shadow-xs transition-all duration-200 ${
+          mobileViewMode === 'editor' ? 'flex flex-1 w-full pb-16 md:pb-0' : 'hidden md:flex w-80 xl:w-96'
+        }`}>
+          {/* Seletor Horizontal de Ferramentas no Mobile (< md) */}
+          <div className="md:hidden flex items-center gap-1.5 p-2 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 overflow-x-auto scrollbar-none shrink-0">
+            {[
+              { id: 'branding' as StudioTab, label: 'Estilo', icon: Palette },
+              { id: 'auth_methods' as StudioTab, label: 'Login', icon: KeyRound },
+              { id: 'leads_form' as StudioTab, label: 'Leads', icon: FileSpreadsheet },
+              { id: 'ads' as StudioTab, label: 'Mídias', icon: Megaphone },
+              { id: 'walled_garden' as StudioTab, label: 'Walled', icon: Globe },
+              { id: 'css_pro' as StudioTab, label: 'CSS', icon: Code2 },
+              { id: 'provisioning' as StudioTab, label: 'Provisionar', icon: Cpu },
+            ].map(tab => {
+              const Icon = tab.icon;
+              const isCurrent = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-all cursor-pointer ${
+                    isCurrent
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
           {activeTab === 'branding' && (
             <BrandingStudioPanel
               colors={colors}
@@ -1092,6 +1195,7 @@ export default function PortalEditor() {
               template={template}
               setTemplate={setTemplate}
               availableTemplates={availableTemplates}
+              onOpenMediaPicker={handleOpenMediaPicker}
             />
           )}
 
@@ -1151,6 +1255,7 @@ export default function PortalEditor() {
               onSlotClear={handleSlotClear}
               adUploadLoading={adUploadLoading}
               onPreviewAd={() => setShowSimulatedAd(true)}
+              onOpenMediaPicker={handleOpenMediaPicker}
             />
           )}
 
@@ -1195,6 +1300,34 @@ export default function PortalEditor() {
         </aside>
       </div>
 
+      {/* Floating Mobile Mode Switcher Bar (< md) */}
+      <div className="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-700/90 shadow-xl shadow-slate-900/15 dark:shadow-black/60 rounded-2xl p-1 flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setMobileViewMode('preview')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            mobileViewMode === 'preview'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Eye className="w-4 h-4" />
+          <span>Ver Portal</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileViewMode('editor')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            mobileViewMode === 'editor'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Sliders className="w-4 h-4" />
+          <span>Configurar</span>
+        </button>
+      </div>
+
       {/* 3. Deploy Dialog */}
       <DeployStudioModal
         isOpen={isDeployOpen}
@@ -1205,6 +1338,16 @@ export default function PortalEditor() {
         deploying={deploying}
         deployModalResult={deployModalResult}
         onDownloadZip={handleDownloadZip}
+      />
+
+      {/* 4. Media Library & VPS Storage Manager Modal */}
+      <MediaLibraryModal
+        isOpen={isMediaModalOpen}
+        onClose={() => setIsMediaModalOpen(false)}
+        onSelectMedia={handleSelectMedia}
+        targetTitle={mediaModalTarget.title}
+        targetType={mediaModalTarget.type}
+        template={template}
       />
     </div>
   );

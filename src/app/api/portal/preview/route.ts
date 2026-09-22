@@ -100,6 +100,9 @@ export async function GET(request: Request) {
       html = html.replace(/<script[^>]*>[\s\S]*?mgInitVideo[\s\S]*?<\/script>/gi, '');
     }
 
+    // Remove duplicate fonts.css if already present in template
+    html = html.replace(/<link\s+[^>]*href=["'](?:\/)?fonts\/fonts\.css["'][^>]*>/gi, '');
+
     // 2. Inject live styling hooks into <head> WITHOUT stripping the compiled effects/styles from login.html
     const fontsTags = `<link href="/fonts/fonts.css" rel="stylesheet">${initialRegHideStyle}<style id="mg-preview-ad-close-fix">#adCloseBtn, .ad-modal-close { display: flex !important; pointer-events: auto !important; cursor: pointer !important; z-index: 9999999 !important; }</style><style id="mg-live-injected-css"></style><style id="mg-live-studio-css"></style><style id="mg-live-colors-css"></style><style id="mg-live-bg-style"></style>`;
     if (html.includes('</head>')) {
@@ -108,11 +111,12 @@ export async function GET(request: Request) {
       html = fontsTags + html;
     }
 
-    // 3. Rewrite relative asset URLs (like logo.png, fonts/fonts.css, etc.)
+    // 3. Rewrite relative asset URLs (like logo.png, etc.)
     html = html.replace(
       /(src|href)="(?!https?:|\/\/|data:|javascript:|\/uploads\/|\/api\/|\/fonts\/)([^"]+)"/gi,
       (match, attr, filePath) => {
         if (filePath.startsWith('/')) return match;
+        if (filePath.startsWith('fonts/')) return `${attr}="/${filePath}"`;
         return `${attr}="/api/portal/asset?template=${encodeURIComponent(template)}&file=${encodeURIComponent(filePath)}"`;
       }
     );

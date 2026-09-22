@@ -111,7 +111,7 @@ export default function HotspotAuthStudioPanel({
           <KeyRound className="w-4 h-4 text-blue-600" />
           <span>Métodos de Autenticação do Hotspot</span>
         </h3>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
           Configure como os clientes irão se conectar ao Wi-Fi através do MikroTik.
         </p>
       </div>

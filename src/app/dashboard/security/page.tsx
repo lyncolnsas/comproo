@@ -268,7 +268,7 @@ export default function SecurityControl() {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded tracking-wider uppercase">
+            <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 px-2 py-0.5 rounded tracking-wider uppercase">
               Firewall & Acessos
             </span>
           </div>
@@ -282,13 +282,13 @@ export default function SecurityControl() {
       </header>
 
       {/* Tabs Menu */}
-      <div className="flex flex-wrap gap-2 bg-slate-100/80 border border-slate-200/80 p-1.5 rounded-xl w-fit shadow-xs">
+      <div className="flex flex-wrap gap-2 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 p-1.5 rounded-xl w-fit shadow-xs">
         <button
           onClick={() => setActiveTab('walled-garden')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
             activeTab === 'walled-garden'
               ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/60'
           }`}
         >
           🌐 Sites Walled Garden
@@ -298,7 +298,7 @@ export default function SecurityControl() {
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
             activeTab === 'time-block'
               ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/60'
           }`}
         >
           🕒 Bloqueio de Horário
@@ -308,7 +308,7 @@ export default function SecurityControl() {
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
             activeTab === 'keywords'
               ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/60'
           }`}
         >
           🚫 Palavras-Chave

@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { getNicheEffectMarkup } from '@/lib/niche-effects';
 import { getBrandEffectsStyles } from '@/lib/brand-effects-styles';
 import { getTemplatePaths, normalizeHtmlStructure } from '@/lib/portal-template-utils';
-import { getMaskedPortalDomain, getMaskedPortalUrl, isVpsMode } from '@/lib/domain';
+import { getMaskedPortalDomain, getMaskedPortalUrl, isVpsMode, getPublicDomain } from '@/lib/domain';
 
 const DEFAULT_HOTSPOT_DIR = path.join(process.cwd(), 'hotspot', 'default');
 
@@ -1340,8 +1340,8 @@ export async function GET(request: Request) {
       const fileContent = fs.readFileSync(CONFIG_PATH, 'utf8');
       const savedConfig = JSON.parse(fileContent);
       
-      // If the saved URL is empty, contains raw IP or localhost, update to masked domain
-      if (!savedConfig.systemUrl || /^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?/i.test(savedConfig.systemUrl) || savedConfig.systemUrl.includes('localhost')) {
+      // If the saved URL is empty, contains raw IP, localhost, or portal.wifi.local (in VPS mode), update to masked domain
+      if (!savedConfig.systemUrl || isVpsMode() || savedConfig.systemUrl.includes('portal.wifi.local') || /^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?/i.test(savedConfig.systemUrl) || savedConfig.systemUrl.includes('localhost')) {
         savedConfig.systemUrl = defaultPortalUrl;
       }
 
@@ -1412,6 +1412,11 @@ export async function POST(request: Request) {
     const { HOTSPOT_DIR, CONFIG_PATH, LOGIN_HTML_PATH } = getPaths(template);
     const safeName = template;
     
+    const defaultPortalUrl = getMaskedPortalUrl();
+    if (!newConfig.systemUrl || isVpsMode() || newConfig.systemUrl.includes('portal.wifi.local') || newConfig.systemUrl.includes('localhost') || /^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?/i.test(newConfig.systemUrl)) {
+      newConfig.systemUrl = defaultPortalUrl;
+    }
+
     // Save configuration
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(newConfig, null, 2), 'utf8');
 
@@ -1420,6 +1425,15 @@ export async function POST(request: Request) {
         where: { key: 'SYSTEM_URL' },
         update: { value: newConfig.systemUrl },
         create: { key: 'SYSTEM_URL', value: newConfig.systemUrl }
+      }).catch(() => null);
+    }
+
+    if (isVpsMode()) {
+      const publicDomain = getPublicDomain() || 'mikrogestor.com';
+      await prisma.systemConfig.upsert({
+        where: { key: 'HOTSPOT_DNS_NAME' },
+        update: { value: publicDomain },
+        create: { key: 'HOTSPOT_DNS_NAME', value: publicDomain }
       }).catch(() => null);
     }
 
@@ -2044,6 +2058,13 @@ ${newConfig.enabled !== false ? `.actions { display: grid !important; grid-templ
         } else {
            html += `\n<script>\n/* AdCarouselScript */\n${adJS}\n/* EndAdCarouselScript */\n</script>\n`;
         }
+      }
+
+      // Sanitize any remaining portal.wifi.local or local IPs in login.html
+      if (isVpsMode() || MG_SERVER_BASE.startsWith('http')) {
+        html = html.replace(/https?:\/\/portal\.wifi\.local(:\d+)?/gi, MG_SERVER_BASE);
+        html = html.replace(/https?:\/\/192\.168\.\d+\.\d+(:\d+)?/gi, MG_SERVER_BASE);
+        html = html.replace(/https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?/gi, MG_SERVER_BASE);
       }
 
       // Write changes back to login.html

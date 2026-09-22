@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { MikrotikAPI } from '@/lib/routeros';
 
 export const dynamic = 'force-dynamic';
 
@@ -144,13 +145,28 @@ export async function POST(request: Request) {
       },
     });
 
-    // Cookie path '/' so it is sent to all routes including /api/*
-    response.cookies.set('portal_session', lead.id, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24, // 24h
-    });
+    // Limpeza de regra temporária de WhatsApp (failsafe além do script nativo on-login do MikroTik)
+    (async () => {
+      try {
+        const lastPayment = await prisma.payment.findFirst({
+          where: { leadId: lead.id, macAddress: { not: null } },
+          orderBy: { createdAt: 'desc' }
+        });
+        const clientMac = lastPayment?.macAddress;
+        if (clientMac) {
+          const activeRouter = await prisma.router.findFirst({ where: { active: true } });
+          if (activeRouter) {
+            const mk = new MikrotikAPI();
+            if (await mk.connect(activeRouter.host, activeRouter.user, activeRouter.password, activeRouter.port)) {
+              await mk.removeTempWhatsAppAccess(clientMac);
+              mk.disconnect();
+            }
+          }
+        }
+      } catch (cleanErr) {
+        console.warn('[portal/customer/login] Erro na limpeza secundária de regra Temp WhatsApp:', cleanErr);
+      }
+    })();
 
     return response;
   } catch (error: any) {

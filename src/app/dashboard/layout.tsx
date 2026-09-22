@@ -71,17 +71,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  // Always default to light mode for visual consistency
+  // Load theme from localStorage and sync data-theme + dark class
   useEffect(() => {
-    setTheme('light');
-    document.documentElement.setAttribute('data-theme', 'light');
-    localStorage.setItem('mg-theme', 'light');
+    const saved = localStorage.getItem('mg-theme') as 'light' | 'dark' | null;
+    const initial = saved || 'light';
+    setTheme(initial);
+    document.documentElement.setAttribute('data-theme', initial);
+    document.documentElement.classList.toggle('dark', initial === 'dark');
   }, []);
 
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(nextTheme);
     document.documentElement.setAttribute('data-theme', nextTheme);
+    document.documentElement.classList.toggle('dark', nextTheme === 'dark');
     localStorage.setItem('mg-theme', nextTheme);
   };
 
@@ -143,10 +146,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Sidebar ──────────────────────────────────────────────── */}
       <aside
         className={[
-          'fixed inset-y-0 left-0 z-50 w-60 flex flex-col shrink-0',
+          'saas-sidebar fixed inset-y-0 left-0 z-50 w-60 flex flex-col shrink-0',
           'md:sticky md:top-0 md:h-screen md:translate-x-0',
           'transition-transform duration-300 ease-in-out',
-          'print:hidden bg-[#1a1d2e] border-r border-[#262a3d]',
+          'print:hidden border-r border-[#262a3d]',
           open ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
         ].join(' ')}
       >

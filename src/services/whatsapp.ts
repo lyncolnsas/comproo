@@ -10,7 +10,7 @@ import { spinText } from '@/utils/spintax';
 import { MetaAdapter } from './whatsapp-meta';
 import { BaileysAdapter } from './whatsapp-baileys';
 import type { IWhatsappAdapter } from './whatsapp-interface';
-import { getMaskedPortalDomain } from '@/lib/domain';
+import { getMaskedPortalDomain, getMaskedPortalUrl } from '@/lib/domain';
 
 interface ChatState {
   step: number;
@@ -542,9 +542,9 @@ class WhatsappSpecialist {
     this.chatStates.set(remoteJid, { step: 0, mac, token, tokenVerified: false });
     this.saveStates();
 
-    const portalDomain = getMaskedPortalDomain();
+    const portalUrl = getMaskedPortalUrl();
     await this.sendWhatsAppMessage(userId, remoteJid, spinText(
-      `{👋|🙌|✨|😃|🤖} {Olá|Oi|Opa|Seja bem-vindo|E aí}! Bem-vindo à nossa Wi-Fi.\n\n{Para liberar|Para acessar} seu acesso, {acesse|visite} {nossa página|nosso portal} de {cadastro|registro}:\nhttp://${portalDomain}/portal/register`
+      `{👋|🙌|✨|😃|🤖} {Olá|Oi|Opa|Seja bem-vindo|E aí}! Bem-vindo à nossa Wi-Fi.\n\n{Para liberar|Para acessar} seu acesso, {acesse|visite} {nossa página|nosso portal} de {cadastro|registro}:\n${portalUrl}/portal/register`
     ));
   }
 
@@ -583,11 +583,11 @@ class WhatsappSpecialist {
 
     // ── Passo Inicial (Cliente chamou no WhatsApp sem cadastro prévio) ──
     if (!state.step || state.step === 0) {
-      const portalDomain = getMaskedPortalDomain();
+      const portalUrl = getMaskedPortalUrl();
       await this.sendWhatsAppMessage('admin', remoteJid, spinText(
         `{👋|🙌|✨|😃|🤖} {Olá|Oi|Opa|Seja bem-vindo}! Bem-vindo ao atendimento automático da nossa Wi-Fi.\n\n` +
         `{Para liberar seu acesso à internet|Para acessar o portal de conexão}, visite:\n` +
-        `http://${portalDomain}/portal/register\n\n` +
+        `${portalUrl}/portal/register\n\n` +
         `Ou se deseja comprar um plano de acesso por aqui agora mesmo, responda informando seu *NOME*:`
       ));
       state.step = 1;

@@ -1,7 +1,7 @@
 {
   "businessName": " Hotspot VIP Super Fast",
   "message": "Seja bem-vindo ao Wi-Fi MikroGestor! Digite seu voucher.",
-  "systemUrl": "http://portal.wifi.local",
+  "systemUrl": "https://mikrogestor.com",
   "colors": {
     "brand": "#002B49",
     "brandDark": "#001726",
@@ -24,7 +24,7 @@
     "glassBlur": 14
   },
   "effects": {
-    "bgEffect": "fap-adventista",
+    "bgEffect": "fiber-optic",
     "bgEffectSpeed": "slow",
     "cardShape": "pill",
     "cardNoiseTexture": false,
@@ -130,7 +130,7 @@
     "url": ""
   },
   "ad": {
-    "type": "video",
+    "type": "none",
     "mediaUrl": "/uploads/ad_1789832309709.mp4",
     "targetUrl": "",
     "items": [

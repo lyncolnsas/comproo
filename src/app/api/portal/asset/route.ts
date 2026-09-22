@@ -81,6 +81,17 @@ export async function GET(request: Request) {
         });
       }
 
+      // Fallback para arquivos de fontes caso o template não possua a pasta local
+      if (lowerFile.endsWith('.woff2') || lowerFile.endsWith('.woff') || lowerFile.endsWith('.ttf')) {
+        const publicFontPath = path.join(process.cwd(), 'public', 'fonts', path.basename(file));
+        if (fs.existsSync(publicFontPath)) {
+          const buffer = fs.readFileSync(publicFontPath);
+          const ext = path.extname(publicFontPath).toLowerCase();
+          const mime = MIME[ext] || 'font/woff2';
+          return new NextResponse(buffer, { status: 200, headers: { 'Content-Type': mime, 'Cache-Control': 'public, max-age=31536000' } });
+        }
+      }
+
       // For any other missing image/media file, return transparent 1x1 SVG so onerror NEVER triggers in templates
       if (lowerFile.endsWith('.png') || lowerFile.endsWith('.jpg') || lowerFile.endsWith('.jpeg') || lowerFile.endsWith('.webp') || lowerFile.endsWith('.gif') || lowerFile.endsWith('.svg')) {
         const transparentSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>`;

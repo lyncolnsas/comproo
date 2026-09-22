@@ -303,9 +303,9 @@ export default function FinanceReport() {
     <main className="w-full p-4 md:p-6 space-y-6 animate-fade-in text-slate-800">
       {/* ── Pending Manual PIX Section ──────────────────────────────── */}
       {pendingPix.length > 0 && (
-        <section className="bg-amber-50/90 border border-amber-200 rounded-2xl p-6 shadow-sm mb-6">
+        <section className="bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-6 shadow-sm mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-xl bg-amber-100 text-amber-700">
+            <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
               </svg>
@@ -367,7 +367,7 @@ export default function FinanceReport() {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded tracking-wider uppercase">
+            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded tracking-wider uppercase">
               Auditoria Financeira
             </span>
           </div>

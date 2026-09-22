@@ -13,6 +13,8 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/api/portal/') || 
     path.startsWith('/api/webhook') ||
     path.startsWith('/uploads/') ||
+    path.startsWith('/fonts') ||
+    path === '/icon.png' ||
     (path.startsWith('/api/vpn/router/') && path.includes('/cert-file'));
   
   const token = request.cookies.get('system_auth')?.value;
@@ -52,5 +54,5 @@ export async function middleware(request: NextRequest) {
 
 // Configura quais rotas o middleware deve rodar
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon.png|fonts|uploads).*)'],
 };

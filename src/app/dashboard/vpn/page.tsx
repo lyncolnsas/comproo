@@ -1061,17 +1061,17 @@ export default function VpnPage() {
       {/* ── Metric Cards ─────────────────────────────────────────── */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Total Online na VPN", value: totalConnected, sub: `${connectedRouters} Roteador(es) · ${connectedPeers} Admin(s)`, color: "text-emerald-600", bg: "bg-emerald-50/70 border-emerald-200", dot: "bg-emerald-500" },
-          { label: "MikroTiks Conectados", value: vpnRouters.length, sub: "Túneis de controle ativos", color: "text-blue-600", bg: "bg-blue-50/70 border-blue-200", dot: "bg-blue-500" },
-          { label: "PCs e Celulares Admin", value: peers.length, sub: "Perfis com acesso Winbox", color: "text-indigo-600", bg: "bg-indigo-50/70 border-indigo-200", dot: "bg-indigo-500" },
+          { label: "Total Online na VPN", value: totalConnected, sub: `${connectedRouters} Roteador(es) · ${connectedPeers} Admin(s)`, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50/70 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/25", dot: "bg-emerald-500" },
+          { label: "MikroTiks Conectados", value: vpnRouters.length, sub: "Túneis de controle ativos", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50/70 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/25", dot: "bg-blue-500" },
+          { label: "PCs e Celulares Admin", value: peers.length, sub: "Perfis com acesso Winbox", color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50/70 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/25", dot: "bg-indigo-500" },
         ].map((s) => (
           <div key={s.label} className={`border rounded-3xl p-5 ${s.bg} flex items-center justify-between shadow-xs`}>
             <div>
-              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+              <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
                 {s.label}
               </span>
               <p className={`text-3xl font-black mt-1 ${s.color}`}>{s.value}</p>
-              <p className="text-[10px] text-slate-500 font-medium mt-0.5">{s.sub}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">{s.sub}</p>
             </div>
             <div className={`w-3 h-3 rounded-full ${s.dot} shadow-xs`} />
           </div>

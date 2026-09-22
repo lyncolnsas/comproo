@@ -208,7 +208,7 @@ export default function AdminSettings() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]" />
-            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/60 px-2 py-0.5 rounded">
               SYSTEM // HARDWARE ROUTERS & USERS CONFIG
             </span>
           </div>
@@ -247,9 +247,9 @@ export default function AdminSettings() {
             </div>
 
             {/* VPN Banner */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200/80 dark:border-blue-800/50 rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-blue-600/10 text-blue-600 flex items-center justify-center text-base shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-blue-600/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center text-base shrink-0">
                   🛡️
                 </div>
                 <div>
@@ -416,11 +416,11 @@ export default function AdminSettings() {
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3 min-w-0">
                 <div
-                  className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all duration-300"
-                  style={{
-                    background: freeWifiMode ? '#dcfce7' : '#f1f5f9',
-                    border: freeWifiMode ? '1px solid #86efac' : '1px solid #e2e8f0',
-                  }}
+                  className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-lg transition-all duration-300 border ${
+                    freeWifiMode
+                      ? 'bg-emerald-100 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800'
+                      : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                  }`}
                 >
                   {freeWifiMode ? '🎉' : '🎟️'}
                 </div>
@@ -498,7 +498,7 @@ export default function AdminSettings() {
                 type="number" 
                 value={maxUsers} 
                 onChange={(e) => setMaxUsers(e.target.value)} 
-                className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-blue-500 outline-none" 
+                className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs focus:bg-white dark:focus:bg-[#141d30] focus:border-blue-500 outline-none" 
                 placeholder="Ex: 50"
               />
               <button 
@@ -524,11 +524,11 @@ export default function AdminSettings() {
               <form onSubmit={handleUserUpdate} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Novo Usuário Admin</label>
-                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required placeholder="Ex: admin" className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-blue-500 outline-none" />
+                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required placeholder="Ex: admin" className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs focus:bg-white dark:focus:bg-[#141d30] focus:border-blue-500 outline-none" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nova Senha</label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl px-3 py-2 text-xs focus:bg-white focus:border-blue-500 outline-none" />
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs focus:bg-white dark:focus:bg-[#141d30] focus:border-blue-500 outline-none" />
                 </div>
                 <button type="submit" disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50">
                   {saving ? 'Salvando...' : 'Salvar Credenciais'}

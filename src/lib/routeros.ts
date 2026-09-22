@@ -375,6 +375,26 @@ export class MikrotikAPI {
         const clean = rawHost.replace(/^\*+|\*+$/g, '').trim().toLowerCase();
         if (!clean) continue;
 
+        // Expurgar domínios externos que não pertencem à infraestrutura da plataforma
+        const comment = (item.comment || '').toLowerCase();
+        const isExternal =
+          clean.includes('mercadopago') ||
+          clean.includes('mercadolivre') ||
+          clean.includes('mercadolibre') ||
+          clean.includes('whatsapp') ||
+          clean.includes('googleapis') ||
+          clean.includes('gstatic') ||
+          comment.includes('integracao') ||
+          comment.includes('mercadolivre') ||
+          comment.includes('mercadopago') ||
+          comment.includes('whatsapp');
+
+        if (isExternal) {
+          const id = item['.id'] || item.id;
+          if (id) await wgMenu.remove(id).catch(() => null);
+          continue;
+        }
+
         if (seenHosts.has(clean)) {
           const id = item['.id'] || item.id;
           if (id) await wgMenu.remove(id).catch(() => null);
@@ -395,11 +415,30 @@ export class MikrotikAPI {
       for (const item of listIp) {
         const id = item['.id'] || item.id;
         if (!id) continue;
-        const hostVal = item.dstHost || item['dst-host'] || '';
+        const hostVal = (item.dstHost || item['dst-host'] || '').toLowerCase();
         const addrVal = item.dstAddress || item['dst-address'] || '';
+        const comment = (item.comment || '').toLowerCase();
 
         // Regra inválida ou com asterisco (não suportado em IP no ROS v7)
         if (item.invalid === true || item.invalid === 'true' || hostVal.includes('*')) {
+          await wgIpMenu.remove(id).catch(() => null);
+          continue;
+        }
+
+        // Expurgar domínios externos que não pertencem à infraestrutura da plataforma
+        const isExternal =
+          hostVal.includes('mercadopago') ||
+          hostVal.includes('mercadolivre') ||
+          hostVal.includes('mercadolibre') ||
+          hostVal.includes('whatsapp') ||
+          hostVal.includes('googleapis') ||
+          hostVal.includes('gstatic') ||
+          comment.includes('integracao') ||
+          comment.includes('mercadolivre') ||
+          comment.includes('mercadopago') ||
+          comment.includes('whatsapp');
+
+        if (isExternal) {
           await wgIpMenu.remove(id).catch(() => null);
           continue;
         }
@@ -451,7 +490,8 @@ export class MikrotikAPI {
 
   /**
    * Configuração completa, segura e 100% idempotente de Walled Garden no MikroTik.
-   * Evita repetições, remove duplicatas e garante acesso irrestrito ao portal e gateways.
+   * Evita repetições, remove duplicatas e garante acesso irrestrito EXCLUSIVAMENTE
+   * ao domínio da plataforma e IP da VPS (removendo plataformas externas).
    */
   async ensureWalledGardenRules(opts?: {
     mode?: 'local' | 'vps';
@@ -465,7 +505,7 @@ export class MikrotikAPI {
     const subdomain = (opts?.subdomain || '').replace(/^\*+|\*+$/g, '').trim();
     const adminIp = opts?.adminIp || '';
 
-    // 1. Executa limpeza e deduplicação profunda primeiro
+    // 1. Executa limpeza, remoção de externos e deduplicação profunda primeiro
     await this.cleanupAndDeduplicateWalledGarden({ isVps });
 
     if (!isVps) {
@@ -502,29 +542,295 @@ export class MikrotikAPI {
       const VPN_SERVER_IP = process.env.VPN_SERVER_IP || '10.8.0.1';
       await this.addWalledGardenIp('accept', VPN_SERVER_IP, 'IP VPN Servidor');
 
-      // 5. Integrações Essenciais (Mercado Pago, WhatsApp, Google Fonts)
-      const essentialDomains = [
-        'mercadopago.com',
-        'www.mercadopago.com',
-        'mercadopago.com.br',
-        'www.mercadopago.com.br',
-        'api.mercadopago.com',
-        'api.mercadolibre.com',
-        'mercadolivre.com.br',
-        'www.mercadolivre.com.br',
-        'whatsapp.com',
-        'web.whatsapp.com',
-        'api.whatsapp.com',
-        'whatsapp.net',
-        'fonts.googleapis.com',
-        'fonts.gstatic.com',
-      ];
+      // OBS: Domínios externos como WhatsApp, Google e Mercado Pago foram intencionalmente
+      // removidos do Walled Garden para evitar uso indevido da rede, pois o cliente já recebe
+      // 15 minutos de navegação completa para efetuar o pagamento.
+    }
+  }
 
-      for (const d of essentialDomains) {
-        await this.addWalledGarden('allow', d, `Integracao ${d}`);
-        await this.addWalledGardenIp('accept', d, `Integracao ${d} (HTTPS)`);
+  // --- ANTI-TETHERING (BLOQUEIO CONTRA COMPARTILHAMENTO) --- //
+
+  /**
+   * Garante a regra de Mangle com TTL=1 no MikroTik para impedir que clientes compartilhem
+   * o acesso Wi-Fi via Roteador Wi-Fi (Tethering), Bluetooth ou USB.
+   * Quando o pacote chega ao celular com TTL=1, o celular consome o pacote normalmente,
+   * mas se tentar repassar para outro dispositivo, o TTL é decrementado para 0 e descartado.
+   */
+  async ensureAntiTetheringRule(bridgeName: string = 'bridge'): Promise<{ status: string; id?: string }> {
+    if (!this.client) throw new Error('Not connected');
+    try {
+      const mangleMenu = this.client.menu('/ip/firewall/mangle');
+      const rules = ((await mangleMenu.get()) as any[]) || [];
+      const existing = rules.find(
+        (r: any) =>
+          r.comment &&
+          r.comment.includes('Anti-Tethering') &&
+          (r['out-interface'] === bridgeName || !r['out-interface'])
+      );
+
+      if (existing) {
+        if (existing.disabled === 'true' || existing.disabled === 'yes') {
+          const eid = existing['.id'] || existing.id;
+          await mangleMenu.update({ '.id': eid, disabled: 'no' });
+          return { status: 'enabled', id: eid };
+        }
+        return { status: 'already_exists', id: existing['.id'] || existing.id };
+      }
+
+      // Adiciona a regra de Mangle postrouting change-ttl set:1
+      const res = await mangleMenu.add({
+        chain: 'postrouting',
+        action: 'change-ttl',
+        'new-ttl': 'set:1',
+        'out-interface': bridgeName,
+        comment: 'MikroGestor: Anti-Tethering (Bloqueio Compartilhamento)',
+        passthrough: 'yes',
+      });
+
+      return { status: 'created', id: res?.id || res?.['.id'] };
+    } catch (err: any) {
+      console.warn('[Anti-Tethering] Erro ao configurar regra Mangle:', err);
+      throw err;
+    }
+  }
+
+  // --- BLOQUEIO DE CAMADA 2 (IP BINDING BLOCKED) --- //
+
+  /**
+   * Bloqueia categoricamente um endereço MAC no MikroTik via IP-Binding type=blocked.
+   * Remove a sessão ativa imediatamente e derruba qualquer tentativa de acesso,
+   * mesmo se o usuário esquecer a rede e reconectar.
+   */
+  async blockHotspotMac(macAddress: string, comment: string = 'Bloqueado por inadimplencia'): Promise<any> {
+    if (!this.client) throw new Error('Not connected');
+    const cleanMac = macAddress.trim().toUpperCase();
+    if (!cleanMac) throw new Error('MAC Address inválido para bloqueio.');
+
+    // 1. Derruba qualquer sessão ativa deste MAC
+    await this.removeHotspotActiveByMac(cleanMac).catch(() => null);
+
+    // 2. Procura e remove bindings existentes (ex: bypassed antigos)
+    const bindingMenu = this.client.menu('/ip/hotspot/ip-binding');
+    const existing = ((await bindingMenu.where('mac-address', cleanMac).get()) as any[]) || [];
+
+    for (const b of existing) {
+      const bid = b['.id'] || b.id;
+      if (b.type === 'blocked') {
+        return b; // Já está bloqueado
+      }
+      if (bid) await bindingMenu.remove(bid).catch(() => null);
+    }
+
+    // 3. Adiciona regra categórica de bloqueio
+    return await bindingMenu.add({
+      'mac-address': cleanMac,
+      type: 'blocked',
+      comment: `MikroGestor: ${comment}`.substring(0, 100),
+    });
+  }
+
+  /**
+   * Desbloqueia um endereço MAC no MikroTik removendo a regra de IP-Binding blocked.
+   */
+  async unblockHotspotMac(macAddress: string): Promise<boolean> {
+    if (!this.client) throw new Error('Not connected');
+    const cleanMac = macAddress.trim().toUpperCase();
+    if (!cleanMac) return false;
+
+    const bindingMenu = this.client.menu('/ip/hotspot/ip-binding');
+    const existing = ((await bindingMenu.where('mac-address', cleanMac).get()) as any[]) || [];
+    let removed = false;
+
+    for (const b of existing) {
+      const bid = b['.id'] || b.id;
+      if (bid) {
+        await bindingMenu.remove(bid).catch(() => null);
+        removed = true;
       }
     }
+    return removed;
+  }
+
+  // --- ACESSO TEMPORÁRIO CIRÚRGICO AO WHATSAPP PÓS-PAGAMENTO --- //
+
+  /**
+   * Localiza o IP atual do cliente no MikroTik a partir do seu endereço MAC.
+   * Varre /ip/hotspot/host, /ip/dhcp-server/lease e /ip/arp.
+   */
+  async getClientIpByMac(mac: string): Promise<string | null> {
+    if (!this.client) throw new Error('Not connected');
+    const cleanMac = mac.trim().toUpperCase();
+    if (!cleanMac) return null;
+
+    // 1. Tenta encontrar no /ip/hotspot/host
+    try {
+      const hosts = ((await this.client.menu('/ip/hotspot/host').get()) as any[]) || [];
+      const found = hosts.find((h: any) => {
+        const hMac = (h.macAddress || h['mac-address'] || '').toUpperCase();
+        return hMac === cleanMac;
+      });
+      if (found?.address) return found.address;
+    } catch (e) {
+      console.warn('[getClientIpByMac] Erro em /ip/hotspot/host:', e);
+    }
+
+    // 2. Tenta encontrar no /ip/dhcp-server/lease
+    try {
+      const leases = ((await this.client.menu('/ip/dhcp-server/lease').get()) as any[]) || [];
+      const found = leases.find((l: any) => {
+        const lMac = (l.macAddress || l['mac-address'] || '').toUpperCase();
+        return lMac === cleanMac;
+      });
+      if (found?.address) return found.address;
+    } catch (e) {
+      console.warn('[getClientIpByMac] Erro em /ip/dhcp-server/lease:', e);
+    }
+
+    // 3. Tenta encontrar no /ip/arp
+    try {
+      const arps = ((await this.client.menu('/ip/arp').get()) as any[]) || [];
+      const found = arps.find((a: any) => {
+        const aMac = (a.macAddress || a['mac-address'] || '').toUpperCase();
+        return aMac === cleanMac;
+      });
+      if (found?.address) return found.address;
+    } catch (e) {
+      console.warn('[getClientIpByMac] Erro em /ip/arp:', e);
+    }
+
+    return null;
+  }
+
+  /**
+   * Libera temporariamente o tráfego do WhatsApp EXCLUSIVAMENTE para o IP deste cliente.
+   * Garante que o cliente receba a notificação com Usuário e Senha pelo WhatsApp no celular
+   * antes de efetuar o login formal no Hotspot.
+   * Não libera nenhum outro site ou serviço geral.
+   */
+  async addTempWhatsAppAccess(clientIp: string, mac: string): Promise<void> {
+    if (!this.client) throw new Error('Not connected');
+    const cleanIp = clientIp.trim();
+    const cleanMac = mac.trim().toUpperCase();
+    if (!cleanIp) return;
+
+    const commentTag = `MikroGestor: Temp WhatsApp ${cleanIp} - ${cleanMac}`;
+
+    // 1. Regra no Firewall Filter (portas nativas do protocolo de mensagens WhatsApp)
+    try {
+      const filterMenu = this.client.menu('/ip/firewall/filter');
+      const existingFilter = ((await filterMenu.where('comment', commentTag).get()) as any[]) || [];
+      if (existingFilter.length === 0) {
+        await filterMenu.add({
+          chain: 'forward',
+          action: 'accept',
+          'src-address': cleanIp,
+          protocol: 'tcp',
+          'dst-port': '5222,5223,5228,4244',
+          comment: commentTag,
+        });
+      }
+    } catch (err) {
+      console.warn('[addTempWhatsAppAccess] Erro ao adicionar filter rule:', err);
+    }
+
+    // 2. Regras no Walled Garden IP (HTTPS porta 443 para WhatsApp)
+    try {
+      const wgIpMenu = this.client.menu('/ip/hotspot/walled-garden/ip');
+      const waHosts = ['whatsapp.net', 'whatsapp.com', 'web.whatsapp.com', 'api.whatsapp.com'];
+      for (const d of waHosts) {
+        const existing = ((await wgIpMenu.where('src-address', cleanIp).where('dst-host', d).get()) as any[]) || [];
+        if (existing.length === 0) {
+          await wgIpMenu.add({
+            action: 'accept',
+            'src-address': cleanIp,
+            'dst-host': d,
+            comment: commentTag,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('[addTempWhatsAppAccess] Erro ao adicionar WG IP rule:', err);
+    }
+
+    // 3. Regra no Walled Garden HTTP
+    try {
+      const wgMenu = this.client.menu('/ip/hotspot/walled-garden');
+      const existingWg = ((await wgMenu.where('src-address', cleanIp).where('dst-host', '*whatsapp*').get()) as any[]) || [];
+      if (existingWg.length === 0) {
+        await wgMenu.add({
+          action: 'allow',
+          'src-address': cleanIp,
+          'dst-host': '*whatsapp*',
+          comment: commentTag,
+        });
+      }
+    } catch (err) {
+      console.warn('[addTempWhatsAppAccess] Erro ao adicionar WG HTTP rule:', err);
+    }
+  }
+
+  /**
+   * Deleta todas as regras temporárias de firewall criadas para um cliente (por IP ou MAC).
+   * Chamado automaticamente pelo MikroTik on-login ou pelo backend.
+   */
+  async removeTempWhatsAppAccess(clientIpOrMac: string): Promise<number> {
+    if (!this.client) throw new Error('Not connected');
+    const term = clientIpOrMac.trim();
+    if (!term) return 0;
+    let count = 0;
+
+    // 1. Limpa de /ip/firewall/filter
+    try {
+      const filterMenu = this.client.menu('/ip/firewall/filter');
+      const filters = ((await filterMenu.get()) as any[]) || [];
+      for (const f of filters) {
+        if (f.comment && f.comment.includes('Temp WhatsApp') && f.comment.includes(term)) {
+          const fid = f['.id'] || f.id;
+          if (fid) {
+            await filterMenu.remove(fid).catch(() => null);
+            count++;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[removeTempWhatsAppAccess] Erro ao remover do filter:', e);
+    }
+
+    // 2. Limpa de /ip/hotspot/walled-garden/ip
+    try {
+      const wgIpMenu = this.client.menu('/ip/hotspot/walled-garden/ip');
+      const wgIps = ((await wgIpMenu.get()) as any[]) || [];
+      for (const w of wgIps) {
+        if (w.comment && w.comment.includes('Temp WhatsApp') && w.comment.includes(term)) {
+          const wid = w['.id'] || w.id;
+          if (wid) {
+            await wgIpMenu.remove(wid).catch(() => null);
+            count++;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[removeTempWhatsAppAccess] Erro ao remover de WG IP:', e);
+    }
+
+    // 3. Limpa de /ip/hotspot/walled-garden
+    try {
+      const wgMenu = this.client.menu('/ip/hotspot/walled-garden');
+      const wgs = ((await wgMenu.get()) as any[]) || [];
+      for (const w of wgs) {
+        if (w.comment && w.comment.includes('Temp WhatsApp') && w.comment.includes(term)) {
+          const wid = w['.id'] || w.id;
+          if (wid) {
+            await wgMenu.remove(wid).catch(() => null);
+            count++;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[removeTempWhatsAppAccess] Erro ao remover de WG HTTP:', e);
+    }
+
+    return count;
   }
 
   async setTimeBlockRule(startTime: string, endTime: string, days: string, comment: string) {
@@ -1196,12 +1502,14 @@ export class MikrotikAPI {
     rateLimit?: string;
     sessionTimeout?: string;
     sharedUsers?: string;
+    onLogin?: string;
   }) {
     if (!this.client) throw new Error('Not connected');
     const params: any = { name: profile.name };
     if (profile.rateLimit) params['rate-limit'] = profile.rateLimit;
     if (profile.sessionTimeout) params['session-timeout'] = profile.sessionTimeout;
     if (profile.sharedUsers) params['shared-users'] = profile.sharedUsers;
+    if (profile.onLogin) params['on-login'] = profile.onLogin;
     return await this.client.menu('/ip/hotspot/user/profile').add(params);
   }
 

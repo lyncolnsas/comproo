@@ -11,7 +11,8 @@ import {
   Sliders, 
   AlertTriangle,
   Type,
-  ShieldCheck
+  ShieldCheck,
+  FolderOpen
 } from 'lucide-react';
 import { BrandConfig } from '@/components/portal/DynamicLogoEditor';
 
@@ -55,6 +56,7 @@ interface BrandingStudioPanelProps {
   template?: string;
   setTemplate?: (t: string) => void;
   availableTemplates?: string[];
+  onOpenMediaPicker?: (target: { type: 'bg' | 'logo'; title: string }) => void;
 }
 
 export default function BrandingStudioPanel({
@@ -77,6 +79,7 @@ export default function BrandingStudioPanel({
   template = 'default',
   setTemplate,
   availableTemplates = ['default', 'FAP'],
+  onOpenMediaPicker,
 }: BrandingStudioPanelProps) {
   const [activeSubTab, setActiveSubTab] = useState<'presets' | 'palette' | 'logo' | 'background'>('presets');
 
@@ -87,7 +90,7 @@ export default function BrandingStudioPanel({
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 overflow-y-auto p-4 space-y-5 select-none">
       {/* Subtabs for Branding */}
-      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200 dark:border-slate-700/70">
         {[
           { id: 'presets', label: 'Temas Prontos' },
           { id: 'palette', label: 'Cores & Contraste' },
@@ -100,8 +103,8 @@ export default function BrandingStudioPanel({
             onClick={() => setActiveSubTab(sub.id as any)}
             className={`flex-1 text-xs font-semibold py-1.5 px-2 rounded-lg transition-all cursor-pointer text-center ${
               activeSubTab === sub.id
-                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-bold'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-xs font-bold'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             {sub.label}
@@ -116,10 +119,10 @@ export default function BrandingStudioPanel({
           {setTemplate && availableTemplates && availableTemplates.length > 0 && (
             <div className="space-y-2 pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   Modelos de Hotspot (Presets)
                 </h3>
-                <span className="text-[10px] text-slate-400">Selecione o modelo</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">Selecione o modelo</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {availableTemplates.map((t) => {
@@ -132,8 +135,8 @@ export default function BrandingStudioPanel({
                       onClick={() => setTemplate(t)}
                       className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                         isCur
-                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-2 ring-blue-500/20 shadow-xs'
-                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-700'
+                          ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/60 ring-2 ring-blue-500/20 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/60 hover:border-slate-300 dark:hover:border-slate-600'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
@@ -147,7 +150,7 @@ export default function BrandingStudioPanel({
                       <div className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                         {isFap ? 'FAP Oficial' : 'Padrão Pro'}
                       </div>
-                      <div className="text-[10px] text-slate-400 dark:text-slate-500 line-clamp-1">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-300 line-clamp-1">
                         {isFap ? 'Faculdade Adventista' : 'Modelo Moderno'}
                       </div>
                     </button>
@@ -158,10 +161,10 @@ export default function BrandingStudioPanel({
           )}
 
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
               Paletas de Cores de Alta Performance
             </h3>
-            <span className="text-[10px] text-slate-400">Clique para aplicar</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">Clique para aplicar</span>
           </div>
 
           <div className="grid grid-cols-1 gap-2.5">
@@ -174,8 +177,8 @@ export default function BrandingStudioPanel({
                   onClick={() => setColors((prev: any) => ({ ...prev, ...preset.colors }))}
                   className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer group ${
                     isSelected
-                      ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-blue-500/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700'
+                      ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/50 ring-2 ring-blue-500/30 shadow-xs'
+                      : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/60 hover:border-slate-300 dark:hover:border-slate-600'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -191,7 +194,7 @@ export default function BrandingStudioPanel({
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-300 line-clamp-1">
                         {preset.desc}
                       </p>
                     </div>
@@ -291,11 +294,22 @@ export default function BrandingStudioPanel({
             <div className="flex-1">
               <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Logotipo Atual</h4>
               <p className="text-[11px] text-slate-500 mb-2">Suporte a PNG, JPG ou SVG com fundo transparente</p>
-              <label className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs">
-                <Upload className="w-3.5 h-3.5" />
-                <span>{logoUploadLoading ? 'Enviando...' : 'Substituir Logo'}</span>
-                <input type="file" accept="image/*" onChange={onLogoUpload} className="hidden" disabled={logoUploadLoading} />
-              </label>
+              {onOpenMediaPicker ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenMediaPicker({ type: 'logo', title: 'Selecionar Logotipo da Galeria' })}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  <span>Escolher da Galeria / Enviar</span>
+                </button>
+              ) : (
+                <label className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-xs">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{logoUploadLoading ? 'Enviando...' : 'Substituir Logo'}</span>
+                  <input type="file" accept="image/*" onChange={onLogoUpload} className="hidden" disabled={logoUploadLoading} />
+                </label>
+              )}
             </div>
           </div>
 
@@ -345,36 +359,62 @@ export default function BrandingStudioPanel({
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Mídia de Fundo Personalizada</h4>
               {bg.type !== 'default' && bg.url && (
-                <button
-                  type="button"
-                  onClick={onBgRemove}
-                  className="text-[10px] text-red-600 hover:text-red-700 font-bold cursor-pointer"
-                >
-                  Remover Mídia
-                </button>
+                <div className="flex items-center gap-2">
+                  {onOpenMediaPicker && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenMediaPicker({ type: 'bg', title: 'Trocar Plano de Fundo da Galeria' })}
+                      className="text-[10px] text-blue-600 hover:text-blue-700 font-bold cursor-pointer"
+                    >
+                      Trocar Fundo
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onBgRemove}
+                    className="text-[10px] text-red-600 hover:text-red-700 font-bold cursor-pointer"
+                  >
+                    Remover Mídia
+                  </button>
+                </div>
               )}
             </div>
 
-            <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 rounded-xl cursor-pointer bg-white dark:bg-slate-900 transition-all text-center">
-              <Upload className="w-5 h-5 text-blue-600 mb-1" />
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                {bgUploadLoading ? 'Processando envio...' : 'Enviar Imagem ou Vídeo'}
-              </span>
-              <span className="text-[10px] text-slate-500 mt-0.5">
-                Fotos até 10MB ou vídeos MP4 até 35MB
-              </span>
-              <input
-                type="file"
-                accept="image/*,video/mp4,video/webm"
-                onChange={onBgUpload}
-                disabled={bgUploadLoading}
-                className="hidden"
-              />
-            </label>
+            {onOpenMediaPicker ? (
+              <div 
+                onClick={() => onOpenMediaPicker({ type: 'bg', title: 'Selecionar Plano de Fundo da Galeria' })}
+                className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 rounded-xl cursor-pointer bg-white dark:bg-slate-900 transition-all text-center group"
+              >
+                <FolderOpen className="w-6 h-6 text-blue-600 mb-1 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Escolher da Galeria ou Enviar Novo Fundo
+                </span>
+                <span className="text-[10px] text-slate-500 mt-0.5">
+                  Fotos até 10MB ou vídeos MP4 até 35MB
+                </span>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 rounded-xl cursor-pointer bg-white dark:bg-slate-900 transition-all text-center">
+                <Upload className="w-5 h-5 text-blue-600 mb-1" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  {bgUploadLoading ? 'Processando envio...' : 'Enviar Imagem ou Vídeo'}
+                </span>
+                <span className="text-[10px] text-slate-500 mt-0.5">
+                  Fotos até 10MB ou vídeos MP4 até 35MB
+                </span>
+                <input
+                  type="file"
+                  accept="image/*,video/mp4,video/webm"
+                  onChange={onBgUpload}
+                  disabled={bgUploadLoading}
+                  className="hidden"
+                />
+              </label>
+            )}
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
               Efeitos de Fundo Dinâmicos (Nicho)
             </h4>
             <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
@@ -387,15 +427,15 @@ export default function BrandingStudioPanel({
                     onClick={() => setEffects((prev: any) => ({ ...prev, bgEffect: ef.id }))}
                     className={`p-2 rounded-xl border text-left cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200'
-                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                        ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/60 text-blue-800 dark:text-blue-200 ring-2 ring-blue-500/20'
+                        : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
                     }`}
                   >
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="text-sm">{ef.icon}</span>
                       <span className="text-[11px] font-bold truncate">{ef.name}</span>
                     </div>
-                    <span className="text-[9px] text-slate-500 block truncate">{ef.niche}</span>
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 block truncate">{ef.niche}</span>
                   </button>
                 );
               })}

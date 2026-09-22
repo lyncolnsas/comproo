@@ -363,6 +363,7 @@ export async function POST(request: Request) {
     { name: 'hs_server',     label: '[ HOTSPOT ] Servidor Hotspot',                            status: 'pending', message: '' },
     { name: 'user_profile',  label: '[ PERFIL ] Perfil de Usuário Padrão',                   status: 'pending', message: '' },
     { name: 'walled_garden', label: '[ SEGURANÇA ] Walled Garden & SSL Bypass',                status: 'pending', message: '' },
+    { name: 'anti_tethering', label: '[ FIREWALL ] Bloqueio contra Compartilhamento (TTL=1)',  status: 'pending', message: '' },
     { name: 'nat',           label: '[ NAT ] NAT Masquerade via WAN',                      status: 'pending', message: '' },
     { name: 'update_media_urls', label: '[ MÍDIA ] Atualizar IP do Servidor nos Templates', status: 'pending', message: '' },
     { name: 'provision_signature', label: '[ LOG ] Gravar Assinatura MikroGestor',        status: 'pending', message: '' },
@@ -727,14 +728,29 @@ export async function POST(request: Request) {
       try {
         const userProfiles = await mk.getHotspotProfiles().catch(() => []) as any[];
         const existing = userProfiles.find((p: any) => p.name === 'default');
+        const onLoginCleanScript = '/ip firewall filter remove [find comment~("Temp WhatsApp.*" . $"mac-address")]; /ip hotspot walled-garden ip remove [find comment~("Temp WhatsApp.*" . $"mac-address")]; /ip hotspot walled-garden remove [find comment~("Temp WhatsApp.*" . $"mac-address")]';
+
         if (!existing) {
-          await mk.addHotspotUserProfile({ name: 'default', rateLimit: '5M/5M', sessionTimeout: '1d', sharedUsers: '1' });
-          ok('user_profile', 'Perfil "default" criado: 5M/5M, 1 dia, 1 dispositivo.');
-        } else if (existing.disabled === 'true' || existing.disabled === 'yes') {
-          await (mk as any).client?.menu('/ip/hotspot/user/profile').where('.id', existing.id).update({ disabled: 'no' });
-          ok('user_profile', 'Perfil "default" encontrado (desabilitado) — habilitado.');
+          await mk.addHotspotUserProfile({
+            name: 'default',
+            rateLimit: '5M/5M',
+            sessionTimeout: '1d',
+            sharedUsers: '1',
+            onLogin: onLoginCleanScript
+          });
+          ok('user_profile', 'Perfil "default" criado: 5M/5M, 1 dia, 1 dispositivo, auto-limpeza de WhatsApp no login.');
         } else {
-          skip('user_profile', `Perfil "default" já existe${existing['rate-limit'] ? `: ${existing['rate-limit']}` : ''}.`);
+          const updateParams: any = {};
+          if (existing.disabled === 'true' || existing.disabled === 'yes') updateParams.disabled = 'no';
+          if (existing['shared-users'] !== '1') updateParams['shared-users'] = '1';
+          if (existing['on-login'] !== onLoginCleanScript) updateParams['on-login'] = onLoginCleanScript;
+
+          if (Object.keys(updateParams).length > 0) {
+            await (mk as any).client?.menu('/ip/hotspot/user/profile').where('.id', existing.id).update(updateParams);
+            ok('user_profile', 'Perfil "default" atualizado: 1 dispositivo, auto-limpeza de WhatsApp no login.');
+          } else {
+            skip('user_profile', `Perfil "default" já ativo com auto-limpeza de regras temporárias.`);
+          }
         }
       } catch (e: any) { warn('user_profile', e?.message || String(e)); }
 
@@ -751,6 +767,14 @@ export async function POST(request: Request) {
       } catch (e: any) {
         warn('walled_garden', `Walled Garden: ${e?.message || e}`);
       }
+
+      // Passo 9.2: Bloqueio contra Compartilhamento (Anti-Tethering Mangle TTL=1)
+      try {
+        const antiTetherRes = await mk.ensureAntiTetheringRule(BRIDGE);
+        ok('anti_tethering', `Anti-Tethering ativo na interface "${BRIDGE}" (Mangle TTL=1: ${antiTetherRes.status}).`);
+      } catch (e: any) {
+        warn('anti_tethering', `Anti-Tethering: ${e?.message || e}`);
+      }
     }
 
     // Passo 10: NAT Masquerade (Bypass)
@@ -763,7 +787,10 @@ export async function POST(request: Request) {
     // MODO VPS:   usa https://domínio_público — NUNCA IP interno Docker
     try {
       const reqHost = request.headers.get('host');
-      const serverBaseUrl = getMaskedPortalUrl('', reqHost);
+      let serverBaseUrl = getMaskedPortalUrl('', reqHost);
+      if (deployMode === 'vps' || serverBaseUrl.includes('portal.wifi.local')) {
+        serverBaseUrl = getMaskedPortalUrl();
+      }
       await prisma.systemConfig.upsert({
         where: { key: 'SYSTEM_URL' },
         update: { value: serverBaseUrl },
@@ -787,9 +814,9 @@ export async function POST(request: Request) {
           if (fs.existsSync(loginHtmlPath)) {
             try {
               let html = fs.readFileSync(loginHtmlPath, 'utf8');
-              html = html.replace(/http:\/\/192\.168\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
-              html = html.replace(/http:\/\/10\.\d+\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
-              html = html.replace(/http:\/\/portal\.wifi\.local(:\d+)?/gi, serverBaseUrl);
+              html = html.replace(/https?:\/\/192\.168\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
+              html = html.replace(/https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
+              html = html.replace(/https?:\/\/portal\.wifi\.local(:\d+)?/gi, serverBaseUrl);
               fs.writeFileSync(loginHtmlPath, html, 'utf8');
             } catch (err) {}
           }

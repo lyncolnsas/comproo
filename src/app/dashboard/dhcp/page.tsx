@@ -45,7 +45,7 @@ export default function DHCPLeases() {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded tracking-wider uppercase">
+            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 px-2 py-0.5 rounded tracking-wider uppercase">
               Rede Local // Concessões DHCP
             </span>
           </div>
@@ -60,12 +60,12 @@ export default function DHCPLeases() {
 
       {/* Main Table Card */}
       <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-200 bg-slate-50/70 flex justify-between items-center">
+        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#161e31] flex justify-between items-center">
           <div>
-            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">Dispositivos Conectados</h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Clientes identificados com IPs concedidos via DHCP</p>
+            <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Dispositivos Conectados</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Clientes identificados com IPs concedidos via DHCP</p>
           </div>
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-800 tracking-wider uppercase">
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800/80 bg-amber-50 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 tracking-wider uppercase">
             {leases.length} LEASES
           </span>
         </div>
@@ -75,7 +75,7 @@ export default function DHCPLeases() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-[11px]">
                   <th className="px-6 py-3.5">Endereço IP</th>
                   <th className="px-6 py-3.5">MAC Address</th>
                   <th className="px-6 py-3.5">Host Name</th>
@@ -83,7 +83,7 @@ export default function DHCPLeases() {
                   <th className="px-6 py-3.5 text-right">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-[#111726]">
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-8 text-center text-slate-500 italic font-medium">

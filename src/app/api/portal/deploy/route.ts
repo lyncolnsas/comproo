@@ -5,7 +5,7 @@ import fs from 'fs';
 import * as ftp from 'basic-ftp';
 import { prisma } from '@/lib/prisma';
 import { resolveTemplateDir } from '@/lib/portal-template-utils';
-import { getMaskedPortalUrl } from '@/lib/domain';
+import { getMaskedPortalUrl, isVpsMode } from '@/lib/domain';
 
 export async function POST(request: Request) {
   const client = new ftp.Client();
@@ -46,22 +46,31 @@ export async function POST(request: Request) {
 
     // Auto-detect server base URL and update media paths in login.html before deploy
     try {
-      const dbSystemUrl = await prisma.systemConfig.findUnique({ where: { key: 'SYSTEM_URL' } });
       const defaultUrl = getMaskedPortalUrl();
+      const dbSystemUrl = await prisma.systemConfig.findUnique({ where: { key: 'SYSTEM_URL' } });
       let serverBaseUrl = dbSystemUrl?.value || defaultUrl;
-      if (/^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?/i.test(serverBaseUrl) || serverBaseUrl.includes('localhost')) {
+      if (isVpsMode() || !serverBaseUrl || serverBaseUrl.includes('portal.wifi.local') || serverBaseUrl.includes('localhost') || /^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?/i.test(serverBaseUrl)) {
         serverBaseUrl = defaultUrl;
       }
       
       const loginHtmlPath = path.join(localHotspotDir, 'login.html');
       if (fs.existsSync(loginHtmlPath)) {
         let html = fs.readFileSync(loginHtmlPath, 'utf8');
-        html = html.replace(/http:\/\/192\.168\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
-        html = html.replace(/http:\/\/10\.\d+\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
-        html = html.replace(/http:\/\/portal\.wifi\.local(:\d+)?/gi, serverBaseUrl);
+        html = html.replace(/https?:\/\/192\.168\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
+        html = html.replace(/https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?/gi, serverBaseUrl);
+        html = html.replace(/https?:\/\/portal\.wifi\.local(:\d+)?/gi, serverBaseUrl);
         // Ensure relative media endpoints have absolute server base URL
         html = html.replace(/(src|href|poster|url\(['"]?)\/(api\/portal\/(bg|logo)|uploads\/[^'"]+)/gi, `$1${serverBaseUrl}/$2`);
         fs.writeFileSync(loginHtmlPath, html, 'utf8');
+      }
+
+      const configJsonPath = path.join(localHotspotDir, 'config.json');
+      if (fs.existsSync(configJsonPath)) {
+        try {
+          const cfg = JSON.parse(fs.readFileSync(configJsonPath, 'utf8'));
+          cfg.systemUrl = serverBaseUrl;
+          fs.writeFileSync(configJsonPath, JSON.stringify(cfg, null, 2), 'utf8');
+        } catch {}
       }
     } catch (err) {
       console.warn('Could not pre-process media URLs for deploy:', err);
@@ -156,15 +165,21 @@ export async function POST(request: Request) {
 
     client.close();
 
-    // Salvar o último template oficialmente no banco de dados
+    // Salvar o último template oficialmente no banco de dados e sincronizar SYSTEM_URL
     try {
       await prisma.systemConfig.upsert({
         where: { key: 'LAST_DEPLOYED_TEMPLATE' },
         update: { value: template },
         create: { key: 'LAST_DEPLOYED_TEMPLATE', value: template }
       });
+      const currentPortalUrl = getMaskedPortalUrl();
+      await prisma.systemConfig.upsert({
+        where: { key: 'SYSTEM_URL' },
+        update: { value: currentPortalUrl },
+        create: { key: 'SYSTEM_URL', value: currentPortalUrl }
+      });
     } catch (e) {
-      console.warn('Falha ao salvar LAST_DEPLOYED_TEMPLATE no DB:', e);
+      console.warn('Falha ao salvar LAST_DEPLOYED_TEMPLATE/SYSTEM_URL no DB:', e);
     }
 
     return NextResponse.json({ 

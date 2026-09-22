@@ -71,12 +71,12 @@ export default function LeadsFieldsStudioPanel({
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             <span>Formulário de Captação de Leads</span>
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Defina quais dados os clientes devem preencher para liberar o Wi-Fi.
           </p>
         </div>
 
-        <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+        <label className="flex items-center gap-2 text-xs font-bold cursor-pointer text-slate-800 dark:text-slate-200">
           <input
             type="checkbox"
             checked={enabled}
@@ -95,7 +95,7 @@ export default function LeadsFieldsStudioPanel({
 
       {/* Field Toggles List */}
       <div className="space-y-2.5">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           Campos Disponíveis
         </h4>
 

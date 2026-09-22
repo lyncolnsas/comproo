@@ -74,6 +74,8 @@ model HotspotLead {
   avatarUrl        String?   // WhatsApp profile picture downloaded locally
   optInCourses     Boolean   @default(true) // Consent to receive course info
   drawnInRaffle    Boolean   @default(false) // Flag to prevent duplicate drawing
+  trialBlocked     Boolean   @default(false) // Bloqueado por expiração ou tentativa de burla
+  trialGrantedAt   DateTime? // Momento em que recebeu os 15m de carência
   createdAt        DateTime  @default(now())
   payments         Payment[]
 }
@@ -179,5 +181,15 @@ model VpnPeer {
   lastSeen     DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model BlockedClient {
+  id        String   @id @default(uuid())
+  mac       String?  @unique
+  cpf       String?
+  phone     String?
+  reason    String
+  blockedAt DateTime @default(now())
+  active    Boolean  @default(true)
 }
 

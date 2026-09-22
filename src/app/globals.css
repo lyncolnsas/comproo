@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap');
 @import "tailwindcss";
 
+/* Habilita a variante dark: para funcionar com data-theme="dark" e classe .dark */
+@variant dark (&:is([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
+
 /* ══════════════════════════════════════════════════════════════════════════
    DESIGN TOKENS
    ══════════════════════════════════════════════════════════════════════════ */
@@ -37,21 +40,21 @@
   --font-mono-retro: 'Share Tech Mono', 'Courier New', monospace;
 
   /* Background & Foreground */
-  --background: var(--chassis);
-  --foreground: #c8c8e8;
+  --background: var(--mg-app-bg, var(--chassis));
+  --foreground: var(--mg-text-body, #c8c8e8);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--mg-app-bg, var(--background));
+  --color-foreground: var(--mg-text-body, var(--foreground));
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Share Tech Mono', 'JetBrains Mono', monospace;
 }
 
 body {
-  background: var(--chassis);
-  color: var(--foreground);
-  font-family: 'Geist', Arial, Helvetica, sans-serif;
+  background: var(--mg-app-bg, var(--chassis));
+  color: var(--mg-text-body, var(--foreground));
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -643,6 +646,43 @@ body {
   border: 1px solid #bfdbfe;
 }
 
+:is([data-theme="dark"], .dark) .saas-pill-success,
+.saas-theme :is([data-theme="dark"], .dark) .saas-pill-success,
+:is([data-theme="dark"], .dark) span.saas-pill-success {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #4ade80 !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+}
+
+:is([data-theme="dark"], .dark) .saas-pill-warning,
+.saas-theme :is([data-theme="dark"], .dark) .saas-pill-warning,
+:is([data-theme="dark"], .dark) span.saas-pill-warning {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+:is([data-theme="dark"], .dark) .saas-pill-danger,
+.saas-theme :is([data-theme="dark"], .dark) .saas-pill-danger,
+:is([data-theme="dark"], .dark) span.saas-pill-danger {
+  background: rgba(244, 63, 94, 0.15) !important;
+  color: #fb7185 !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+}
+
+:is([data-theme="dark"], .dark) .saas-pill-primary,
+.saas-theme :is([data-theme="dark"], .dark) .saas-pill-primary,
+:is([data-theme="dark"], .dark) span.saas-pill-primary {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+:is([data-theme="dark"], .dark) .bg-slate-50\/70,
+.saas-theme :is([data-theme="dark"], .dark) .bg-slate-50\/70 {
+  background-color: #161e31 !important;
+}
+
 /* Dark Navy Sidebar */
 .saas-sidebar {
   background: #1a1d2e;
@@ -743,138 +783,75 @@ body {
    GLOBAL HIGH-CONTRAST ENFORCEMENT (WCAG AAA - MAXIMUM READABILITY)
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* 1. SIDEBAR: Dark Navy (#0f1322) with Crisp White/Slate-100 Text */
-.saas-theme aside {
+/* 1. SIDEBAR: Dark Navy (#0f1322) with Crisp White/Slate-100 Text (apenas na barra lateral do painel) */
+.saas-sidebar {
   background-color: #0f1322 !important;
   border-right: 1px solid #1e2538 !important;
 }
 
-.saas-theme aside [class*="text-slate-"],
-.saas-theme aside p,
-.saas-theme aside span {
-  color: #f1f5f9 !important;
+.saas-sidebar [class*="text-slate-"],
+.saas-sidebar p,
+.saas-sidebar span {
+  color: #f1f5f9;
 }
 
-.saas-theme aside [class*="uppercase"] {
-  color: #cbd5e1 !important;
-  font-weight: 800 !important;
-  font-size: 11px !important;
-  letter-spacing: 0.12em !important;
+.saas-sidebar [class*="uppercase"] {
+  color: #cbd5e1;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.12em;
 }
 
-.saas-theme aside nav a {
-  color: #f8fafc !important;
-  font-size: 0.875rem !important; /* 14px */
-  font-weight: 600 !important;
+.saas-sidebar nav a {
+  color: #f8fafc;
+  font-size: 0.875rem; /* 14px */
+  font-weight: 600;
 }
 
-.saas-theme aside nav a svg {
-  color: #93c5fd !important; /* bright sky blue icon for high contrast */
-  stroke-width: 2 !important;
+.saas-sidebar nav a svg {
+  color: #93c5fd;
+  stroke-width: 2;
 }
 
-.saas-theme aside nav a:hover {
-  color: #ffffff !important;
-  background-color: rgba(255, 255, 255, 0.14) !important;
+.saas-sidebar nav a:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.14);
 }
 
-.saas-theme aside nav a[class*="bg-blue-600"] {
+.saas-sidebar nav a[class*="bg-blue-600"] {
   background-color: #2563eb !important;
   color: #ffffff !important;
-  font-weight: 800 !important;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45) !important;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45);
 }
 
-.saas-theme aside nav a[class*="bg-blue-600"] svg {
+.saas-sidebar nav a[class*="bg-blue-600"] svg {
   color: #ffffff !important;
 }
 
-/* 2. HEADINGS & TITLES (Pitch Black in Light, Crisp White in Dark) */
-.saas-theme main h1,
-.saas-theme main h2,
-.saas-theme main h3,
-.saas-theme main h4,
-.saas-theme main h5,
-.saas-theme main h6,
-.saas-theme :not(aside) h1,
-.saas-theme :not(aside) h2,
-.saas-theme :not(aside) h3,
-.saas-theme :not(aside) h4,
-.saas-theme :not(aside) h5,
-.saas-theme :not(aside) h6 {
-  color: var(--mg-text-heading) !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.02em !important;
+/* 2. TIPOGRAFIA HARMONIOSA (Hierarquia Natural sem distorções de peso) */
+.saas-theme h1,
+.saas-theme h2,
+.saas-theme h3,
+.saas-theme h4 {
+  color: var(--mg-text-heading);
+  letter-spacing: -0.015em;
 }
 
-/* 3. SUBTITLES & PARAGRAPHS */
-.saas-theme main header p,
-.saas-theme main p.text-xs,
-.saas-theme main p.text-sm,
-.saas-theme main .saas-card p,
-.saas-theme :not(aside) header p,
-.saas-theme :not(aside) p.text-xs,
-.saas-theme :not(aside) p.text-sm {
-  color: var(--mg-text-body) !important;
-  font-weight: 600 !important;
+.saas-theme p,
+.saas-theme span {
+  color: inherit;
 }
 
-/* 4. TAILWIND TEXT COLOR ELEVATION IN CONTENT (Eliminate Washed-out Grey) */
-.saas-theme main .text-slate-400,
-.saas-theme main [class*="text-slate-400"]:not([class*="bg-slate-9"] *):not([class*="bg-slate-8"] *):not([class*="bg-black"] *),
-.saas-theme :not(aside) .text-slate-400,
-.saas-theme :not(aside) [class*="text-slate-400"]:not([class*="bg-slate-9"] *):not([class*="bg-slate-8"] *):not([class*="bg-black"] *) {
-  color: var(--mg-text-body) !important;
-  font-weight: 600 !important;
-}
-
-.saas-theme main .text-slate-500,
-.saas-theme main [class*="text-slate-500"]:not([class*="bg-slate-9"] *):not([class*="bg-slate-8"] *):not([class*="bg-black"] *),
-.saas-theme :not(aside) .text-slate-500,
-.saas-theme :not(aside) [class*="text-slate-500"]:not([class*="bg-slate-9"] *):not([class*="bg-slate-8"] *):not([class*="bg-black"] *) {
-  color: var(--mg-text-heading) !important;
-  font-weight: 600 !important;
-}
-
-.saas-theme main .text-slate-300:not([class*="bg-slate-9"] *):not([class*="bg-slate-8"] *):not([class*="bg-black"] *),
-.saas-theme main [class*="text-slate-300"]:not([class*="bg-slate-9"] *):not([class*="bg-slate-8"] *):not([class*="bg-black"] *),
-.saas-theme main .text-slate-200:not([class*="bg-slate-9"] *):not([class*="bg-slate-8"] *):not([class*="bg-black"] *),
-.saas-theme main [class*="text-slate-200"]:not([class*="bg-slate-9"] *):not([class*="bg-slate-8"] *):not([class*="bg-black"] *),
-.saas-theme :not(aside) .text-slate-300:not([class*="bg-slate-9"] *):not([class*="bg-slate-8"] *):not([class*="bg-black"] *),
-.saas-theme :not(aside) [class*="text-slate-300"]:not([class*="bg-slate-9"] *):not([class*="bg-slate-8"] *):not([class*="bg-black"] *) {
-  color: var(--mg-text-muted) !important;
-  font-weight: 600 !important;
-}
-
-/* Form Labels & Uppercase Headings in Content */
-.saas-theme main label,
-.saas-theme :not(aside) label,
-.saas-theme main [class*="uppercase"]:not(aside *):not([class*="bg-"]):not(button *),
-.saas-theme :not(aside) [class*="uppercase"]:not(aside *):not([class*="bg-"]):not(button *) {
-  color: var(--mg-text-heading) !important;
-  font-weight: 800 !important;
-}
-
-/* 5. METRIC CARDS, DARK CONTAINERS & COLORED BANNERS (PRESERVE WHITE TEXT) */
-/* NOTE: Only target SOLID dark/saturated backgrounds — NOT light tints like bg-emerald-50, bg-blue-50 */
+/* 3. METRIC CARDS & GRADIENTS (Preservar texto branco em backgrounds saturados) */
 .saas-theme .saas-stat-teal *,
 .saas-theme .saas-stat-blue *,
 .saas-theme .saas-stat-rose *,
 .saas-theme .saas-stat-orange *,
-.saas-theme [class*="bg-slate-900"]:not([class*="fixed"]):not([class*="inset-0"]) *:not([class*="bg-white"] *),
-.saas-theme [class*="bg-slate-950"]:not([class*="fixed"]):not([class*="inset-0"]) *:not([class*="bg-white"] *),
-.saas-theme [class*="bg-black"]:not([class*="fixed"]):not([class*="inset-0"]) *:not([class*="bg-white"] *),
 .saas-theme pre,
-.saas-theme pre *,
-.saas-theme [style*="background: linear-gradient"]:not([class*="bg-white"] *) {
+.saas-theme pre * {
   color: #ffffff !important;
 }
-
-/* Explicit high-contrast defaults for white containers and dialog modals */
-.saas-theme [class*="bg-white"] {
-  color: var(--mg-text-body, #0f172a);
-}
-.saas-theme [class*="bg-white"] p:not([class*="text-"]):not([class*="bg-"] *),
 .saas-theme [class*="bg-white"] span:not([class*="text-"]):not([class*="bg-"] *),
 .saas-theme [class*="bg-white"] li:not([class*="text-"]):not([class*="bg-"] *) {
   color: inherit;
@@ -954,62 +931,51 @@ body {
 }
 
 /* 7. FORM INPUTS & SELECTS */
-.saas-theme main input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
-.saas-theme :not(aside) input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
-.saas-theme main select,
-.saas-theme :not(aside) select,
-.saas-theme main textarea,
-.saas-theme :not(aside) textarea {
-  color: var(--mg-input-text) !important;
-  font-weight: 700 !important;
-  border: 1.5px solid var(--mg-input-border) !important;
-  background-color: var(--mg-input-bg) !important;
-  border-radius: 0.75rem !important;
+.saas-theme input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.saas-theme select,
+.saas-theme textarea {
+  color: var(--mg-input-text);
+  font-weight: 600;
+  border: 1.5px solid var(--mg-input-border);
+  background-color: var(--mg-input-bg);
+  border-radius: 0.75rem;
+  transition: all 0.15s ease;
 }
 
 .saas-theme input::placeholder,
 .saas-theme textarea::placeholder {
-  color: var(--mg-input-placeholder) !important;
-  font-weight: 500 !important;
+  color: var(--mg-input-placeholder);
+  font-weight: 400;
 }
 
-.saas-theme main input:focus,
-.saas-theme :not(aside) input:focus,
-.saas-theme main select:focus,
-.saas-theme :not(aside) select:focus,
-.saas-theme main textarea:focus,
-.saas-theme :not(aside) textarea:focus {
-  border-color: var(--mg-input-border-focus) !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25) !important;
+.saas-theme input:focus,
+.saas-theme select:focus,
+.saas-theme textarea:focus {
+  border-color: var(--mg-input-border-focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 /* 8. TABS & PILLS */
 .saas-theme .tab-pill-active {
   background-color: #2563eb !important;
   color: #ffffff !important;
-  font-weight: 800 !important;
+  font-weight: 700 !important;
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35) !important;
 }
 
 .saas-theme .tab-pill-inactive {
-  color: #334155 !important;
-  font-weight: 700 !important;
+  color: var(--mg-text-muted);
+  font-weight: 600;
 }
 
 .saas-theme .tab-pill-inactive:hover {
-  background-color: #e2e8f0 !important;
-  color: #090d16 !important;
-}
-
-.saas-theme select {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #64748b !important;
+  background-color: var(--mg-card-bg-subtle);
+  color: var(--mg-text-heading);
 }
 
 .saas-theme select option {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+  background-color: var(--mg-card-bg);
+  color: var(--mg-text-heading);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1089,7 +1055,7 @@ body {
   --mg-info-text: #075985;
 }
 
-[data-theme="dark"] {
+:is([data-theme="dark"], .dark) {
   /* 1. Superfícies & Fundo */
   --mg-app-bg: #090d16;
   --mg-card-bg: #111726;
@@ -1420,73 +1386,459 @@ body {
 
 /* ══════════════════════════════════════════════════════════════════════════
    AUTOMATIC DARK MODE SURFACING (MAPS ALL SAAS CARDS & LABELS INSTANTLY)
+   Supports both [data-theme="dark"] and .dark class on html/root.
    ══════════════════════════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .bg-white {
+/* A. Surfaces & Cards */
+:is([data-theme="dark"], .dark) .bg-white {
   background-color: var(--mg-card-bg) !important;
   border-color: var(--mg-card-border) !important;
 }
 
-[data-theme="dark"] .bg-slate-50,
-[data-theme="dark"] .bg-slate-50\/50,
-[data-theme="dark"] .bg-slate-100 {
+:is([data-theme="dark"], .dark) .bg-slate-50,
+:is([data-theme="dark"], .dark) .bg-slate-50\/40,
+:is([data-theme="dark"], .dark) .bg-slate-50\/50,
+:is([data-theme="dark"], .dark) .bg-slate-50\/60,
+:is([data-theme="dark"], .dark) .bg-slate-50\/70,
+:is([data-theme="dark"], .dark) .bg-slate-50\/80,
+:is([data-theme="dark"], .dark) .bg-slate-50\/90,
+:is([data-theme="dark"], .dark) .bg-slate-100,
+:is([data-theme="dark"], .dark) .bg-slate-100\/50,
+:is([data-theme="dark"], .dark) .bg-slate-100\/60,
+:is([data-theme="dark"], .dark) .bg-slate-100\/70,
+:is([data-theme="dark"], .dark) .bg-slate-100\/80,
+:is([data-theme="dark"], .dark) .bg-slate-100\/90,
+:is([data-theme="dark"], .dark) .bg-slate-200\/50,
+:is([data-theme="dark"], .dark) .bg-slate-200\/60,
+:is([data-theme="dark"], .dark) .bg-slate-200\/70,
+:is([data-theme="dark"], .dark) .bg-slate-200\/80,
+:is([data-theme="dark"], .dark) .bg-slate-200\/90,
+:is([data-theme="dark"], .dark) .bg-gray-50,
+:is([data-theme="dark"], .dark) .bg-gray-100 {
   background-color: var(--mg-card-bg-subtle) !important;
 }
 
-[data-theme="dark"] .hover\:bg-slate-50:hover,
-[data-theme="dark"] .hover\:bg-slate-50\/70:hover,
-[data-theme="dark"] .hover\:bg-slate-50\/80:hover {
+:is([data-theme="dark"], .dark) .hover\:bg-slate-50:hover,
+:is([data-theme="dark"], .dark) .hover\:bg-slate-50\/70:hover,
+:is([data-theme="dark"], .dark) .hover\:bg-slate-50\/80:hover,
+:is([data-theme="dark"], .dark) .hover\:bg-slate-100:hover,
+:is([data-theme="dark"], .dark) .hover\:bg-slate-100\/70:hover,
+:is([data-theme="dark"], .dark) .hover\:bg-gray-50:hover,
+:is([data-theme="dark"], .dark) .hover\:bg-gray-100:hover {
   background-color: var(--mg-card-bg-subtle) !important;
 }
 
-[data-theme="dark"] .border-slate-100,
-[data-theme="dark"] .border-slate-200,
-[data-theme="dark"] .border-slate-200\/80,
-[data-theme="dark"] .border-slate-200\/70,
-[data-theme="dark"] .border-slate-300 {
+/* B. Borders & Dividers */
+:is([data-theme="dark"], .dark) .border-slate-100,
+:is([data-theme="dark"], .dark) .border-slate-200,
+:is([data-theme="dark"], .dark) .border-slate-200\/60,
+:is([data-theme="dark"], .dark) .border-slate-200\/70,
+:is([data-theme="dark"], .dark) .border-slate-200\/80,
+:is([data-theme="dark"], .dark) .border-slate-200\/90,
+:is([data-theme="dark"], .dark) .border-slate-300,
+:is([data-theme="dark"], .dark) .border-slate-300\/80,
+:is([data-theme="dark"], .dark) .border-gray-100,
+:is([data-theme="dark"], .dark) .border-gray-200,
+:is([data-theme="dark"], .dark) .border-dashed {
   border-color: var(--mg-card-border) !important;
 }
 
-[data-theme="dark"] .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
-[data-theme="dark"] .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+:is([data-theme="dark"], .dark) .border-slate-400 {
+  border-color: var(--mg-input-border) !important;
+}
+
+:is([data-theme="dark"], .dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+:is([data-theme="dark"], .dark) .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+:is([data-theme="dark"], .dark) .divide-slate-200\/70 > :not([hidden]) ~ :not([hidden]) {
   border-color: var(--mg-card-border-subtle) !important;
 }
 
-[data-theme="dark"] .text-slate-900,
-[data-theme="dark"] .text-slate-800 {
+/* C. Text Colors & Typography */
+:is([data-theme="dark"], .dark) .text-slate-950,
+:is([data-theme="dark"], .dark) .text-slate-900,
+:is([data-theme="dark"], .dark) .text-slate-800,
+:is([data-theme="dark"], .dark) .text-black,
+:is([data-theme="dark"], .dark) .text-gray-900,
+:is([data-theme="dark"], .dark) .text-gray-800 {
   color: var(--mg-text-heading) !important;
 }
 
-[data-theme="dark"] .text-slate-700,
-[data-theme="dark"] .text-slate-600 {
+:is([data-theme="dark"], .dark) .text-slate-700,
+:is([data-theme="dark"], .dark) .text-slate-600,
+:is([data-theme="dark"], .dark) .text-gray-700,
+:is([data-theme="dark"], .dark) .text-gray-600 {
   color: var(--mg-text-body) !important;
 }
 
-[data-theme="dark"] .text-slate-500 {
+:is([data-theme="dark"], .dark) .text-slate-500,
+:is([data-theme="dark"], .dark) .text-gray-500 {
   color: var(--mg-text-muted) !important;
 }
 
-[data-theme="dark"] .text-slate-400 {
+:is([data-theme="dark"], .dark) .text-slate-400,
+:is([data-theme="dark"], .dark) .text-gray-400 {
   color: var(--mg-text-subtle) !important;
 }
 
-[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
-[data-theme="dark"] select,
-[data-theme="dark"] textarea {
+/* D. Inputs, Form Controls & Browser Autofill */
+:is([data-theme="dark"], .dark) input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+:is([data-theme="dark"], .dark) select,
+:is([data-theme="dark"], .dark) textarea {
   background-color: var(--mg-input-bg) !important;
   border-color: var(--mg-input-border) !important;
   color: var(--mg-input-text) !important;
 }
 
-[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus,
-[data-theme="dark"] select:focus,
-[data-theme="dark"] textarea:focus {
+:is([data-theme="dark"], .dark) input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus,
+:is([data-theme="dark"], .dark) select:focus,
+:is([data-theme="dark"], .dark) textarea:focus {
   background-color: var(--mg-input-bg-focus) !important;
   border-color: var(--mg-input-border-focus) !important;
 }
 
-[data-theme="dark"] select option {
+:is([data-theme="dark"], .dark) select option {
   background-color: var(--mg-card-bg) !important;
   color: var(--mg-text-heading) !important;
 }
 
+:is([data-theme="dark"], .dark) input::placeholder,
+:is([data-theme="dark"], .dark) textarea::placeholder {
+  color: var(--mg-input-placeholder) !important;
+  opacity: 1;
+}
+
+/* Fix Browser Autofill (Chrome/Edge white box bug) */
+:is([data-theme="dark"], .dark) input:-webkit-autofill,
+:is([data-theme="dark"], .dark) input:-webkit-autofill:hover,
+:is([data-theme="dark"], .dark) input:-webkit-autofill:focus,
+:is([data-theme="dark"], .dark) textarea:-webkit-autofill,
+:is([data-theme="dark"], .dark) textarea:-webkit-autofill:hover,
+:is([data-theme="dark"], .dark) textarea:-webkit-autofill:focus,
+:is([data-theme="dark"], .dark) select:-webkit-autofill,
+:is([data-theme="dark"], .dark) select:-webkit-autofill:hover,
+:is([data-theme="dark"], .dark) select:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #0e1524 inset !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  box-shadow: 0 0 0 1000px #0e1524 inset !important;
+  caret-color: #f8fafc !important;
+}
+
+/* E. Semantic Badges & Pills (Universal Dark Contrast) */
+:is([data-theme="dark"], .dark) .bg-emerald-50,
+:is([data-theme="dark"], .dark) .bg-emerald-50\/60,
+:is([data-theme="dark"], .dark) .bg-emerald-50\/70,
+:is([data-theme="dark"], .dark) .bg-emerald-50\/80,
+:is([data-theme="dark"], .dark) .bg-emerald-50\/90,
+:is([data-theme="dark"], .dark) .bg-emerald-100,
+:is([data-theme="dark"], .dark) .bg-green-50,
+:is([data-theme="dark"], .dark) .bg-green-50\/70,
+:is([data-theme="dark"], .dark) .bg-green-50\/80 {
+  background-color: rgba(34, 197, 94, 0.15) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+}
+:is([data-theme="dark"], .dark) .bg-emerald-50:not(button):not(a),
+:is([data-theme="dark"], .dark) .bg-emerald-100:not(button):not(a),
+:is([data-theme="dark"], .dark) .bg-green-50:not(button):not(a) {
+  color: #4ade80 !important;
+}
+
+:is([data-theme="dark"], .dark) .bg-amber-50,
+:is([data-theme="dark"], .dark) .bg-amber-50\/70,
+:is([data-theme="dark"], .dark) .bg-amber-50\/80,
+:is([data-theme="dark"], .dark) .bg-amber-50\/90,
+:is([data-theme="dark"], .dark) .bg-amber-100,
+:is([data-theme="dark"], .dark) .bg-yellow-50 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+:is([data-theme="dark"], .dark) .bg-amber-50:not(button):not(a),
+:is([data-theme="dark"], .dark) .bg-amber-100:not(button):not(a),
+:is([data-theme="dark"], .dark) .bg-yellow-50:not(button):not(a) {
+  color: #fbbf24 !important;
+}
+
+:is([data-theme="dark"], .dark) .bg-blue-50,
+:is([data-theme="dark"], .dark) .bg-blue-50\/60,
+:is([data-theme="dark"], .dark) .bg-blue-50\/70,
+:is([data-theme="dark"], .dark) .bg-blue-50\/80,
+:is([data-theme="dark"], .dark) .bg-blue-50\/90,
+:is([data-theme="dark"], .dark) .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+:is([data-theme="dark"], .dark) .bg-blue-50:not(button):not(a),
+:is([data-theme="dark"], .dark) .bg-blue-100:not(button):not(a) {
+  color: #60a5fa !important;
+}
+
+:is([data-theme="dark"], .dark) .bg-indigo-50,
+:is([data-theme="dark"], .dark) .bg-indigo-50\/60,
+:is([data-theme="dark"], .dark) .bg-indigo-50\/70,
+:is([data-theme="dark"], .dark) .bg-indigo-50\/80,
+:is([data-theme="dark"], .dark) .bg-indigo-50\/90,
+:is([data-theme="dark"], .dark) .bg-indigo-100 {
+  background-color: rgba(99, 102, 241, 0.15) !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
+}
+:is([data-theme="dark"], .dark) .bg-indigo-50:not(button):not(a),
+:is([data-theme="dark"], .dark) .bg-indigo-100:not(button):not(a) {
+  color: #a5b4fc !important;
+}
+
+:is([data-theme="dark"], .dark) .bg-rose-50,
+:is([data-theme="dark"], .dark) .bg-rose-50\/60,
+:is([data-theme="dark"], .dark) .bg-rose-50\/70,
+:is([data-theme="dark"], .dark) .bg-rose-50\/80,
+:is([data-theme="dark"], .dark) .bg-rose-100,
+:is([data-theme="dark"], .dark) .bg-red-50 {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+}
+:is([data-theme="dark"], .dark) .bg-rose-50:not(button):not(a),
+:is([data-theme="dark"], .dark) .bg-rose-100:not(button):not(a),
+:is([data-theme="dark"], .dark) .bg-red-50:not(button):not(a) {
+  color: #fb7185 !important;
+}
+
+:is([data-theme="dark"], .dark) .bg-sky-50,
+:is([data-theme="dark"], .dark) .bg-sky-50\/70,
+:is([data-theme="dark"], .dark) .bg-sky-50\/80,
+:is([data-theme="dark"], .dark) .bg-sky-100 {
+  background-color: rgba(14, 165, 233, 0.15) !important;
+  border-color: rgba(14, 165, 233, 0.35) !important;
+}
+:is([data-theme="dark"], .dark) .bg-sky-50:not(button):not(a),
+:is([data-theme="dark"], .dark) .bg-sky-100:not(button):not(a) {
+  color: #7dd3fc !important;
+}
+
+:is([data-theme="dark"], .dark) .bg-orange-50,
+:is([data-theme="dark"], .dark) .bg-orange-50\/70,
+:is([data-theme="dark"], .dark) .bg-orange-50\/80,
+:is([data-theme="dark"], .dark) .bg-orange-100 {
+  background-color: rgba(249, 115, 22, 0.15) !important;
+  border-color: rgba(249, 115, 22, 0.35) !important;
+}
+:is([data-theme="dark"], .dark) .bg-orange-50:not(button):not(a),
+:is([data-theme="dark"], .dark) .bg-orange-100:not(button):not(a) {
+  color: #fb923c !important;
+}
+
+/* F. Semantic Text Colors (Boosted for High Contrast) */
+:is([data-theme="dark"], .dark) .text-emerald-700,
+:is([data-theme="dark"], .dark) .text-emerald-800,
+:is([data-theme="dark"], .dark) .text-emerald-950,
+:is([data-theme="dark"], .dark) .text-green-700,
+:is([data-theme="dark"], .dark) .text-green-800 {
+  color: #4ade80 !important;
+}
+
+:is([data-theme="dark"], .dark) .text-amber-700,
+:is([data-theme="dark"], .dark) .text-amber-800,
+:is([data-theme="dark"], .dark) .text-yellow-700,
+:is([data-theme="dark"], .dark) .text-yellow-800 {
+  color: #fbbf24 !important;
+}
+
+:is([data-theme="dark"], .dark) .text-blue-600,
+:is([data-theme="dark"], .dark) .text-blue-700,
+:is([data-theme="dark"], .dark) .text-blue-800 {
+  color: #60a5fa !important;
+}
+
+:is([data-theme="dark"], .dark) .text-indigo-700,
+:is([data-theme="dark"], .dark) .text-indigo-800,
+:is([data-theme="dark"], .dark) .text-indigo-950 {
+  color: #a5b4fc !important;
+}
+
+:is([data-theme="dark"], .dark) .text-rose-700,
+:is([data-theme="dark"], .dark) .text-rose-800,
+:is([data-theme="dark"], .dark) .text-red-700,
+:is([data-theme="dark"], .dark) .text-red-800 {
+  color: #fb7185 !important;
+}
+
+:is([data-theme="dark"], .dark) .text-sky-700,
+:is([data-theme="dark"], .dark) .text-sky-800 {
+  color: #7dd3fc !important;
+}
+
+:is([data-theme="dark"], .dark) .text-orange-700,
+:is([data-theme="dark"], .dark) .text-orange-800 {
+  color: #fb923c !important;
+}
+
+/* G. Gradients (from-* and to-* tokens) */
+:is([data-theme="dark"], .dark) .from-blue-50,
+:is([data-theme="dark"], .dark) .from-indigo-50,
+:is([data-theme="dark"], .dark) .from-emerald-50,
+:is([data-theme="dark"], .dark) .from-rose-50,
+:is([data-theme="dark"], .dark) .from-amber-50,
+:is([data-theme="dark"], .dark) .from-sky-50,
+:is([data-theme="dark"], .dark) .from-violet-50 {
+  --tw-gradient-from: rgba(59, 130, 246, 0.08) !important;
+}
+
+:is([data-theme="dark"], .dark) .to-white,
+:is([data-theme="dark"], .dark) .to-slate-50,
+:is([data-theme="dark"], .dark) .to-slate-100,
+:is([data-theme="dark"], .dark) .to-blue-50,
+:is([data-theme="dark"], .dark) .to-indigo-50,
+:is([data-theme="dark"], .dark) .to-emerald-50,
+:is([data-theme="dark"], .dark) .to-rose-50,
+:is([data-theme="dark"], .dark) .to-amber-50,
+:is([data-theme="dark"], .dark) .to-sky-50,
+:is([data-theme="dark"], .dark) .to-violet-50 {
+  --tw-gradient-to: rgba(99, 102, 241, 0.08) !important;
+}
+
+:is([data-theme="dark"], .dark) .bg-gradient-to-r,
+:is([data-theme="dark"], .dark) .bg-gradient-to-tr,
+:is([data-theme="dark"], .dark) .bg-gradient-to-br {
+  background-color: var(--mg-card-bg) !important;
+}
+
+/* H. Buttons & Action Elements */
+:is([data-theme="dark"], .dark) .bg-emerald-600 *,
+:is([data-theme="dark"], .dark) .bg-emerald-700 *,
+:is([data-theme="dark"], .dark) .bg-blue-600 *,
+:is([data-theme="dark"], .dark) .bg-blue-700 *,
+:is([data-theme="dark"], .dark) .bg-rose-600 *,
+:is([data-theme="dark"], .dark) .bg-rose-700 *,
+:is([data-theme="dark"], .dark) .bg-indigo-600 *,
+:is([data-theme="dark"], .dark) .bg-indigo-700 * {
+  color: #ffffff !important;
+}
+
+/* I. Tables in Dark Mode */
+:is([data-theme="dark"], .dark) table thead,
+:is([data-theme="dark"], .dark) table thead tr {
+  background-color: var(--mg-table-th-bg) !important;
+  color: var(--mg-table-th-text) !important;
+}
+
+:is([data-theme="dark"], .dark) table tbody tr {
+  border-color: var(--mg-table-row-divide) !important;
+}
+
+:is([data-theme="dark"], .dark) table tbody tr:hover {
+  background-color: var(--mg-table-row-hover) !important;
+}
+
+/* J. Navigation Tabs and Containers */
+:is([data-theme="dark"], .dark) nav.bg-slate-100\/80,
+:is([data-theme="dark"], .dark) .bg-slate-100\/80,
+:is([data-theme="dark"], .dark) .bg-slate-200\/80 {
+  background-color: var(--mg-card-bg-subtle) !important;
+  border-color: var(--mg-card-border) !important;
+}
+
+:is([data-theme="dark"], .dark) nav button:not(.bg-white):not(.bg-blue-600),
+:is([data-theme="dark"], .dark) .bg-slate-100\/80 button:not(.bg-white):not(.bg-blue-600),
+:is([data-theme="dark"], .dark) .bg-slate-200\/80 button:not(.bg-white):not(.bg-blue-600) {
+  color: var(--mg-text-muted) !important;
+}
+
+:is([data-theme="dark"], .dark) nav button:not(.bg-white):not(.bg-blue-600):hover,
+:is([data-theme="dark"], .dark) .bg-slate-100\/80 button:not(.bg-white):not(.bg-blue-600):hover,
+:is([data-theme="dark"], .dark) .bg-slate-200\/80 button:not(.bg-white):not(.bg-blue-600):hover {
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* K. Recharts Tooltips */
+:is([data-theme="dark"], .dark) .recharts-default-tooltip {
+  background-color: #111726 !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+:is([data-theme="dark"], .dark) .recharts-tooltip-item {
+  color: #cbd5e1 !important;
+}
+:is([data-theme="dark"], .dark) .from-rose-50     { --tw-gradient-from: rgba(244,63,94,0.06)  !important; }
+:is([data-theme="dark"], .dark) .from-amber-50    { --tw-gradient-from: rgba(245,158,11,0.06) !important; }
+:is([data-theme="dark"], .dark) .from-indigo-50   { --tw-gradient-from: rgba(99,102,241,0.06) !important; }
+:is([data-theme="dark"], .dark) .from-sky-50      { --tw-gradient-from: rgba(14,165,233,0.06) !important; }
+:is([data-theme="dark"], .dark) .from-violet-50   { --tw-gradient-from: rgba(139,92,246,0.06) !important; }
+
+/* L. Preserve always-white text on colored gradient stat cards */
+:is([data-theme="dark"], .dark) .saas-stat-teal *,
+:is([data-theme="dark"], .dark) .saas-stat-blue *,
+:is([data-theme="dark"], .dark) .saas-stat-rose *,
+:is([data-theme="dark"], .dark) .saas-stat-orange * {
+  color: #ffffff !important;
+}
+
+/* M. Ensure white text stays white on colored button backgrounds */
+:is([data-theme="dark"], .dark) .bg-emerald-600 *,
+:is([data-theme="dark"], .dark) .bg-emerald-700 *,
+:is([data-theme="dark"], .dark) .bg-blue-600 *,
+:is([data-theme="dark"], .dark) .bg-blue-700 *,
+:is([data-theme="dark"], .dark) .bg-rose-600 *,
+:is([data-theme="dark"], .dark) .bg-rose-700 *,
+:is([data-theme="dark"], .dark) .bg-indigo-600 *,
+:is([data-theme="dark"], .dark) .bg-indigo-700 * {
+  color: #ffffff !important;
+}
+
+/* N. Table thead in dark (catch any tables not using .saas-table or .mg-table classes) */
+:is([data-theme="dark"], .dark) table thead {
+  background-color: var(--mg-table-th-bg) !important;
+  color: var(--mg-table-th-text) !important;
+}
+
+:is([data-theme="dark"], .dark) table tbody tr {
+  border-color: var(--mg-table-row-divide) !important;
+}
+
+:is([data-theme="dark"], .dark) table tbody tr:hover {
+  background-color: var(--mg-table-row-hover) !important;
+}
+
+/* ── P. Opacity-variant semantic bgs (bg-emerald-50/70, bg-blue-50/60, etc.) ─ */
+:is([data-theme="dark"], .dark) .bg-emerald-50\/70,
+:is([data-theme="dark"], .dark) .bg-emerald-50\/60,
+:is([data-theme="dark"], .dark) .bg-emerald-50\/80,
+:is([data-theme="dark"], .dark) .bg-emerald-50\/90 { background-color: rgba(34,197,94,0.12)  !important; }
+
+:is([data-theme="dark"], .dark) .bg-blue-50\/70,
+:is([data-theme="dark"], .dark) .bg-blue-50\/60,
+:is([data-theme="dark"], .dark) .bg-blue-50\/80,
+:is([data-theme="dark"], .dark) .bg-blue-50\/90    { background-color: rgba(59,130,246,0.12) !important; }
+
+:is([data-theme="dark"], .dark) .bg-indigo-50\/70,
+:is([data-theme="dark"], .dark) .bg-indigo-50\/60,
+:is([data-theme="dark"], .dark) .bg-indigo-50\/80  { background-color: rgba(99,102,241,0.12) !important; }
+
+:is([data-theme="dark"], .dark) .bg-rose-50\/70,
+:is([data-theme="dark"], .dark) .bg-rose-50\/60,
+:is([data-theme="dark"], .dark) .bg-rose-50\/80    { background-color: rgba(244,63,94,0.12)  !important; }
+
+:is([data-theme="dark"], .dark) .bg-amber-50\/70,
+:is([data-theme="dark"], .dark) .bg-amber-50\/80,
+:is([data-theme="dark"], .dark) .bg-amber-50\/90   { background-color: rgba(245,158,11,0.12) !important; }
+
+:is([data-theme="dark"], .dark) .bg-sky-50\/70,
+:is([data-theme="dark"], .dark) .bg-sky-50\/80     { background-color: rgba(14,165,233,0.12) !important; }
+
+:is([data-theme="dark"], .dark) .bg-green-50\/70,
+:is([data-theme="dark"], .dark) .bg-green-50\/80   { background-color: rgba(34,197,94,0.12)  !important; }
+
+:is([data-theme="dark"], .dark) .bg-violet-50\/70,
+:is([data-theme="dark"], .dark) .bg-violet-50\/80  { background-color: rgba(139,92,246,0.12) !important; }
+
+:is([data-theme="dark"], .dark) .bg-orange-50\/70,
+:is([data-theme="dark"], .dark) .bg-orange-50\/80  { background-color: rgba(249,115,22,0.12) !important; }
+
+/* ── Q. Finance page loading state skeleton ───────────────────────────────── */
+:is([data-theme="dark"], .dark) .bg-slate-200\/80 {
+  background-color: var(--mg-card-bg-subtle) !important;
+  opacity: 0.6;
+}
+
+/* ── R. Fix breadcrumb top bar in Finance ─────────────────────────────────── */
+:is([data-theme="dark"], .dark) .border-b.border-slate-200\/80 {
+  border-bottom-color: var(--mg-card-border) !important;
+}

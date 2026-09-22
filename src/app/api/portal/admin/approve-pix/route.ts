@@ -91,20 +91,44 @@ export async function POST(request: Request) {
           const finalUsername = payment.lead.hotspotUser;
           const finalPassword = payment.lead.password || payment.lead.hotspotUser;
           
-          // 1. Remover a sessão ativa e o usuário temporário Trial (T-MAC)
-          if (payment.macAddress) {
+          const clientMac = payment.macAddress ? payment.macAddress.trim().toUpperCase() : null;
+
+          // 1. Desbloquear MAC no MikroTik e no banco caso estivesse bloqueado por expiração
+          if (clientMac) {
             try {
-              const trialUser = `T-${payment.macAddress}`;
+              await mk.unblockHotspotMac(clientMac);
+              console.log(`[Unblock MAC] MAC ${clientMac} desbloqueado no MikroTik após aprovação manual.`);
+            } catch (e) { console.error('Erro ao desbloquear MAC no MikroTik:', e); }
+
+            try {
+              await prisma.blockedClient.updateMany({
+                where: { mac: clientMac },
+                data: { active: false }
+              });
+            } catch (e) { console.error('Erro ao desativar registro BlockedClient:', e); }
+
+            if (payment.leadId) {
+              try {
+                await prisma.hotspotLead.update({
+                  where: { id: payment.leadId },
+                  data: { trialBlocked: false }
+                });
+              } catch (e) {}
+            }
+
+            // 1.1. Remover a sessão ativa e o usuário temporário Trial (T-MAC)
+            try {
+              const trialUser = `T-${clientMac}`;
               await mk.removeHotspotActiveByUser(trialUser);
               await mk.removeHotspotUserByName(trialUser);
-              console.log(`Trial do MAC: ${payment.macAddress} derrubado.`);
+              console.log(`Trial do MAC: ${clientMac} derrubado.`);
             } catch(e) { console.error('Erro ao remover trial', e); }
             
-            // 1.5. Remover o IP Binding Bypassed
+            // 1.2. Remover o IP Binding Bypassed
             try {
                 const bindings = await mk.getHotspotIpBindings() as any[];
                 for (const b of bindings) {
-                    if (b['mac-address'] === payment.macAddress && b.type === 'bypassed') {
+                    if (b['mac-address'] === clientMac && b.type === 'bypassed') {
                         await mk.removeHotspotIpBinding(b['.id'] || b.id);
                     }
                 }
@@ -146,6 +170,31 @@ export async function POST(request: Request) {
               });
             }
           } catch(e) { console.error('Erro ao criar/atualizar usuário mk', e); }
+
+          // 3. Regra de Firewall Temporária para WhatsApp:
+          // Se o cliente NÃO estiver com sessão ativa oficial (ex: estava bloqueado ou desconectado),
+          // liberamos SOMENTE o tráfego do WhatsApp para o IP dele, para que ele receba a mensagem com usuário e senha.
+          // Assim que ele logar no Hotspot, a regra é automaticamente deletada pelo script on-login do profile ou pelo backend.
+          if (clientMac) {
+            try {
+              const activeSessions = (await mk.getHotspotActive()) as any[];
+              const isUserActive = activeSessions.some(a => String(a.user) === String(finalUsername));
+              
+              if (!isUserActive) {
+                const clientIp = await mk.getClientIpByMac(clientMac);
+                if (clientIp) {
+                  await mk.addTempWhatsAppAccess(clientIp, clientMac);
+                  console.log(`[Temp WhatsApp] Acesso liberado para IP ${clientIp} (MAC: ${clientMac}) receber credenciais.`);
+                } else {
+                  console.warn(`[Temp WhatsApp] IP não localizado para MAC ${clientMac}.`);
+                }
+              } else {
+                console.log(`[Temp WhatsApp] Usuário ${finalUsername} já ativo. Nenhuma regra temporária necessária.`);
+              }
+            } catch (waErr) {
+              console.error('[Temp WhatsApp] Erro ao aplicar regra temporária de WhatsApp:', waErr);
+            }
+          }
           
           mk.disconnect();
           

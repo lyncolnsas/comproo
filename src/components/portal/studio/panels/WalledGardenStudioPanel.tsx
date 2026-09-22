@@ -30,31 +30,19 @@ export default function WalledGardenStudioPanel({
   const [newHost, setNewHost] = useState('');
   const [message, setMessage] = useState('');
 
-  // Extract detected domains from current config
+  // Domínios essenciais da própria plataforma MikroGestor conforme Regra 13 (Lockdown Total)
   const detectedDomains = React.useMemo(() => {
-    const list: string[] = [];
-    if (social?.whatsappEnabled || social?.whatsappNumber) {
-      list.push('*.whatsapp.com', '*.whatsapp.net');
-    }
-    if (social?.instagramUrl) {
-      list.push('*.instagram.com', '*.cdninstagram.com');
-    }
-    if (social?.facebookUrl) {
-      list.push('*.facebook.com', '*.fbcdn.net');
-    }
-    if (social?.googleMapsUrl) {
-      list.push('*.google.com', '*.googleapis.com', '*.gstatic.com');
-    }
+    const list: string[] = ['mikrogestor.com', 'www.mikrogestor.com'];
     if (bg?.url && bg.url.startsWith('http')) {
       try {
         const u = new URL(bg.url);
-        list.push(u.hostname);
+        if (!u.hostname.includes('whatsapp') && !u.hostname.includes('mercadopago')) {
+          list.push(u.hostname);
+        }
       } catch {}
     }
-    // Default essentials for modern portals
-    list.push('fonts.googleapis.com', 'fonts.gstatic.com');
     return Array.from(new Set(list));
-  }, [social, bg]);
+  }, [bg]);
 
   const fetchWalledGarden = async () => {
     setLoading(true);

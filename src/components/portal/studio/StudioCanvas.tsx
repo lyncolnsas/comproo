@@ -173,7 +173,7 @@ export default function StudioCanvas({
   const carouselItems = Array.isArray(ad?.items) ? ad.items.filter((i: any) => i?.url) : [];
 
   return (
-    <section className="flex-1 bg-slate-100/70 dark:bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden select-none">
+    <section className="flex-1 bg-slate-100/70 dark:bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-auto custom-scrollbar select-none">
       {/* Suprimir botões de play e controles nativos de vídeo */}
       <style>{`
         video::-webkit-media-controls,
@@ -202,7 +202,7 @@ export default function StudioCanvas({
         style={{ transform: `scale(${previewZoom / 100})` }}
       >
         <div 
-          className={`relative bg-black rounded-[42px] p-3 shadow-2xl border-4 border-slate-800/80 dark:border-slate-700/80 transition-all duration-300 ${
+          className={`relative bg-black rounded-[42px] p-2.5 sm:p-3 shadow-2xl border-4 border-slate-800/80 dark:border-slate-700/80 transition-all duration-300 max-w-[calc(100vw-32px)] ${
             viewportMode === 'mobile' ? 'ring-1 ring-slate-900/40 ring-offset-4 ring-offset-slate-100 dark:ring-offset-slate-900' : 'rounded-2xl p-2'
           }`}
           style={{ width: dimensions.width, height: dimensions.height }}
@@ -360,7 +360,7 @@ export default function StudioCanvas({
       </div>
 
       {/* Floating Canvas Footer HUD */}
-      <div className="absolute bottom-4 z-30 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg text-xs">
+      <div className="absolute bottom-16 md:bottom-4 z-30 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg text-xs">
         <span className="text-slate-500 dark:text-slate-400 font-medium">
           {dimensions.label}
         </span>

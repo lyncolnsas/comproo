@@ -40,4 +40,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
     - O repositório portátil `CooliFy - MCP` permite que qualquer agente de IA (Antigravity, Claude, Cursor) execute diagnósticos, controle containers Docker e dispare deploys sem necessidade de comandos SSH manuais.
     - O servidor MCP está configurado globalmente em `~/.gemini/config/mcp_config.json` e pode ser testado a qualquer momento com `npm test` dentro de `CooliFy - MCP`.
     - Ao realizar deploys automatizados via MCP (`coolify_deploy_application`), sempre confirme antes se o volume persistente do SQLite (`/data/mikrogestor/prisma` -> `/app/prisma`) está montado.
+13. **WALLED GARDEN ULTRA RESTRITO (LOCKDOWN TOTAL)**:
+    - O Walled Garden do MikroTik libera **EXCLUSIVAMENTE** os domínios e IPs pertencentes à plataforma MikroGestor (`PORTAL_PUBLIC_DOMAIN`, `www.PORTAL_PUBLIC_DOMAIN`, subdomínio dedicado do roteador, `VPS_PUBLIC_IP` e `10.8.0.1`).
+    - É EXPRESSAMENTE PROIBIDO incluir plataformas de terceiros no Walled Garden (como Mercado Pago, Mercado Livre, WhatsApp, Google Fonts). O cliente recebe 15 minutos de internet completa ao se cadastrar para realizar o pagamento Pix diretamente pelo aplicativo do seu próprio banco.
+14. **BLOQUEIO CATEGÓRICO DE INADIMPLENTES & ANTI-BURLA (15 MINUTOS)**:
+    - Se o cliente não efetuar o pagamento do plano Pix dentro dos 15 minutos de cortesia, ele é categoricamente bloqueado.
+    - O sistema derruba a sessão ativa, desativa o usuário e adiciona o MAC address em `/ip/hotspot/ip-binding` com `type=blocked`.
+    - Não adianta esquecer a rede Wi-Fi ou ativar MAC aleatório: o sistema checa o CPF e Telefone informados no cadastro. Caso conste carência utilizada sem pagamento aprovado, o cadastro é rejeitado (HTTP 403) e o novo MAC é imediatamente adicionado à blacklist do MikroTik.
+15. **BLOQUEIO CONTRA COMPARTILHAMENTO (ANTI-TETHERING)**:
+    - Em todo provisionamento de Hotspot, é OBRIGATÓRIO aplicar a regra de Mangle:
+      `/ip firewall mangle add chain=postrouting out-interface=bridge action=change-ttl new-ttl=set:1 comment="MikroGestor: Anti-Tethering (Bloqueio Compartilhamento)"`
+    - Todos os pacotes chegam aos smartphones com TTL=1. Caso o cliente tente compartilhar a conexão via Roteador Wi-Fi (Hotspot Pessoal), Bluetooth ou USB, o kernel do celular decrementa o TTL para 0 e descarta o pacote, impedindo que dispositivos dependentes naveguem.
+    - No perfil de usuário Hotspot (`/ip/hotspot/user/profile`), o parâmetro `shared-users=1` deve ser sempre forçado.
 
