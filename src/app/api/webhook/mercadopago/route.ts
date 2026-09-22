@@ -4,7 +4,7 @@ import { MikrotikAPI } from '@/lib/routeros';
 import { whatsappService } from '@/services/whatsapp';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { getMaskedPortalDomain } from '@/lib/domain';
-import { getCustomTemplate, applyTemplateTags } from '@/services/whatsapp-custom-messages';
+import { getCustomTemplate, applyTemplateTags, getCustomTemplateMedia } from '@/services/whatsapp-custom-messages';
 
 export async function POST(request: Request) {
   try {
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
                           if (index < voucherPayments.length - 1) msg += `------------------------\n`;
                       });
                       
-                      msg += `\nObrigado pela preferência e bom uso!`;
+                      msg += `\nObrigado pela preferência e bom uso!\n\n📄 Termos de Uso e Isenção de Responsabilidade: http://${getMaskedPortalDomain()}/portal/termos/pago`;
                       whatsappService.sendWhatsAppMessage('admin', contactPhone, msg);
                    }
                 }
@@ -207,7 +207,9 @@ export async function POST(request: Request) {
                                 link_portal: `http://${portalDomain}/portal/planos`,
                                 rede_wifi: wifiName,
                             });
-                            whatsappService.sendWhatsAppMessage('admin', contactPhone, msg);
+                            const finalMsg = msg + `\n\n📄 Termos de Uso e Isenção de Responsabilidade: http://${portalDomain}/portal/termos/pago`;
+                            const media = await getCustomTemplateMedia('WA_MSG_PAYMENT_APPROVED_HOTSPOT');
+                            whatsappService.sendWhatsAppMessage('admin', contactPhone, finalMsg, { media: media || undefined });
                          }
                       }
                    }

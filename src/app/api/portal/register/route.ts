@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { resolveTemplateDir } from '@/lib/portal-template-utils';
 import { getMaskedPortalDomain, getMaskedPortalUrl, isVpsMode } from '@/lib/domain';
-import { getCustomTemplate, applyTemplateTags, getFlowConfig } from '@/services/whatsapp-custom-messages';
+import { getCustomTemplate, applyTemplateTags, getFlowConfig, getCustomTemplateMedia } from '@/services/whatsapp-custom-messages';
 import { signCustomerJwt } from '@/lib/jwt';
 
 
@@ -776,6 +776,8 @@ export async function POST(request: Request) {
 
                 const portalUrl = getMaskedPortalUrl('', request.headers.get('host'));
                 const rawTemplate = await getCustomTemplate(step.key);
+                const media = await getCustomTemplateMedia(step.key);
+
                 const msgBody = applyTemplateTags(rawTemplate, {
                   cliente: finalName,
                   usuario: hotspotUser,
@@ -788,7 +790,8 @@ export async function POST(request: Request) {
 
                 const res = await whatsappService.sendWhatsAppMessage('admin', targetPhone, msgBody, {
                   skipStandby: true,
-                  pinnedInstanceId: dispatchedInstanceId
+                  pinnedInstanceId: dispatchedInstanceId,
+                  media: media || undefined
                 });
 
                 if (res.success && !dispatchedInstanceId && res.instanceId) {

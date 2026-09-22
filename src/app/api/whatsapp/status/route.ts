@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { whatsappService } from '@/services/whatsapp';
 import { prisma } from '@/lib/prisma';
-import { getCustomTemplate, applyTemplateTags } from '@/services/whatsapp-custom-messages';
+import { getCustomTemplate, applyTemplateTags, getCustomTemplateMedia } from '@/services/whatsapp-custom-messages';
 
 export async function GET() {
   try {
@@ -92,7 +92,8 @@ export async function POST(request: Request) {
         validade: timeLimit || '15 minutos',
         rede_wifi: wifiName,
       });
-      const res = await whatsappService.sendWhatsAppMessage('admin', phone, text, { pinnedInstanceId: id });
+      const media = await getCustomTemplateMedia('WA_MSG_VOUCHER_DELIVERY');
+      const res = await whatsappService.sendWhatsAppMessage('admin', phone, text, { pinnedInstanceId: id, media: media || undefined });
       
       return NextResponse.json({ success: res.success, message: res.success ? 'Voucher disparado com sucesso!' : (res.error || 'Falha ao enviar voucher via WhatsApp.') });
     }

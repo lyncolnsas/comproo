@@ -27,6 +27,8 @@ interface MessageTrigger {
   currentTemplate: string;
   isCustomized: boolean;
   availableTags: TriggerTag[];
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video' | 'audio' | 'document';
 }
 
 interface FlowStepConfig {
@@ -62,6 +64,8 @@ export function WhatsappMessageCustomizer() {
   const [selectedId, setSelectedId] = useState<string>('welcome_paid');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [editedTemplates, setEditedTemplates] = useState<Record<string, string>>({});
+  const [editedMediaUrls, setEditedMediaUrls] = useState<Record<string, string>>({});
+  const [editedMediaTypes, setEditedMediaTypes] = useState<Record<string, 'image' | 'video' | 'audio' | 'document'>>({});
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ key: string; success: boolean; message: string } | null>(null);
   const [copiedTag, setCopiedTag] = useState<string | null>(null);
@@ -86,10 +90,16 @@ export function WhatsappMessageCustomizer() {
             setSelectedMode(data.activeSystemMode);
           }
           const initialMap: Record<string, string> = {};
+          const mediaUrlMap: Record<string, string> = {};
+          const mediaTypeMap: Record<string, 'image' | 'video' | 'audio' | 'document'> = {};
           data.triggers.forEach((t: MessageTrigger) => {
             initialMap[t.key] = t.currentTemplate;
+            if (t.mediaUrl) mediaUrlMap[t.key] = t.mediaUrl;
+            if (t.mediaType) mediaTypeMap[t.key] = t.mediaType;
           });
           setEditedTemplates(initialMap);
+          setEditedMediaUrls(mediaUrlMap);
+          setEditedMediaTypes(mediaTypeMap);
 
           const firstInMode = data.triggers.find((t: MessageTrigger) => t.mode === (data.activeSystemMode || 'paid'));
           if (firstInMode) {
@@ -234,17 +244,20 @@ export function WhatsappMessageCustomizer() {
     setSavingKey(trigger.key);
     try {
       const template = editedTemplates[trigger.key] ?? trigger.currentTemplate;
+      const mediaUrl = editedMediaUrls[trigger.key] ?? trigger.mediaUrl ?? '';
+      const mediaType = editedMediaTypes[trigger.key] ?? trigger.mediaType ?? 'image';
+      
       const res = await fetch('/api/admin/whatsapp-messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: trigger.key, template, action: 'save' }),
+        body: JSON.stringify({ key: trigger.key, template, action: 'save', mediaUrl, mediaType }),
       });
       const data = await res.json();
       if (data.success) {
         setTriggers((prev) =>
           prev.map((t) =>
             t.key === trigger.key
-              ? { ...t, currentTemplate: template, isCustomized: data.isCustomized }
+              ? { ...t, currentTemplate: template, isCustomized: data.isCustomized, mediaUrl, mediaType }
               : t
           )
         );
@@ -272,10 +285,12 @@ export function WhatsappMessageCustomizer() {
       const data = await res.json();
       if (data.success) {
         handleTemplateChange(trigger.key, trigger.defaultTemplate);
+        setEditedMediaUrls((prev) => ({ ...prev, [trigger.key]: '' }));
+        setEditedMediaTypes((prev) => ({ ...prev, [trigger.key]: 'image' }));
         setTriggers((prev) =>
           prev.map((t) =>
             t.key === trigger.key
-              ? { ...t, currentTemplate: trigger.defaultTemplate, isCustomized: false }
+              ? { ...t, currentTemplate: trigger.defaultTemplate, isCustomized: false, mediaUrl: '', mediaType: 'image' }
               : t
           )
         );
@@ -936,6 +951,36 @@ export function WhatsappMessageCustomizer() {
                 />
                 <p className="text-[11px] text-slate-500">
                   Dica: use <code className="text-slate-800 font-bold">*negrito*</code>, <code className="text-slate-800 font-bold">_itálico_</code>, ou <code className="text-slate-800 font-bold">`código`</code> para destacar informações.
+                </p>
+              </div>
+
+              {/* Media Attachment */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                  <Sliders className="w-3.5 h-3.5" />
+                  Mídia Anexada (Opcional)
+                </label>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <select
+                    value={editedMediaTypes[selectedTrigger.key] ?? selectedTrigger.mediaType ?? 'image'}
+                    onChange={(e) => setEditedMediaTypes((prev) => ({ ...prev, [selectedTrigger.key]: e.target.value as any }))}
+                    className="w-full sm:w-1/3 bg-slate-50 border border-slate-300 rounded-xl px-3 h-10 text-xs font-semibold text-slate-800 focus:outline-none focus:border-slate-500 transition-colors cursor-pointer"
+                  >
+                    <option value="image">Imagem</option>
+                    <option value="video">Vídeo</option>
+                    <option value="audio">Áudio</option>
+                    <option value="document">Documento</option>
+                  </select>
+                  <input
+                    type="url"
+                    value={editedMediaUrls[selectedTrigger.key] ?? selectedTrigger.mediaUrl ?? ''}
+                    onChange={(e) => setEditedMediaUrls((prev) => ({ ...prev, [selectedTrigger.key]: e.target.value }))}
+                    placeholder="URL pública do arquivo (ex: https://.../img.jpg)"
+                    className="w-full sm:w-2/3 bg-slate-50 border border-slate-300 rounded-xl px-3 h-10 text-xs font-mono text-slate-800 focus:outline-none focus:border-slate-500 transition-colors"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Insira o link direto do arquivo hospedado. Se for áudio, certifique-se de ser MP4/M4A/MP3 compatível.
                 </p>
               </div>
 

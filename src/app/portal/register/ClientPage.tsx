@@ -1656,6 +1656,7 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isClientIframe, setIsClientIframe] = useState(false);
@@ -2270,6 +2271,12 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
     setSuccess('');
 
     try {
+      if (!termsAccepted) {
+        setError('Você deve aceitar os Termos de Uso e Isenção de Responsabilidade para prosseguir com o cadastro.');
+        setLoading(false);
+        return;
+      }
+
       if (fields.nameEnabled && fields.nameRequired && nameVal.status === 'error') {
         setError(nameVal.message || 'Nome completo é obrigatório.');
         setLoading(false);
@@ -3462,6 +3469,19 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
             )}
 
             {/* Submit Button */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', margin: '10px 0 20px 0' }}>
+              <input 
+                type="checkbox" 
+                id="termsAccepted" 
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                style={{ marginTop: '2px', accentColor: colors.brand || '#2563eb', cursor: 'pointer' }}
+              />
+              <label htmlFor="termsAccepted" style={{ fontSize: '0.78rem', color: colors.muted, lineHeight: 1.3, cursor: 'pointer' }}>
+                Eu li e aceito os <a href={isFreeWifi ? "/portal/termos/gratis" : "/portal/termos/pago"} target="_blank" style={{ color: colors.brand || '#2563eb', textDecoration: 'underline' }}>Termos de Uso e Isenção de Responsabilidade</a>.
+              </label>
+            </div>
+
             <button 
               type="submit" 
               disabled={loading || !!success || timerActive}

@@ -6,6 +6,10 @@ export interface SendMessageOptions {
   skipStandby?: boolean;
   pinnedInstanceId?: string;
   preferredEngine?: 'meta' | 'baileys';
+  media?: {
+    url: string;
+    type: 'image' | 'video' | 'audio' | 'document';
+  };
 }
 
 export interface SendMessageResult {

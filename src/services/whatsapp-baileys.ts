@@ -614,6 +614,22 @@ export class BaileysAdapter implements IWhatsappAdapter {
     const jid = await this.resolveJid(session, to);
 
     try {
+      const sendMediaIfPresent = async () => {
+        if (options?.media?.url && options?.media?.type) {
+          try {
+            // For audio, we might want ptt: true (voice note), but default is fine.
+            const msgPayload: any = { [options.media.type]: { url: options.media.url } };
+            if (options.media.type === 'audio') {
+              msgPayload.mimetype = 'audio/mp4'; // recommended by Baileys for generic audio
+            }
+            await session.sock.sendMessage(jid, msgPayload);
+            await sleep(1500); // pause to let the media process
+          } catch (mediaErr) {
+            console.error(`[Baileys][${session.id}] Erro ao enviar mídia para ${jid}:`, mediaErr);
+          }
+        }
+      };
+
       // Immediate transactional send (credentials / vouchers / PIX)
       if (options?.skipStandby || !cfg.enabled) {
         if (cfg.enabled && cfg.simulateTyping) {
@@ -623,6 +639,7 @@ export class BaileysAdapter implements IWhatsappAdapter {
             await session.sock.sendPresenceUpdate('paused', jid);
           } catch {}
         }
+        await sendMediaIfPresent();
         await session.sock.sendMessage(jid, { text });
         console.log(`[Baileys][${session.id}] Mensagem enviada com sucesso para ${jid}`);
         this.incrementDailyCount(session.id);
@@ -634,6 +651,8 @@ export class BaileysAdapter implements IWhatsappAdapter {
         const delayMs = randomBetween(cfg.standbyMinSeconds * 1000, cfg.standbyMaxSeconds * 1000);
         await sleep(delayMs);
       }
+
+      await sendMediaIfPresent();
 
       const chunks = cfg.typingDelayBetweenChunks ? splitIntoChunks(text) : [text];
       for (let i = 0; i < chunks.length; i++) {

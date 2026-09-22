@@ -347,3 +347,18 @@ export function applyTemplateTags(template: string, vars: Record<string, string>
   }
   return result;
 }
+
+/**
+ * Retorna os dados da mídia associada ao template (se houver)
+ */
+export async function getCustomTemplateMedia(key: string): Promise<{ url: string; type: 'image' | 'video' | 'audio' | 'document' } | undefined> {
+  try {
+    const row = await prisma.systemConfig.findUnique({ where: { key: `${key}_MEDIA` } });
+    if (row?.value) {
+      return JSON.parse(row.value);
+    }
+  } catch (err) {
+    console.error(`[WhatsAppCustomMessages] Erro ao buscar mídia para template ${key}:`, err);
+  }
+  return undefined;
+}
