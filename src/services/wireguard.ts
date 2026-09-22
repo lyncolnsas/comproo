@@ -431,9 +431,10 @@ ${subdomain ? `# Subdomínio: ${subdomain}\n` : ""}# Gerado em: ${new Date().toI
 # --- 4. ROTA DE CONTROLE ---
 /ip route add dst-address=10.8.0.0/24 gateway=wg-mikrogestor comment="MikroGestor VPN route"
 
-# --- 5. FIREWALL DE SEGURANÇA ---
+# --- 5. FIREWALL DE SEGURANÇA E SERVIÇOS ---
+/ip service set ftp disabled=no; /ip service set api disabled=no
 :local ruleApi [/ip firewall filter find comment="MikroGestor: API access"]
-:if ([:len $ruleApi] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=10.8.0.0/24 dst-port=80,443,8291,8728,8729 protocol=tcp action=accept place-before=0 comment="MikroGestor: API access" } else={ /ip firewall filter set $ruleApi src-address=10.8.0.0/24 dst-port=80,443,8291,8728,8729 }
+:if ([:len $ruleApi] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=10.8.0.0/24 dst-port=21,80,443,8291,8728,8729 protocol=tcp action=accept place-before=0 comment="MikroGestor: API access" } else={ /ip firewall filter set $ruleApi src-address=10.8.0.0/24 dst-port=21,80,443,8291,8728,8729 }
 
 :local ruleBlock [/ip firewall filter find comment="MikroGestor: block non-VPS via VPN"]
 :if ([:len $ruleBlock] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=!10.8.0.0/24 action=drop comment="MikroGestor: block non-VPS via VPN" } else={ /ip firewall filter set $ruleBlock src-address=!10.8.0.0/24 }
