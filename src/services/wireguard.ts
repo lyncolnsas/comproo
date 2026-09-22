@@ -186,7 +186,6 @@ export class WireGuardService {
         select: { vpnIp: true },
       }),
       prisma.vpnPeer.findMany({
-        where: { vpnIp: { not: null } },
         select: { vpnIp: true },
       }),
     ]);
