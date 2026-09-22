@@ -2,7 +2,7 @@
 
 /**
  * /dashboard/vpn — Painel de VPN Control
- * Gerencia conexões WireGuard entre a VPS e os MikroTiks.
+ * Gerencia conexões WireGuard entre a VPS, MikroTiks e dispositivos de administração (Windows / Celular).
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -23,7 +23,14 @@ import {
   ArrowRight,
   Lock,
   Globe,
+  Smartphone,
+  Laptop,
+  Monitor,
+  QrCode,
+  CheckCircle2,
+  Info,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────
 
@@ -51,10 +58,24 @@ interface RouterBasic {
   vpnEnabled: boolean;
 }
 
+interface VpnPeerClient {
+  id: string;
+  name: string;
+  deviceType: string;
+  vpnIp: string;
+  publicKey: string;
+  status: string;
+  lastSeen: string | null;
+  createdAt: string;
+  transferRx: number;
+  transferTx: number;
+  endpoint: string | null;
+}
+
 // ─── Utils ─────────────────────────────────────────────────────────────────
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
+  if (!bytes || bytes === 0) return "0 B";
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -88,7 +109,21 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function CopyButton({ text, label = "Copiar Script" }: { text: string; label?: string }) {
+function DeviceIcon({ type }: { type: string }) {
+  switch (type.toLowerCase()) {
+    case "android":
+    case "ios":
+      return <Smartphone className="w-5 h-5 text-indigo-600" />;
+    case "macos":
+    case "linux":
+      return <Laptop className="w-5 h-5 text-slate-700" />;
+    case "windows":
+    default:
+      return <Monitor className="w-5 h-5 text-blue-600" />;
+  }
+}
+
+function CopyButton({ text, label = "Copiar" }: { text: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     navigator.clipboard.writeText(text);
@@ -115,7 +150,7 @@ function CopyButton({ text, label = "Copiar Script" }: { text: string; label?: s
   );
 }
 
-// ─── Modal de Criação / Geração de Túnel ────────────────────────────────────
+// ─── Modal de Criação / Geração de Túnel MikroTik ───────────────────────────
 
 interface CreateTunnelModalProps {
   existingRouters: RouterBasic[];
@@ -186,7 +221,7 @@ function CreateTunnelModal({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `mikrogestor-vpn-${scriptResult.routerName.replace(/\\s+/g, "-").toLowerCase()}.rsc`;
+    a.download = `mikrogestor-vpn-${scriptResult.routerName.replace(/\s+/g, "-").toLowerCase()}.rsc`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -203,7 +238,7 @@ function CreateTunnelModal({
             </div>
             <div>
               <h2 className="text-base font-black text-slate-900">
-                {scriptResult ? "Script de Conexão Gerado" : "Novo Túnel VPN WireGuard"}
+                {scriptResult ? "Script de Conexão Gerado" : "Novo Túnel VPN WireGuard (MikroTik)"}
               </h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
                 {scriptResult
@@ -231,7 +266,6 @@ function CreateTunnelModal({
 
           {!scriptResult ? (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Tab Selector se houver roteadores cadastrados */}
               {existingRouters.length > 0 && (
                 <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl text-xs font-bold">
                   <button
@@ -259,15 +293,15 @@ function CreateTunnelModal({
                 </div>
               )}
 
-              {mode === "existing" && existingRouters.length > 0 ? (
+              {mode === "existing" ? (
                 <div>
-                  <label className="block text-xs font-black text-slate-900 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Selecione o Roteador
                   </label>
                   <select
                     value={selectedId}
                     onChange={(e) => setSelectedId(e.target.value)}
-                    className="w-full bg-white border-2 border-slate-300 text-slate-950 font-bold rounded-2xl px-3.5 py-2.5 text-xs focus:border-blue-600 outline-none transition-colors"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-blue-500 transition-colors"
                   >
                     {existingRouters.map((r) => (
                       <option key={r.id} value={r.id}>
@@ -277,75 +311,61 @@ function CreateTunnelModal({
                   </select>
                 </div>
               ) : (
-                <div className="space-y-3.5">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-black text-slate-900 uppercase tracking-wider mb-1.5">
-                      Nome de Identificação
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Nome do Roteador / Local
                     </label>
                     <input
                       type="text"
+                      placeholder="Ex: MikroTik Praça Central"
                       value={routerName}
                       onChange={(e) => setRouterName(e.target.value)}
                       required
-                      placeholder="Ex: MikroTik Principal / Hotspot Matriz"
-                      className="w-full bg-white border-2 border-slate-300 text-slate-950 font-bold rounded-2xl px-3.5 py-2.5 text-xs focus:border-blue-600 outline-none transition-colors"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-blue-500 transition-colors"
                     />
                   </div>
-
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-black text-slate-900 uppercase tracking-wider mb-1.5">
-                        Usuário API
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Usuário RouterOS
                       </label>
                       <input
                         type="text"
                         value={user}
                         onChange={(e) => setUser(e.target.value)}
                         required
-                        placeholder="admin"
-                        className="w-full bg-white border-2 border-slate-300 text-slate-950 font-bold rounded-2xl px-3.5 py-2.5 text-xs focus:border-blue-600 outline-none transition-colors"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-blue-500 transition-colors"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-black text-slate-900 uppercase tracking-wider mb-1.5">
-                        Senha API
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Senha RouterOS
                       </label>
                       <input
                         type="password"
+                        placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••"
-                        className="w-full bg-white border-2 border-slate-300 text-slate-950 font-bold rounded-2xl px-3.5 py-2.5 text-xs focus:border-blue-600 outline-none transition-colors"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-blue-500 transition-colors"
                       />
                     </div>
                   </div>
                 </div>
               )}
 
-              <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4 text-xs text-blue-950 space-y-1.5">
-                <div className="font-extrabold flex items-center gap-1.5 text-blue-900">
-                  <Shield className="w-4 h-4 text-blue-600" />
-                  O que este processo faz automaticamente:
-                </div>
-                <p className="text-[11px] text-blue-800 leading-relaxed font-medium">
-                  1. Gera chaves criptográficas WireGuard assimétricas exclusivas.<br />
-                  2. Aloca um IP privado na VPN (ex: 10.8.0.2).<br />
-                  3. Cria o script completo para você colar no Terminal do MikroTik.
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-2">
+              <div className="pt-4 flex justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-sm disabled:opacity-50"
                 >
                   {loading ? (
                     <>
@@ -362,7 +382,6 @@ function CreateTunnelModal({
               </div>
             </form>
           ) : (
-            /* Script Output Step */
             <div className="space-y-4 animate-fade-in">
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between">
                 <div>
@@ -391,7 +410,7 @@ function CreateTunnelModal({
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <CopyButton text={scriptResult.script} />
+                  <CopyButton text={scriptResult.script} label="Copiar Script" />
                   <button
                     onClick={downloadScript}
                     className="p-2 rounded-xl bg-white hover:bg-emerald-100 text-emerald-700 border border-emerald-300 transition-colors cursor-pointer"
@@ -402,24 +421,22 @@ function CreateTunnelModal({
                 </div>
               </div>
 
-              {/* Instructions Steps */}
               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2">
                 <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
                   Como Conectar o MikroTik:
                 </h4>
                 <ol className="text-xs text-slate-600 font-medium space-y-1.5 list-decimal list-inside leading-relaxed">
-                  <li>Abra o <strong>Winbox</strong> conectado ao seu MikroTik.</li>
-                  <li>Clique no botão <strong>New Terminal</strong> na barra lateral esquerda.</li>
-                  <li><strong>Cole o script abaixo</strong> e pressione Enter.</li>
+                  <li>Abra o <strong>Winbox</strong> conectado ao seu MikroTik na rede local.</li>
+                  <li>Clique no botão <strong>New Terminal</strong> no menu lateral esquerdo.</li>
+                  <li><strong>Cole o script gerado</strong> e pressione Enter.</li>
                   <li>O MikroTik conectará à VPS em menos de 5 segundos!</li>
                 </ol>
               </div>
 
-              {/* Script Box */}
               <div>
                 <div className="flex items-center justify-between pb-1 text-[11px] font-bold text-slate-500">
                   <span>Script RouterOS 7+ (.rsc)</span>
-                  <span className="font-mono text-[10px]">Auto-gerado</span>
+                  <span className="font-mono text-[10px]">Linha única / Idempotente</span>
                 </div>
                 <pre className="bg-[#0f172a] text-slate-200 p-4 rounded-2xl text-[11px] font-mono leading-relaxed overflow-x-auto max-h-60 custom-scrollbar border border-slate-800 selection:bg-blue-600">
                   {scriptResult.script}
@@ -443,31 +460,499 @@ function CreateTunnelModal({
   );
 }
 
+// ─── Modal de Criação de Peer (Windows / Celular) ───────────────────────────
+
+interface CreatePeerModalProps {
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function CreatePeerModal({ onClose, onSuccess }: CreatePeerModalProps) {
+  const [name, setName] = useState("");
+  const [deviceType, setDeviceType] = useState<"windows" | "android" | "ios" | "macos" | "linux">("windows");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<{
+    peer: { id: string; name: string; deviceType: string; vpnIp: string };
+    clientConfig: string;
+  } | null>(null);
+
+  const [activeTab, setActiveTab] = useState<"qr" | "conf">("conf");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/vpn/peers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, deviceType }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao criar dispositivo VPN.");
+
+      setResult({
+        peer: data.peer,
+        clientConfig: data.clientConfig,
+      });
+
+      if (deviceType === "android" || deviceType === "ios") {
+        setActiveTab("qr");
+      } else {
+        setActiveTab("conf");
+      }
+
+      onSuccess();
+    } catch (err: any) {
+      setError(err?.message || "Falha na comunicação ao criar peer.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadConf = () => {
+    if (!result) return;
+    const blob = new Blob([result.clientConfig], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const safeName = result.peer.name.toLowerCase().replace(/\s+/g, "-");
+    a.download = `mikrogestor-${safeName}.conf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl max-h-[92vh] overflow-hidden flex flex-col border border-slate-200">
+        
+        {/* Modal Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-blue-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20">
+              <Laptop className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900">
+                {result ? "Dispositivo VPN Configurado!" : "Conectar PC ou Celular à VPN"}
+              </h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                {result
+                  ? `IP Alocado: ${result.peer.vpnIp} — Pronto para acessar o Winbox`
+                  : "Acesse seus MikroTiks remotamente via Winbox de onde estiver"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto space-y-5 flex-1 custom-scrollbar">
+          {error && (
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2.5">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {!result ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  Tipo de Dispositivo
+                </label>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {[
+                    { id: "windows", label: "Windows PC", icon: Monitor, desc: "Winbox nativo" },
+                    { id: "android", label: "Celular Android", icon: Smartphone, desc: "QR Code" },
+                    { id: "ios", label: "iPhone / iPad", icon: Smartphone, desc: "QR Code" },
+                  ].map((dev) => {
+                    const Icon = dev.icon;
+                    const selected = deviceType === dev.id;
+                    return (
+                      <button
+                        key={dev.id}
+                        type="button"
+                        onClick={() => setDeviceType(dev.id as any)}
+                        className={`p-3 rounded-2xl border text-left flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                          selected
+                            ? "bg-blue-50/80 border-blue-500 text-blue-900 shadow-xs ring-2 ring-blue-500/20"
+                            : "bg-slate-50/60 border-slate-200 text-slate-700 hover:bg-slate-100"
+                        }`}
+                      >
+                        <Icon className={`w-5 h-5 mb-1.5 ${selected ? "text-blue-600" : "text-slate-500"}`} />
+                        <span className="text-xs font-black block">{dev.label}</span>
+                        <span className="text-[10px] text-slate-400 mt-0.5">{dev.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Nome do Dispositivo / Identificação
+                </label>
+                <input
+                  type="text"
+                  placeholder={
+                    deviceType === "windows"
+                      ? "Ex: Notebook Windows Lyncoln"
+                      : deviceType === "android"
+                      ? "Ex: Samsung Galaxy S23 (Admin)"
+                      : "Ex: iPhone 15 Pro (Suporte)"
+                  }
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-blue-500 transition-colors"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Um nome amigável para identificar este dispositivo na lista de conexões.
+                </p>
+              </div>
+
+              <div className="bg-blue-50/60 border border-blue-200/80 rounded-2xl p-4 flex items-start gap-3 text-xs text-blue-900">
+                <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold">Split-Tunneling Seguro Ativado</p>
+                  <p className="text-blue-700 leading-relaxed text-[11px]">
+                    Apenas o tráfego destinado aos MikroTiks e à VPS (<code className="font-mono bg-blue-100/70 px-1 py-0.5 rounded">10.8.0.0/24</code>) passará pela VPN. Sua internet e sites locais continuam rápidos e normais.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md shadow-blue-500/20 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Gerando Chaves...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 stroke-[2.5]" />
+                      Criar Acesso VPN
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-5 animate-fade-in">
+              {/* Top Banner */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-black text-emerald-950 uppercase tracking-wider">
+                      {result.peer.name} Cadastrado!
+                    </span>
+                  </div>
+                  <p className="text-xs text-emerald-800 font-medium mt-0.5">
+                    IP VPN Alocado: <strong className="font-mono">{result.peer.vpnIp}</strong>
+                  </p>
+                </div>
+                <StatusBadge status="pending" />
+              </div>
+
+              {/* Tabs Switcher */}
+              <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("qr")}
+                  className={`py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    activeTab === "qr"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <QrCode className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>📱 QR Code (Celular)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("conf")}
+                  className={`py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    activeTab === "conf"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Download className="w-3.5 h-3.5 text-blue-600" />
+                  <span>🪟 Arquivo .conf (Windows)</span>
+                </button>
+              </div>
+
+              {activeTab === "qr" ? (
+                <div className="flex flex-col items-center justify-center p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+                  <div className="p-3.5 bg-white rounded-2xl shadow-md border border-slate-200">
+                    <QRCodeSVG
+                      value={result.clientConfig}
+                      size={210}
+                      level="M"
+                      includeMargin
+                    />
+                  </div>
+                  <div className="text-center max-w-sm space-y-1">
+                    <p className="text-xs font-black text-slate-800">Como Conectar no Celular:</p>
+                    <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                      1. Instale o app <strong>WireGuard</strong> no Android ou iPhone.<br />
+                      2. Toque no <strong>+</strong> e selecione <strong>Digitalizar código QR</strong>.<br />
+                      3. Aponte a câmera para a tela e dê um nome (ex: <em>MikroGestor</em>).<br />
+                      4. Ative a VPN e abra o Winbox Mobile conectando no IP do seu MikroTik!
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                          Configuração para Windows / Mac / Linux
+                        </h4>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          Baixe o arquivo de túnel para o app oficial do WireGuard.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={downloadConf}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-xs cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Baixar .conf</span>
+                        </button>
+                        <CopyButton text={result.clientConfig} label="Copiar" />
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-white rounded-xl border border-slate-200/80 text-[11px] text-slate-600 font-medium space-y-1">
+                      <p className="font-bold text-slate-800">Passo a passo no Windows:</p>
+                      <p>1. Se ainda não tiver, baixe o <a href="https://www.wireguard.com/install/" target="_blank" rel="noreferrer" className="text-blue-600 underline font-bold">WireGuard for Windows</a>.</p>
+                      <p>2. Clique em <strong>Adicionar Túnel</strong> e selecione o arquivo <strong>.conf</strong> baixado.</p>
+                      <p>3. Clique em <strong>Ativar</strong>.</p>
+                      <p>4. Abra o <strong>Winbox</strong> e conecte no IP do seu MikroTik (ex: <strong>10.8.0.2</strong>).</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="block pb-1 text-[11px] font-bold text-slate-500">
+                      Conteúdo do Arquivo .conf
+                    </span>
+                    <pre className="bg-[#0f172a] text-slate-200 p-3.5 rounded-2xl text-[11px] font-mono leading-relaxed overflow-x-auto max-h-48 custom-scrollbar border border-slate-800">
+                      {result.clientConfig}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-sm"
+                >
+                  Concluído / Fechar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Modal de Visualização de QR Code / Config do Peer Existente ───────────
+
+interface ViewPeerQrModalProps {
+  peer: VpnPeerClient;
+  onClose: () => void;
+}
+
+function ViewPeerQrModal({ peer, onClose }: ViewPeerQrModalProps) {
+  const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"qr" | "conf">(
+    peer.deviceType === "android" || peer.deviceType === "ios" ? "qr" : "conf"
+  );
+
+  useEffect(() => {
+    fetch(`/api/vpn/peers/${peer.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.clientConfig) setConfig(data.clientConfig);
+      })
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }, [peer.id]);
+
+  const downloadConf = () => {
+    if (!config) return;
+    const blob = new Blob([config], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const safeName = peer.name.toLowerCase().replace(/\s+/g, "-");
+    a.download = `mikrogestor-${safeName}.conf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col border border-slate-200">
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center">
+              <DeviceIcon type={peer.deviceType} />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900">{peer.name}</h2>
+              <p className="text-xs text-slate-500 font-mono mt-0.5">IP VPN: {peer.vpnIp}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto space-y-5 flex-1 custom-scrollbar">
+          {loading ? (
+            <div className="p-12 text-center text-slate-500 font-bold text-xs animate-pulse">
+              Carregando chaves e QR Code...
+            </div>
+          ) : !config ? (
+            <div className="p-4 text-center text-rose-600 text-xs font-bold">
+              Não foi possível carregar a configuração do túnel.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("qr")}
+                  className={`py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    activeTab === "qr"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <QrCode className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>📱 QR Code (Celular)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("conf")}
+                  className={`py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    activeTab === "conf"
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Download className="w-3.5 h-3.5 text-blue-600" />
+                  <span>🪟 Arquivo .conf</span>
+                </button>
+              </div>
+
+              {activeTab === "qr" ? (
+                <div className="flex flex-col items-center justify-center p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div className="p-3 bg-white rounded-2xl shadow-md border border-slate-200">
+                    <QRCodeSVG value={config} size={210} level="M" includeMargin />
+                  </div>
+                  <p className="text-[11px] text-slate-500 text-center font-medium">
+                    Aponte a câmera do aplicativo <strong>WireGuard</strong> para este QR Code.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700">Arquivo de Configuração</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={downloadConf}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-xs cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Baixar .conf</span>
+                      </button>
+                      <CopyButton text={config} label="Copiar" />
+                    </div>
+                  </div>
+                  <pre className="bg-[#0f172a] text-slate-200 p-3.5 rounded-2xl text-[11px] font-mono leading-relaxed overflow-x-auto max-h-56 custom-scrollbar border border-slate-800">
+                    {config}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Página Principal ─────────────────────────────────────────────────────
 
 export default function VpnPage() {
   const [vpnRouters, setVpnRouters] = useState<VpnRouter[]>([]);
   const [allRouters, setAllRouters] = useState<RouterBasic[]>([]);
+  const [peers, setPeers] = useState<VpnPeerClient[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Modais
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreatePeerModal, setShowCreatePeerModal] = useState(false);
+  const [selectedPeerForQr, setSelectedPeerForQr] = useState<VpnPeerClient | null>(null);
   const [selectedForConfig, setSelectedForConfig] = useState<RouterBasic | null>(null);
+
   const [revoking, setRevoking] = useState<string | null>(null);
-  const [wgAvailable, setWgAvailable] = useState(true);
+  const [revokingPeer, setRevokingPeer] = useState<string | null>(null);
+  const [syncingSsl, setSyncingSsl] = useState<string | null>(null);
 
   const loadStatus = useCallback(async () => {
     try {
-      const [statusRes, routersRes] = await Promise.all([
+      const [statusRes, routersRes, peersRes] = await Promise.all([
         fetch("/api/vpn/status"),
         fetch("/api/system/routers").catch(() => null),
+        fetch("/api/vpn/peers").catch(() => null),
       ]);
+
       if (statusRes.ok) {
         const data = await statusRes.json();
         setVpnRouters(data.routers ?? []);
-        setWgAvailable(data.wgAvailable ?? true);
       }
       if (routersRes?.ok) {
         const data = await routersRes.json();
         setAllRouters(data?.routers ?? []);
+      }
+      if (peersRes?.ok) {
+        const data = await peersRes.json();
+        setPeers(data?.peers ?? []);
       }
     } catch (err) {
       console.error(err);
@@ -482,8 +967,8 @@ export default function VpnPage() {
     return () => clearInterval(interval);
   }, [loadStatus]);
 
-  const revoke = async (routerId: string, routerName: string) => {
-    if (!confirm(`Revogar acesso VPN de ${routerName}? O MikroTik perderá a conexão com a plataforma.`)) return;
+  const revokeRouter = async (routerId: string, routerName: string) => {
+    if (!confirm(`Revogar acesso VPN do roteador '${routerName}'? O MikroTik perderá a conexão com a plataforma.`)) return;
     setRevoking(routerId);
     try {
       await fetch(`/api/vpn/router/${routerId}/revoke`, { method: "DELETE" });
@@ -493,7 +978,16 @@ export default function VpnPage() {
     }
   };
 
-  const [syncingSsl, setSyncingSsl] = useState<string | null>(null);
+  const revokePeer = async (peerId: string, peerName: string) => {
+    if (!confirm(`Excluir o acesso VPN do dispositivo '${peerName}'? Ele não conseguirá mais conectar aos MikroTiks.`)) return;
+    setRevokingPeer(peerId);
+    try {
+      await fetch(`/api/vpn/peers/${peerId}`, { method: "DELETE" });
+      await loadStatus();
+    } finally {
+      setRevokingPeer(null);
+    }
+  };
 
   const syncSsl = async (routerId: string, routerName: string) => {
     setSyncingSsl(routerId);
@@ -516,9 +1010,9 @@ export default function VpnPage() {
   };
 
   const nonVpnRouters = allRouters.filter((r) => !r.vpnEnabled);
-  const connected = vpnRouters.filter((r) => r.vpnStatus === "connected").length;
-  const pending   = vpnRouters.filter((r) => r.vpnStatus === "pending").length;
-  const offline   = vpnRouters.filter((r) => r.vpnStatus === "disconnected").length;
+  const connectedRouters = vpnRouters.filter((r) => r.vpnStatus === "connected").length;
+  const connectedPeers = peers.filter((p) => p.status === "connected").length;
+  const totalConnected = connectedRouters + connectedPeers;
 
   return (
     <main className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 animate-fade-in">
@@ -536,21 +1030,30 @@ export default function VpnPage() {
             VPN Control
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Controle remoto e provisionamento de roteadores MikroTik sem IP público via WireGuard
+            Gerenciamento de túneis seguros para MikroTiks, computadores e celulares com acesso direto ao Winbox
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowCreatePeerModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-indigo-500/20 transition-all cursor-pointer transform hover:-translate-y-0.5"
+          >
+            <Laptop className="w-4 h-4" />
+            <span>+ Conectar PC / Celular</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
               setSelectedForConfig(null);
               setShowCreateModal(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-500/25 transition-all cursor-pointer transform hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-500/25 transition-all cursor-pointer transform hover:-translate-y-0.5"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>+ Novo Túnel VPN</span>
+            <span>+ Novo MikroTik</span>
           </button>
         </div>
       </header>
@@ -558,9 +1061,9 @@ export default function VpnPage() {
       {/* ── Metric Cards ─────────────────────────────────────────── */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Online / Conectados", value: connected, color: "text-emerald-600", bg: "bg-emerald-50/70 border-emerald-200", dot: "bg-emerald-500" },
-          { label: "Aguardando Conexão",  value: pending,   color: "text-amber-600",   bg: "bg-amber-50/70 border-amber-200",     dot: "bg-amber-500" },
-          { label: "Offline / Desconectados", value: offline, color: "text-rose-600",  bg: "bg-rose-50/70 border-rose-200",       dot: "bg-rose-500" },
+          { label: "Total Online na VPN", value: totalConnected, sub: `${connectedRouters} Roteador(es) · ${connectedPeers} Admin(s)`, color: "text-emerald-600", bg: "bg-emerald-50/70 border-emerald-200", dot: "bg-emerald-500" },
+          { label: "MikroTiks Conectados", value: vpnRouters.length, sub: "Túneis de controle ativos", color: "text-blue-600", bg: "bg-blue-50/70 border-blue-200", dot: "bg-blue-500" },
+          { label: "PCs e Celulares Admin", value: peers.length, sub: "Perfis com acesso Winbox", color: "text-indigo-600", bg: "bg-indigo-50/70 border-indigo-200", dot: "bg-indigo-500" },
         ].map((s) => (
           <div key={s.label} className={`border rounded-3xl p-5 ${s.bg} flex items-center justify-between shadow-xs`}>
             <div>
@@ -568,17 +1071,21 @@ export default function VpnPage() {
                 {s.label}
               </span>
               <p className={`text-3xl font-black mt-1 ${s.color}`}>{s.value}</p>
+              <p className="text-[10px] text-slate-500 font-medium mt-0.5">{s.sub}</p>
             </div>
             <div className={`w-3 h-3 rounded-full ${s.dot} shadow-xs`} />
           </div>
         ))}
       </section>
 
-      {/* ── Tabela de Roteadores VPN ──────────────────────────────── */}
+      {/* ── SEÇÃO 1: Roteadores MikroTik ──────────────────────────── */}
       <section className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div>
-            <h2 className="text-sm font-extrabold text-slate-900">Roteadores com VPN Ativa</h2>
+            <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+              <Wifi className="w-4 h-4 text-blue-600" />
+              Roteadores MikroTik (Hotspots)
+            </h2>
             <p className="text-xs text-slate-400 mt-0.5">Túneis privados estabelecidos entre a VPS e as Routerboards</p>
           </div>
           <button
@@ -595,15 +1102,14 @@ export default function VpnPage() {
             Carregando status dos túneis VPN...
           </div>
         ) : vpnRouters.length === 0 ? (
-          /* Empty State com Botão de Ação Direta */
-          <div className="p-10 text-center space-y-4 max-w-md mx-auto">
-            <div className="w-14 h-14 rounded-3xl bg-blue-50 border border-blue-200 flex items-center justify-center mx-auto text-blue-600 shadow-xs">
-              <Shield className="w-7 h-7" />
+          <div className="p-8 text-center space-y-3 max-w-md mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mx-auto text-blue-600">
+              <Shield className="w-6 h-6" />
             </div>
-            <div className="space-y-1.5">
-              <h3 className="text-base font-black text-slate-900">Nenhum Roteador Conectado via VPN</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                Conecte seu MikroTik à VPS através de um túnel seguro WireGuard para controle total e provisionamento sem precisar de IP fixo ou DDNS.
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-slate-900">Nenhum MikroTik Conectado</h3>
+              <p className="text-xs text-slate-500 font-medium">
+                Conecte sua primeira Routerboard via WireGuard para controle remoto sem IP público.
               </p>
             </div>
             <button
@@ -612,10 +1118,10 @@ export default function VpnPage() {
                 setSelectedForConfig(null);
                 setShowCreateModal(true);
               }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-500/25 transition-all cursor-pointer transform hover:-translate-y-0.5"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors cursor-pointer"
             >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>Conectar Meu Primeiro MikroTik</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Conectar MikroTik</span>
             </button>
           </div>
         ) : (
@@ -635,7 +1141,7 @@ export default function VpnPage() {
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
-                          title="Acessar painel do roteador via HTTPS"
+                          title="Acessar painel via HTTPS"
                         >
                           <Globe className="w-2.5 h-2.5" />
                           <span>{r.subdomain}</span>
@@ -653,12 +1159,24 @@ export default function VpnPage() {
                         </span>
                       ) : null}
                     </div>
-                    <p className="text-xs text-slate-500 font-mono mt-0.5">
-                      IP VPN: <strong className="text-slate-800">{r.vpnIp ?? "—"}</strong>
-                      {r.peer?.endpoint && (
-                        <span className="text-slate-400 ml-1.5">· {r.peer.endpoint}</span>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 font-mono">
+                      <span>IP Winbox:</span>
+                      <strong className="text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                        {r.vpnIp ?? "—"}
+                      </strong>
+                      {r.vpnIp && (
+                        <button
+                          onClick={() => navigator.clipboard.writeText(r.vpnIp!)}
+                          className="text-[10px] text-blue-600 hover:text-blue-800 font-sans font-bold cursor-pointer"
+                          title="Copiar IP do Winbox"
+                        >
+                          Copiar IP
+                        </button>
                       )}
-                    </p>
+                      {r.peer?.endpoint && (
+                        <span className="text-slate-400">· {r.peer.endpoint}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -696,7 +1214,7 @@ export default function VpnPage() {
                       <Download className="w-4 h-4" />
                     </a>
                     <button
-                      onClick={() => revoke(r.id, r.name)}
+                      onClick={() => revokeRouter(r.id, r.name)}
                       disabled={revoking === r.id}
                       className="p-2 hover:bg-rose-50 text-rose-500 hover:text-rose-700 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-rose-200 disabled:opacity-40"
                       title="Revogar acesso VPN"
@@ -711,13 +1229,165 @@ export default function VpnPage() {
         )}
       </section>
 
+      {/* ── SEÇÃO 2: Dispositivos de Acesso Remoto (Windows / Celular) ──── */}
+      <section className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-indigo-50/30">
+          <div>
+            <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+              <Laptop className="w-4 h-4 text-indigo-600" />
+              Dispositivos de Acesso Remoto (Windows / Celular)
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Conecte seu computador ou smartphone à VPN para abrir o Winbox de qualquer lugar
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCreatePeerModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs transition-colors cursor-pointer shadow-xs"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Adicionar Dispositivo</span>
+          </button>
+        </div>
+
+        {peers.length === 0 ? (
+          <div className="p-8 text-center space-y-3 max-w-md mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center mx-auto text-indigo-600">
+              <Laptop className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-slate-900">Nenhum Dispositivo Cadastrado</h3>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Crie um perfil para o seu computador Windows ou celular para conectar via WireGuard e abrir o Winbox dos MikroTiks remotamente.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCreatePeerModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs transition-colors cursor-pointer shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Conectar Meu Computador ou Celular</span>
+            </button>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {peers.map((p) => (
+              <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50/60 transition-colors">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center shrink-0">
+                    <DeviceIcon type={p.deviceType} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-black text-slate-900 text-sm">{p.name}</h4>
+                      <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                        {p.deviceType}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-mono mt-0.5">
+                      IP VPN: <strong className="text-slate-800">{p.vpnIp}</strong>
+                      {p.endpoint && <span className="text-slate-400 ml-1.5">· {p.endpoint}</span>}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 self-end sm:self-center">
+                  <div className="text-right text-xs text-slate-400 hidden md:block">
+                    <p className="font-semibold text-slate-600">
+                      ↑ {formatBytes(p.transferTx)} · ↓ {formatBytes(p.transferRx)}
+                    </p>
+                    <p className="text-[10px] mt-0.5">Visto: {formatLastSeen(p.lastSeen)}</p>
+                  </div>
+
+                  <StatusBadge status={p.status} />
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setSelectedPeerForQr(p)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-colors cursor-pointer border border-indigo-200 text-xs font-bold"
+                      title="Ver QR Code para celular"
+                    >
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>QR Code</span>
+                    </button>
+
+                    <a
+                      href={`/api/vpn/peers/${p.id}/config`}
+                      download
+                      className="p-2 hover:bg-blue-50 text-blue-600 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-blue-200"
+                      title="Baixar arquivo de túnel .conf"
+                    >
+                      <Download className="w-4 h-4" />
+                    </a>
+
+                    <button
+                      onClick={() => revokePeer(p.id, p.name)}
+                      disabled={revokingPeer === p.id}
+                      className="p-2 hover:bg-rose-50 text-rose-500 hover:text-rose-700 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-rose-200 disabled:opacity-40"
+                      title="Excluir dispositivo"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Guia Passo a Passo: Como Acessar via Winbox ────────────── */}
+      <section className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-3xl p-6 text-white shadow-md border border-slate-800 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center">
+            <Monitor className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-white">Como Acessar o Winbox Remotamente</h3>
+            <p className="text-xs text-slate-400">Instruções para conectar do computador ou do celular</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          {/* Card Windows */}
+          <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center gap-2 text-blue-400 font-black">
+              <Monitor className="w-4 h-4" />
+              <span>No Computador (Windows / Mac / Linux)</span>
+            </div>
+            <ol className="text-slate-300 space-y-1.5 list-decimal list-inside font-medium leading-relaxed">
+              <li>Instale o cliente oficial <a href="https://www.wireguard.com/install/" target="_blank" rel="noreferrer" className="text-blue-400 underline font-bold">WireGuard</a>.</li>
+              <li>Clique em <strong>+ Conectar PC / Celular</strong> acima e baixe o arquivo <strong>.conf</strong>.</li>
+              <li>No WireGuard, clique em <strong>Adicionar Túnel</strong> e selecione o arquivo. Clique em <strong>Ativar</strong>.</li>
+              <li>Abra o <strong>Winbox</strong>, e no campo <em>Connect To</em> digite o IP VPN do MikroTik (ex: <code className="text-emerald-300 bg-black/40 px-1 py-0.5 rounded font-mono">10.8.0.2</code>).</li>
+            </ol>
+          </div>
+
+          {/* Card Celular */}
+          <div className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 space-y-2">
+            <div className="flex items-center gap-2 text-indigo-400 font-black">
+              <Smartphone className="w-4 h-4" />
+              <span>No Smartphone (Android / iPhone)</span>
+            </div>
+            <ol className="text-slate-300 space-y-1.5 list-decimal list-inside font-medium leading-relaxed">
+              <li>Instale o app <strong>WireGuard</strong> na Google Play ou App Store.</li>
+              <li>Toque no botão <strong>+</strong> e selecione <strong>Digitalizar código QR</strong>.</li>
+              <li>Aponte para o QR Code do seu dispositivo gerado nesta página.</li>
+              <li>Ative a chave da VPN e use o app <strong>MikroTik Pro</strong> ou <strong>Winbox Mobile</strong> conectando em <code className="text-emerald-300 bg-black/40 px-1 py-0.5 rounded font-mono">10.8.0.2</code>!</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
       {/* ── Roteadores Cadastrados sem VPN ────────────────────────── */}
       {nonVpnRouters.length > 0 && (
         <section className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-extrabold text-slate-900">Roteadores sem VPN</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Roteadores cadastrados no sistema que ainda não possuem túnel WireGuard</p>
+              <h2 className="text-sm font-extrabold text-slate-900">Roteadores Cadastrados sem VPN</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Routerboards locais que ainda não possuem túnel configurado</p>
             </div>
           </div>
           <div className="divide-y divide-slate-100">
@@ -743,30 +1413,7 @@ export default function VpnPage() {
         </section>
       )}
 
-      {/* ── Guia Rápido VPS ───────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-3xl p-6 text-white shadow-md border border-slate-800 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center">
-            <Terminal className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-black text-white">Comando de Instalação na VPS</h3>
-            <p className="text-xs text-slate-400">Execute no terminal SSH da VPS apenas uma vez para ativar o servidor WireGuard</p>
-          </div>
-        </div>
-
-        <div className="bg-black/50 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-mono text-xs text-emerald-400">
-          <span className="truncate">
-            curl -sSL https://raw.githubusercontent.com/lyncolnsas/mikrogestor-voucher22/master/vpn/setup-vps.sh | sudo bash
-          </span>
-          <CopyButton
-            text="curl -sSL https://raw.githubusercontent.com/lyncolnsas/mikrogestor-voucher22/master/vpn/setup-vps.sh | sudo bash"
-            label="Copiar Comando"
-          />
-        </div>
-      </section>
-
-      {/* ── Modal de Criação / Geração de Script ──────────────────── */}
+      {/* ── Modal de Criação MikroTik ─────────────────────────────── */}
       {showCreateModal && (
         <CreateTunnelModal
           existingRouters={nonVpnRouters}
@@ -776,6 +1423,22 @@ export default function VpnPage() {
             setSelectedForConfig(null);
           }}
           onSuccess={loadStatus}
+        />
+      )}
+
+      {/* ── Modal de Criação Peer (Windows / Celular) ───────────────── */}
+      {showCreatePeerModal && (
+        <CreatePeerModal
+          onClose={() => setShowCreatePeerModal(false)}
+          onSuccess={loadStatus}
+        />
+      )}
+
+      {/* ── Modal de QR Code de Peer Existente ────────────────────── */}
+      {selectedPeerForQr && (
+        <ViewPeerQrModal
+          peer={selectedPeerForQr}
+          onClose={() => setSelectedPeerForQr(null)}
         />
       )}
     </main>

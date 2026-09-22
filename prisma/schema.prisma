@@ -167,3 +167,17 @@ model BaileysAuth {
   @@index([instanceId])
 }
 
+model VpnPeer {
+  id           String    @id @default(uuid())
+  name         String
+  deviceType   String    @default("windows") // windows | android | ios | macos | linux
+  vpnIp        String    @unique
+  publicKey    String
+  privateKey   String
+  presharedKey String?
+  status       String    @default("disconnected") // connected | disconnected
+  lastSeen     DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+

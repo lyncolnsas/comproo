@@ -176,20 +176,30 @@ export class WireGuardService {
 
   /**
    * Aloca o próximo IP disponível na subnet 10.8.0.0/24.
-   * Reserva .1 para o servidor VPS.
+   * Reserva .1 para o servidor VPS. Verifica tanto roteadores quanto peers (Windows/Mobile).
    */
   async allocateVpnIp(): Promise<string> {
     await ensureVpnColumns();
-    const used = await prisma.router.findMany({
-      where: { vpnIp: { not: null } },
-      select: { vpnIp: true },
-    });
+    const [usedRouters, usedPeers] = await Promise.all([
+      prisma.router.findMany({
+        where: { vpnIp: { not: null } },
+        select: { vpnIp: true },
+      }),
+      prisma.vpnPeer.findMany({
+        where: { vpnIp: { not: null } },
+        select: { vpnIp: true },
+      }),
+    ]);
 
     const usedOctets = new Set<number>();
     usedOctets.add(VPN_SERVER_OCTET); // .1 = servidor
 
-    for (const r of used) {
+    for (const r of usedRouters) {
       const octet = r.vpnIp?.split(".")[3];
+      if (octet) usedOctets.add(Number(octet));
+    }
+    for (const p of usedPeers) {
+      const octet = p.vpnIp?.split(".")[3];
       if (octet) usedOctets.add(Number(octet));
     }
 
@@ -197,7 +207,49 @@ export class WireGuardService {
       if (!usedOctets.has(i)) return `${VPN_SUBNET_BASE}.${i}`;
     }
 
-    throw new Error("Subnet VPN esgotada — máximo de 253 roteadores atingido.");
+    throw new Error("Subnet VPN esgotada — máximo de 253 clientes/roteadores atingido.");
+  }
+
+  /**
+   * Gera o arquivo de configuração (.conf) padrão do WireGuard para clientes (Windows, Celular, etc.)
+   * Utiliza split-tunneling (AllowedIPs = 10.8.0.0/24) para isolamento seguro do tráfego de controle.
+   */
+  generateClientConfig(params: {
+    name?: string;
+    privateKey: string;
+    vpnIp: string;
+    vpsPublicKey: string;
+    vpsIp: string;
+    vpsPort?: number;
+    dns?: string;
+  }): string {
+    const {
+      name = "MikroGestor VPN",
+      privateKey,
+      vpnIp,
+      vpsPublicKey,
+      vpsIp,
+      vpsPort = 51820,
+      dns = "1.1.1.1, 8.8.8.8",
+    } = params;
+
+    return `# ============================================================
+# MikroGestor VPN — Configuração de Acesso Remoto
+# Dispositivo : ${name}
+# IP Cliente  : ${vpnIp}
+# ============================================================
+
+[Interface]
+PrivateKey = ${privateKey}
+Address = ${vpnIp}/24
+DNS = ${dns}
+
+[Peer]
+PublicKey = ${vpsPublicKey}
+Endpoint = ${vpsIp}:${vpsPort}
+AllowedIPs = 10.8.0.0/24
+PersistentKeepalive = 25
+`;
   }
 
   /**
@@ -382,10 +434,10 @@ ${subdomain ? `# Subdomínio: ${subdomain}\n` : ""}# Gerado em: ${new Date().toI
 
 # --- 5. FIREWALL DE SEGURANÇA ---
 :local ruleApi [/ip firewall filter find comment="MikroGestor: API access"]
-:if ([:len $ruleApi] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=10.8.0.1 dst-port=80,443,8291,8728,8729 protocol=tcp action=accept place-before=0 comment="MikroGestor: API access" } else={ /ip firewall filter set $ruleApi dst-port=80,443,8291,8728,8729 }
+:if ([:len $ruleApi] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=10.8.0.0/24 dst-port=80,443,8291,8728,8729 protocol=tcp action=accept place-before=0 comment="MikroGestor: API access" } else={ /ip firewall filter set $ruleApi src-address=10.8.0.0/24 dst-port=80,443,8291,8728,8729 }
 
 :local ruleBlock [/ip firewall filter find comment="MikroGestor: block non-VPS via VPN"]
-:if ([:len $ruleBlock] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=!10.8.0.1 action=drop comment="MikroGestor: block non-VPS via VPN" }
+:if ([:len $ruleBlock] = 0) do={ /ip firewall filter add chain=input in-interface=wg-mikrogestor src-address=!10.8.0.0/24 action=drop comment="MikroGestor: block non-VPS via VPN" } else={ /ip firewall filter set $ruleBlock src-address=!10.8.0.0/24 }
 
 :do {
   :local ruleHs [/ip firewall filter find comment="MikroGestor: block hotspot thru VPN"]

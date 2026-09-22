@@ -51,6 +51,24 @@ export async function ensureVpnColumns(): Promise<void> {
           await prisma.$executeRawUnsafe(`ALTER TABLE "Router" ADD COLUMN "sslExpiresAt" DATETIME;`).catch(() => {});
         }
       }
+
+      // Garante que a tabela VpnPeer exista no SQLite
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "VpnPeer" (
+          "id" TEXT PRIMARY KEY,
+          "name" TEXT NOT NULL,
+          "deviceType" TEXT NOT NULL DEFAULT 'windows',
+          "vpnIp" TEXT UNIQUE NOT NULL,
+          "publicKey" TEXT NOT NULL,
+          "privateKey" TEXT NOT NULL,
+          "presharedKey" TEXT,
+          "status" TEXT NOT NULL DEFAULT 'disconnected',
+          "lastSeen" DATETIME,
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+      `).catch(() => {});
+
       migrationDone = true;
     } catch (e) {
       console.warn('[Prisma Auto-Migration Error]', e);
