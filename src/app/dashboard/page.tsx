@@ -39,38 +39,10 @@ function formatBytes(bytes: number, decimals = 1) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
 }
 
-// Sample mock trend data for the smooth Spline AreaChart (normalized to current week)
-const CHART_DATA = [
-  { name: 'Seg', faturamento: 180, vouchers: 25 },
-  { name: 'Ter', faturamento: 310, vouchers: 42 },
-  { name: 'Qua', faturamento: 280, vouchers: 38 },
-  { name: 'Qui', faturamento: 450, vouchers: 55 },
-  { name: 'Sex', faturamento: 520, vouchers: 68 },
-  { name: 'Sáb', faturamento: 590, vouchers: 80 },
-  { name: 'Dom', faturamento: 470, vouchers: 62 },
-];
-
-const USER_SPARKLINE = [
-  { v: 20 }, { v: 28 }, { v: 25 }, { v: 36 }, { v: 32 }, { v: 45 }, { v: 42 }, { v: 50 }
-];
-
-const MEM_SPARKLINE = [
-  { v: 45 }, { v: 40 }, { v: 48 }, { v: 42 }, { v: 55 }, { v: 51 }, { v: 62 }, { v: 58 }
-];
-
-// Monthly sales report bar chart data (matching Jan - Jun in reference image)
-const BAR_CHART_DATA = [
-  { name: 'Jan', vendas: 28 },
-  { name: 'Feb', vendas: 18 },
-  { name: 'Mar', vendas: 8 },
-  { name: 'Apr', vendas: 24 },
-  { name: 'May', vendas: 25 },
-  { name: 'Jun', vendas: 28 },
-];
-
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState('');
   const [notConnected, setNotConnected] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -427,7 +399,7 @@ export default function Dashboard() {
               <div className="w-full h-56 mt-2">
                 {mounted && (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart data={stats.chartData || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorFaturamento" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#ff3b5c" stopOpacity={0.25} />
@@ -474,12 +446,12 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN: SPARKLINES + PROGRESS DONUT RINGS */}
+            {/* RIGHT COLUMN: REAL USER & HARDWARE METRICS */}
             <div className="flex flex-col gap-6">
 
-              {/* CARD: USERS & MEMORY SPARKLINES */}
+              {/* CARD: USERS & MEMORY TELEMETRY */}
               <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 grid grid-cols-2 gap-4">
-                {/* User Sparkline */}
+                {/* User Real Stats */}
                 <div className="flex flex-col justify-between">
                   <div>
                     <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400 block mb-0.5">
@@ -487,22 +459,26 @@ export default function Dashboard() {
                     </span>
                     <div className="flex items-baseline gap-1 mt-0.5">
                       <span className="text-xl font-black text-slate-900 dark:text-white">{stats.totalUsersCount}</span>
-                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">+2.12%</span>
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                        {stats.activeUsersCount} online
+                      </span>
                     </div>
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">cadastrados</span>
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">cadastrados no MikroTik</span>
                   </div>
-                  <div className="h-12 w-full mt-2">
-                    {mounted && (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={USER_SPARKLINE}>
-                          <Line type="monotone" dataKey="v" stroke="#10b981" strokeWidth={2.5} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    )}
+                  <div className="mt-3">
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                      <div 
+                        className="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" 
+                        style={{ width: `${Math.min(100, Math.max(5, stats.totalUsersCount > 0 ? Math.round((stats.activeUsersCount / stats.totalUsersCount) * 100) : 0))}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1 block">
+                      Taxa de ocupação: {stats.totalUsersCount > 0 ? Math.round((stats.activeUsersCount / stats.totalUsersCount) * 100) : 0}%
+                    </span>
                   </div>
                 </div>
 
-                {/* RAM Sparkline */}
+                {/* RAM Real Stats */}
                 <div className="flex flex-col justify-between border-l border-slate-200 dark:border-slate-800 pl-4">
                   <div>
                     <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400 block mb-0.5">
@@ -510,20 +486,24 @@ export default function Dashboard() {
                     </span>
                     <div className="flex items-baseline gap-1 mt-0.5">
                       <span className="text-xl font-black text-slate-900 dark:text-white">{formatBytes(stats.freeMemory)}</span>
+                      <span className="text-xs font-bold text-blue-700 dark:text-blue-400">{memUsedPercent}% uso</span>
                     </div>
                     <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">de {formatBytes(stats.totalMemory)}</span>
                   </div>
-                  <div className="h-12 w-full mt-2">
-                    {mounted && (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={MEM_SPARKLINE}>
-                          <Line type="monotone" dataKey="v" stroke="#0084ff" strokeWidth={2.5} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    )}
+                  <div className="mt-3">
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                      <div 
+                        className={`h-2.5 rounded-full transition-all duration-500 ${memUsedPercent > 85 ? 'bg-rose-500' : memUsedPercent > 60 ? 'bg-amber-500' : 'bg-blue-500'}`} 
+                        style={{ width: `${Math.min(100, Math.max(5, memUsedPercent))}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1 block">
+                      Carga de memória da Routerboard
+                    </span>
                   </div>
                 </div>
               </div>
+
 
               {/* CARD: CIRCULAR PROGRESS DONUT (ONLINE VS OFFLINE) */}
               <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex-1 flex flex-col justify-between">
@@ -648,62 +628,60 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {/* Render up to 5 mock/real items */}
-                    {[
-                      { name: 'Alta Lucas', code: 'voucher_88291', date: 'Hoje às 10:30', plan: '1 Hora (R$ 5.00)', status: 'Ativo', color: 'bg-indigo-600' },
-                      { name: 'Teresa Shaw', code: 'voucher_41029', date: 'Hoje às 09:15', plan: '3 Horas (R$ 10.00)', status: 'Ativo', color: 'bg-cyan-600' },
-                      { name: 'Rosa Underwood', code: 'voucher_99412', date: 'Ontem às 22:40', plan: 'Diária (R$ 15.00)', status: 'Pendente', color: 'bg-rose-600' },
-                      { name: 'Vilson Rowe', code: 'voucher_77314', date: 'Ontem às 18:20', plan: '1 Hora (R$ 5.00)', status: 'Ativo', color: 'bg-amber-600' },
-                      { name: 'David Grey', code: 'voucher_66281', date: 'Ontem às 14:10', plan: 'Semanal (R$ 40.00)', status: 'Concluído', color: 'bg-emerald-600' },
-                    ].map((row, idx) => {
-                      const initials = row.name.split(' ').map(n => n[0]).join('').toUpperCase();
-                      return (
+                    {/* Render Real Hotspot Activities (Active Connected Clients Only) */}
+                    {stats.activeHotspotList && stats.activeHotspotList.length > 0 ? (
+                      stats.activeHotspotList.map((row: any, idx: number) => (
                         <tr key={idx} className="group hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
                           <td>
                             <div className="flex items-center gap-3">
-                              <div className={`w-9 h-9 rounded-full ${row.color} text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0`}>
-                                {initials}
+                              <div className="w-9 h-9 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-sm shrink-0">
+                                <Wifi className="w-4 h-4" />
                               </div>
                               <div>
-                                <div className="font-black text-slate-900 dark:text-white text-xs leading-tight">{row.name}</div>
-                                <div className="text-xs font-mono font-bold text-slate-700 dark:text-slate-400">{row.code}</div>
+                                <div className="font-black text-slate-900 dark:text-white text-xs leading-tight">{row.user}</div>
+                                <div className="text-xs font-mono font-bold text-slate-700 dark:text-slate-400">{row.address} | {row.macAddress}</div>
                               </div>
                             </div>
                           </td>
                           <td className="text-xs font-bold text-slate-800 dark:text-slate-300 whitespace-nowrap">
-                            {row.date}
+                            Uptime: {row.uptime}
                           </td>
                           <td className="text-xs font-black text-slate-900 dark:text-white whitespace-nowrap">
-                            {row.plan}
+                            {formatBytes(row.bytesIn + row.bytesOut)}
                           </td>
                           <td className="whitespace-nowrap">
-                            <span className={`saas-pill ${
-                              row.status === 'Ativo' ? 'saas-pill-success' : row.status === 'Pendente' ? 'saas-pill-warning' : 'saas-pill-primary'
-                            }`}>
-                              {row.status}
+                            <span className="saas-pill saas-pill-success">
+                              Conectado
                             </span>
                           </td>
                           <td className="text-center whitespace-nowrap">
-                            <button
-                              type="button"
-                              className="w-8 h-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer mx-auto font-bold"
+                            <Link
+                              href="/dashboard/users"
+                              className="w-8 h-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 inline-flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer mx-auto font-bold"
                             >
-                              <MoreHorizontal className="w-4 h-4" />
-                            </button>
+                              <ExternalLink className="w-4 h-4" />
+                            </Link>
                           </td>
                         </tr>
-                      );
-                    })}
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                          Nenhum cliente conectado ao Hotspot no momento. As conexões ativas do MikroTik aparecerão aqui em tempo real.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
 
               <div className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/60 flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-                <span>Exibindo 5 registros mais recentes</span>
+                <span>{stats.activeHotspotList?.length > 0 ? `${stats.activeHotspotList.length} usuários conectados agora` : 'Nenhum usuário ativo no momento'}</span>
                 <Link href="/dashboard/leads" className="font-black text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
                   Gerenciar Leads & Cadastros →
                 </Link>
               </div>
+
             </div>
 
             {/* RIGHT: UPDATES / LIVE MIKROTIK EVENT LOGS */}
@@ -766,80 +744,60 @@ export default function Dashboard() {
           </section>
 
           {/* ═══════════════════════════════════════════════════════════════
-             4. FOURTH SECTION: DISTRIBUTION + SALE REPORT + SALES OVERVIEW
+             4. FOURTH SECTION: PROFILES + REAL SALES REPORT + PLATFORM OVERVIEW
              ═══════════════════════════════════════════════════════════════ */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-            {/* CARD 1: DISTRIBUTION (70% DONUT) */}
+            {/* CARD 1: DISTRIBUTION (REAL PROFILES) */}
             <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
-                  Distribuição de Tráfego
+                  Perfis de Hotspot
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Proporção de uso por categoria de rede
+                  Distribuição de vouchers por plano cadastrado
                 </p>
               </div>
 
-              {/* 70% Progress Gauge Ring */}
-              <div className="flex flex-col items-center justify-center my-4">
-                <div className="relative w-28 h-28 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      className="text-slate-100 dark:text-slate-800"
-                      strokeWidth="3.8"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className="text-amber-500"
-                      strokeDasharray="70, 100"
-                      strokeWidth="3.8"
-                      strokeLinecap="round"
-                      stroke="currentColor"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                  </svg>
-                  <div className="absolute text-center">
-                    <span className="text-xl font-black text-slate-900 dark:text-white">70%</span>
-                  </div>
-                </div>
-
-                {/* 3 Categories / Legend */}
-                <div className="flex items-center justify-center gap-4 mt-3 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
-                    <span className="text-slate-600 dark:text-slate-300 font-medium">Hotspot</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    <span className="text-slate-600 dark:text-slate-300 font-medium">Vouchers</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                    <span className="text-slate-600 dark:text-slate-300 font-medium">Outros</span>
-                  </div>
-                </div>
+              <div className="my-4 space-y-3">
+                {stats.profileDistribution && stats.profileDistribution.length > 0 ? (
+                  stats.profileDistribution.slice(0, 4).map((item: any, idx: number) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-slate-800 dark:text-slate-200">{item.name}</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-mono">{item.count} ({item.percent}%)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div
+                          className={`h-2 rounded-full ${idx === 0 ? 'bg-blue-600' : idx === 1 ? 'bg-indigo-500' : idx === 2 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                          style={{ width: `${Math.max(5, item.percent)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 py-4 text-center font-medium">
+                    Nenhum perfil com vouchers gerados.
+                  </p>
+                )}
               </div>
 
-              <button
-                type="button"
-                className="w-full py-2 px-3 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+              <Link
+                href="/dashboard/profiles"
+                className="w-full py-2 px-3 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors text-center block shadow-xs"
               >
-                Ver Detalhes
-              </button>
+                Gerenciar Perfis
+              </Link>
             </div>
 
-            {/* CARD 2: SALE REPORT (BAR CHART) */}
+            {/* CARD 2: SALE REPORT (REAL BAR CHART) */}
             <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
                   Relatório de Vendas
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Evolução mensal de receitas arrecadadas
+                  Volume mensal de vouchers nos últimos 6 meses
                 </p>
               </div>
 
@@ -847,9 +805,9 @@ export default function Dashboard() {
               <div className="w-full h-44 my-2">
                 {mounted && (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={BAR_CHART_DATA} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                    <BarChart data={stats.monthlySales || []} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
                       <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}k`} />
+                      <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
                       <Tooltip
                         cursor={{ fill: 'rgba(0, 132, 255, 0.05)' }}
                         contentStyle={{
@@ -860,7 +818,7 @@ export default function Dashboard() {
                           fontWeight: 600,
                         }}
                       />
-                      <Bar dataKey="vendas" fill="#0084ff" radius={[4, 4, 0, 0]} maxBarSize={24} />
+                      <Bar dataKey="vendas" name="Vouchers" fill="#0084ff" radius={[4, 4, 0, 0]} maxBarSize={24} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -868,18 +826,18 @@ export default function Dashboard() {
 
               <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <span>Período: Últimos 6 meses</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">+24.5% média</span>
+                <span className="text-blue-600 dark:text-blue-400 font-bold">Total: {stats.finance.totalVouchers || 0} vouchers</span>
               </div>
             </div>
 
-            {/* CARD 3: SALES REPORT OVERVIEW */}
+            {/* CARD 3: PLATFORM OVERVIEW (REAL METRICS) */}
             <div className="bg-white dark:bg-[#111726] border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-2xl p-5 flex flex-col justify-between">
               <div>
                 <h3 className="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">
-                  Visão Geral Financeira
+                  Visão Geral da Plataforma
                 </h3>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-                  Consolidação de transações, campanhas promocionais e cadastros de visitantes.
+                  Consolidação em tempo real de vouchers, arrecadação financeira e usuários.
                 </p>
               </div>
 
@@ -889,26 +847,25 @@ export default function Dashboard() {
                   <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                     Vouchers
                   </span>
-                  <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">13,956</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">{stats.finance.totalVouchers || 0}</p>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                    Vendas (R$)
+                    Receita (R$)
                   </span>
-                  <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">55,123</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">{(stats.finance.totalRevenue || 0).toFixed(2)}</p>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                     Usuários
                   </span>
-                  <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">29,829</p>
+                  <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">{stats.totalUsersCount || 0}</p>
                 </div>
               </div>
 
-              {/* Trend Tag */}
-              <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold mb-4">
-                <ArrowUp className="w-3.5 h-3.5" />
-                <span>+15% a mais que a semana anterior</span>
+              {/* System summary */}
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 text-xs text-slate-700 dark:text-slate-300 mb-4 font-medium">
+                <span>Roteador: <strong>{stats.identity}</strong> ({stats.model || 'MikroTik'})</span>
               </div>
 
               {/* Action Buttons */}
@@ -938,10 +895,10 @@ export default function Dashboard() {
             <div className="p-5 pb-3 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">
-                  Faturas & Vouchers Emitidos
+                  Faturas & Pagamentos Pix
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Registro de transações comerciais, ativações de planos e provisionamentos no MikroTik.
+                  Registro de transações comerciais, ativações de planos e pagamentos do portal Hotspot.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -949,7 +906,7 @@ export default function Dashboard() {
                   href="/dashboard/finance"
                   className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                 >
-                  Exportar CSV
+                  Ver Financeiro Completo →
                 </Link>
               </div>
             </div>
@@ -959,56 +916,60 @@ export default function Dashboard() {
                 <thead>
                   <tr>
                     <th>Fatura / Código</th>
-                    <th>Cliente / Destino</th>
-                    <th>Origem / Roteador</th>
-                    <th>Valor do Plano</th>
-                    <th>Valor Pago</th>
+                    <th>Cliente</th>
+                    <th>Plano / Perfil</th>
+                    <th>Valor</th>
+                    <th>Data</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    { id: '50014', client: 'David Grey', router: 'Hotspot-Principal', fullPrice: 'R$ 30.00', paidPrice: 'R$ 30.00', status: 'Progress', statusColor: 'bg-emerald-500 text-white' },
-                    { id: '50015', client: 'Stella Johnson', router: 'Wlan-Visitantes', fullPrice: 'R$ 15.00', paidPrice: 'R$ 15.00', status: 'Open', statusColor: 'bg-amber-500 text-white' },
-                    { id: '50016', client: 'Marina Michel', router: 'Bridge-Local', fullPrice: 'R$ 20.00', paidPrice: 'R$ 0.00', status: 'On hold', statusColor: 'bg-rose-500 text-white' },
-                    { id: '50017', client: 'John Doe', router: 'Hotspot-Principal', fullPrice: 'R$ 45.00', paidPrice: 'R$ 45.00', status: 'Progress', statusColor: 'bg-emerald-500 text-white' },
-                    { id: '50018', client: 'Stella Johnson', router: 'AP-Externo', fullPrice: 'R$ 15.00', paidPrice: 'R$ 15.00', status: 'Open', statusColor: 'bg-amber-500 text-white' },
-                    { id: '50019', client: 'David Grey', router: 'Hotspot-Principal', fullPrice: 'R$ 30.00', paidPrice: 'R$ 30.00', status: 'Progress', statusColor: 'bg-emerald-500 text-white' },
-                  ].map((inv, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs">
-                        #{inv.id}
-                      </td>
-                      <td className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
-                        {inv.client}
-                      </td>
-                      <td className="text-xs text-slate-500 dark:text-slate-400">
-                        {inv.router}
-                      </td>
-                      <td className="font-bold text-slate-700 dark:text-slate-300 text-xs">
-                        {inv.fullPrice}
-                      </td>
-                      <td className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
-                        {inv.paidPrice}
-                      </td>
-                      <td>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide uppercase ${inv.statusColor}`}>
-                          {inv.status}
-                        </span>
+                  {stats.recentPayments && stats.recentPayments.length > 0 ? (
+                    stats.recentPayments.map((inv: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs">
+                          #{inv.id?.slice(0, 8)}
+                        </td>
+                        <td className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
+                          {inv.lead?.name || inv.lead?.phone || 'Cliente Hotspot'}
+                        </td>
+                        <td className="text-xs text-slate-500 dark:text-slate-400">
+                          {inv.profile || 'Voucher'}
+                        </td>
+                        <td className="font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+                          R$ {inv.amount?.toFixed(2)}
+                        </td>
+                        <td className="text-xs text-slate-500 dark:text-slate-400">
+                          {new Date(inv.createdAt).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wide uppercase ${
+                            inv.status === 'approved' ? 'bg-emerald-500 text-white' : inv.status === 'pending' ? 'bg-amber-500 text-white' : 'bg-rose-500 text-white'
+                          }`}>
+                            {inv.status === 'approved' ? 'Aprovado' : inv.status === 'pending' ? 'Pendente' : 'Rejeitado'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                        Nenhum pagamento Pix registrado ainda. As vendas geradas pelo portal Hotspot aparecerão aqui automaticamente.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
 
             <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-              <span>Mostrando 6 faturas recentes sincronizadas</span>
+              <span>Status dos pagamentos integrado ao Mercado Pago e SQLite</span>
               <Link href="/dashboard/finance" className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
-                Ver Histórico Completo de Faturas →
+                Histórico Financeiro →
               </Link>
             </div>
           </section>
+
         </>
       ) : null}
 
