@@ -12,6 +12,22 @@ Para instalar o MikroGestor em uma **VPS nova (Ubuntu 22.04/24.04, Debian 11/12)
 - ⚡ **Instalação WireGuard + Daemon + Firewall em 1 comando**: `sudo bash vpn/setup-vps.sh`
 - 🛡️ **Persistência garantida do banco SQLite**: Mapeamento `/data/mikrogestor/prisma` -> `/app/prisma`
 - 🔍 **Validação automática em 8 camadas**: `bash scripts/verificar-deploy-completo.sh`
+- 🔒 **Subdomínios com SSL Let's Encrypt por Roteador**: Auto-provisionamento via Traefik dinâmico
+- 📲 **Admin Peers WireGuard (Windows & Celular)**: Conexão direta com download `.conf` e QR Code
+- 💻 **Acesso Remoto Winbox**: Conecte no Winbox em qualquer MikroTik via IP VPN (`10.8.0.2:8291`) sem AnyDesk
+- 🤖 **Servidor Autônomo Coolify MCP**: Localizado em `CooliFy - MCP` com setup em 1 comando (`npm run setup`)
+
+---
+
+## 🤖 Servidor Autônomo Coolify MCP (v2.0.0)
+
+Para gerenciar a VPS, containers Docker e deploys do Coolify através de assistentes de Inteligência Artificial (**Antigravity IDE**, **Claude Desktop**, **Cursor**, **Windsurf**, **VS Code**):
+
+Consulte a pasta dedicada **`CooliFy - MCP`**:
+- **Setup em 1 comando**: `npm run setup`
+- **Diagnóstico instantâneo**: `npm test`
+- **Guia de Integração em Nova VPS**: `CooliFy - MCP/docs/GUIA_INTEGRACAO_NOVA_VPS.md`
+- **Catálogo de 13 Ferramentas MCP**: `CooliFy - MCP/docs/FERRAMENTAS_MCP.md`
 
 ---
 
@@ -88,10 +104,13 @@ O instalador configura automaticamente o **PM2** para manter o MikroGestor rodan
 ## ✨ Funcionalidades Principais
 
 - 📡 **Integração Nativa com MikroTik RouterOS** (v6 e v7 via API RouterOS e FTP).
+- 🌐 **Túneis WireGuard Multi-Roteador em Split-Tunneling** para controle remoto sem IP público.
+- 💻 **Suporte a Admin Peers (Windows, iOS, Android)** com QR Code e acesso Winbox remoto na porta 8291.
+- 🔒 **Certificados SSL Let's Encrypt por Roteador** com renovação automática via `/tool fetch`.
 - 🎨 **Portal Studio Pro com 25 Nichos Temáticos** e 16 animações exclusivas em Canvas HTML5.
 - 📱 **Captura de Leads e Cadastro via Formulário Responsivo**.
 - 🎫 **Geração, Impressão e Gestão de Vouchers em Lote**.
-- 💬 **Fluxo de Conexão e Verificação via WhatsApp**.
+- 💬 **Fluxo de Conexão e Verificação via WhatsApp Baileys** (persistência SQLite).
 - 💳 **Integração de Pagamento Mercado Pago PIX**.
 - 🛡️ **Segurança Walled Garden, Bloqueio de Horários e Palavras-chave**.
-- 🚀 **Pronto para Produção com PM2 e SQLite/Prisma**.
+- 🚀 **Pronto para Produção com Coolify, Docker, PM2 e SQLite WAL Mode**.

@@ -13,10 +13,13 @@
    - [Passo 2: Configuração de Host (WireGuard, Firewall e Volumes)](#passo-2-configuração-de-host-wireguard-firewall-e-volumes)
    - [Passo 3: Criação da Aplicação no Coolify](#passo-3-criação-da-aplicação-no-coolify)
    - [Passo 4: Volume Persistente SQLite (OBRIGATÓRIO)](#passo-4-volume-persistente-sqlite-obrigatório)
-   - [Passo 5: Variáveis de Ambiente](#passo-5-variáveis-de-ambiente)
+   - [Passo 5: Variáveis de Ambiente e DNS Wildcard](#passo-5-variáveis-de-ambiente-e-dns-wildcard)
    - [Passo 6: Deploy e Inicialização Automática](#passo-6-deploy-e-inicialização-automática)
 4. [Validação Automática do Deploy (Script de 8 Camadas)](#4-validação-automática-do-deploy-script-de-8-camadas)
 5. [Conectando o Primeiro MikroTik (RouterOS v7)](#5-conectando-o-primeiro-mikrotik-routeros-v7)
+   - [5.1 Admin Peers (Windows & Mobile) e Acesso Remoto Winbox](#51-admin-peers-windows--mobile-e-acesso-remoto-winbox)
+   - [5.2 Subdomínios Dinâmicos & SSL Let's Encrypt por Roteador](#52-subdomínios-dinâmicos--ssl-lets-encrypt-por-roteador)
+   - [5.3 Gestão e Operação Autônoma via Coolify MCP Server](#53-gestão-e-operação-autônoma-via-coolify-mcp-server)
 6. [Método Alternativo: Deploy Direto via Docker Compose](#6-método-alternativo-deploy-direto-via-docker-compose)
 7. [Troubleshooting Playbook (Resolução Imediata de Problemas)](#7-troubleshooting-playbook-resolução-imediata-de-problemas)
 8. [Comandos de Emergência e Manutenção](#8-comandos-de-emergência-e-manutenção)
@@ -272,6 +275,66 @@ bash scripts/verificar-deploy-completo.sh
    ```
    *Deve responder imediatamente com 0% packet loss!*
 6. No painel do MikroGestor, o roteador ficará **Verde (Online)** e os gráficos de CPU, Memória e Hotspot carregarão em tempo real.
+
+---
+
+### 5.1 Admin Peers (Windows & Mobile) e Acesso Remoto Winbox
+
+Uma das grandes vantagens da arquitetura WireGuard do MikroGestor é permitir que operadores e técnicos acessem remotamente **qualquer MikroTik via Winbox**, mesmo que o roteador esteja atrás de CGNAT de operadora ou sem IP público, sem necessidade de AnyDesk ou TeamViewer.
+
+#### Como criar um Peer Administrativo:
+1. Acesse o painel web: `/dashboard/vpn`.
+2. Role até a seção **"Dispositivos de Administração (Windows / Celular / Notebook)"**.
+3. Clique em **"+ Novo Peer Administrativo"**.
+4. Defina o nome do operador (ex: `Notebook-Suporte-Lyncio`).
+5. O sistema alocará automaticamente o próximo IP disponível na subnet de controle (ex: `10.8.0.4/32`).
+6. O modal exibirá:
+   - **Download de Arquivo `.conf`**: Para importar no cliente oficial WireGuard do Windows ou macOS.
+   - **QR Code Interativo**: Para escanear com a câmera do celular no aplicativo WireGuard (iOS ou Android).
+
+#### Como Acessar o MikroTik via Winbox Remotamente:
+1. Ative o túnel WireGuard no seu Windows ou Celular.
+2. Abra o **Winbox**.
+3. No campo **Connect To**, digite o IP VPN do MikroTik (ex: `10.8.0.2` ou `10.8.0.3`).
+4. Digite o **Login** e **Password** administrativos do MikroTik.
+5. Clique em **Connect**.
+6. A conexão abrirá instantaneamente em alta velocidade através do túnel criptografado.
+
+> 🔒 **Regra de Firewall no MikroTik**:  
+> Para garantir que o Winbox aceite conexões originadas do seu peer administrativo (`10.8.0.4`), certifique-se de que a regra de firewall permite a subnet `10.8.0.0/24` na porta 8291:  
+> ```routeros
+> /ip firewall filter add chain=input action=accept src-address=10.8.0.0/24 dst-port=8291 protocol=tcp comment="MG: Allow Winbox via WireGuard VPN" place-before=1
+> ```
+
+---
+
+### 5.2 Subdomínios Dinâmicos & SSL Let's Encrypt por Roteador
+
+O MikroGestor oferece a cada roteador cadastrado um subdomínio exclusivo (ex: `mkroca.mikrogestor.com`, `loja01.mikrogestor.com`) com **HTTPS Let's Encrypt 100% livre de avisos de segurança no Hotspot**.
+
+#### Como funciona o fluxo automatizado:
+1. **DNS Wildcard**: O apontamento DNS `* -> IP_VPS` direciona qualquer subdomínio para a VPS.
+2. **Proxy Reverso Traefik**: Ao provisionar o roteador, o daemon `wg-manager` cria um arquivo de roteamento dinâmico em `/data/coolify/proxy/dynamic/router-<slug>.yaml`.
+3. **Emissão SSL Automática**: O Traefik solicita e renova o certificado Let's Encrypt automaticamente salvando em `/data/coolify/proxy/acme.json`.
+4. **Download e Auto-Renovação no MikroTik**: O script `.rsc` do roteador configura o script `/system script add name=mg-sync-ssl` e um agendador `/system scheduler add name=mg-renew-ssl interval=15d`. A cada 15 dias, o roteador baixa os certificados atualizados da API e vincula ao serviço `www-ssl` e ao perfil do Hotspot (`hsprof_hotspot`).
+
+---
+
+### 5.3 Gestão e Operação Autônoma via Coolify MCP Server
+
+O projeto conta com o **CooliFy - MCP (v2.0.0)**, um servidor de protocolo de contexto de modelo independente localizado em `C:\Users\lynco\OneDrive\Documentos\-Projetos\CooliFy - MCP`.
+
+Com ele, agentes de IA (Antigravity IDE, Claude Desktop, Cursor) têm permissão para:
+- Diagnosticar o estado de containers (`docker_ps`, `docker_logs`, `docker_exec`).
+- Inspecionar a interface e peers WireGuard (`wireguard_status`).
+- Executar comandos bash no host via SSH com segurança (`ssh_exec`).
+- Disparar deploys e reinicializações de containers via API Coolify (`coolify_deploy_application`, `coolify_restart_application`).
+
+Para validar a integração do MCP com qualquer VPS a qualquer momento:
+```bash
+cd "C:\Users\lynco\OneDrive\Documentos\-Projetos\CooliFy - MCP"
+npm test
+```
 
 ---
 

@@ -29,4 +29,15 @@ This version has breaking changes — APIs, conventions, and file structure may 
     - **Traefik Dynamic Configuration**: Ao criar ou vincular um roteador VPN, o daemon `wg-manager` cria `/data/coolify/proxy/dynamic/router-<slug>.yaml` configurando o proxy reverso HTTPS com Let's Encrypt para `http://<vpnIp>:80`.
     - **Extração de Certificado**: O daemon expõe `GET /cert/extract?domain=<subdomain>`, que lê `/data/coolify/proxy/acme.json` e retorna o certificado e a chave privada limpos.
     - **Injeção e Renovação Automática no MikroTik**: O script `.rsc` do WireGuard configura no MikroTik um script `/system script add name=mg-sync-ssl ...` e um agendador `/system scheduler add name=mg-renew-ssl interval=15d ...` com permissões completas (`policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon`). O script baixa os arquivos via `/tool fetch` de `https://www.mikrogestor.com/api/vpn/router/<id>/cert-file` (rota pública liberada no `middleware.ts`), importa em `/certificate` e vincula a `www-ssl` e `hsprof_hotspot`, garantindo Hotspot com HTTPS 100% livre de avisos de segurança.
+11. **ADMIN PEERS WIREGUARD (WINDOWS & MOBILE) & ACESSO REMOTO WINBOX**:
+    - **Peers Administrativos**: Além dos MikroTiks, operadores e técnicos podem conectar seus notebooks (Windows WireGuard Client) e celulares (app WireGuard iOS/Android) ao túnel.
+    - **Geração de Configurações**: O painel `/dashboard/vpn` gera peers administrativos dedicados na subnet `10.8.0.0/24` (ex: `10.8.0.4`, `10.8.0.5`), permitindo download imediato do arquivo `.conf` e leitura de **QR Code** para celulares.
+    - **Acesso Remoto via Winbox**: Com o túnel ativo no Windows/Celular, o operador abre o Winbox e conecta diretamente no IP VPN do MikroTik (ex: `10.8.0.2:8291` ou `10.8.0.3:8291`) com suas credenciais normais do roteador, dispensando AnyDesk, TeamViewer ou IP público no cliente.
+    - **Regra de Firewall no MikroTik**: Para o Winbox funcionar pelo túnel, o MikroTik DEVE permitir tráfego da subnet `10.8.0.0/24` na porta 8291:
+      `/ip firewall filter add chain=input action=accept src-address=10.8.0.0/24 dst-port=8291 protocol=tcp comment="MG: Allow Winbox via WireGuard VPN" place-before=1`
+    - **Encaminhamento no Host (VPS)**: O kernel Linux na VPS deve ter `net.ipv4.ip_forward=1` ativo e regras de forward no `wg0.conf`, permitindo que o peer administrativo (`10.8.0.4`) converse diretamente com o peer MikroTik (`10.8.0.2`).
+12. **GERENCIAMENTO & DIAGNÓSTICO VIA COOLIFY MCP (v2.0.0)**:
+    - O repositório portátil `CooliFy - MCP` permite que qualquer agente de IA (Antigravity, Claude, Cursor) execute diagnósticos, controle containers Docker e dispare deploys sem necessidade de comandos SSH manuais.
+    - O servidor MCP está configurado globalmente em `~/.gemini/config/mcp_config.json` e pode ser testado a qualquer momento com `npm test` dentro de `CooliFy - MCP`.
+    - Ao realizar deploys automatizados via MCP (`coolify_deploy_application`), sempre confirme antes se o volume persistente do SQLite (`/data/mikrogestor/prisma` -> `/app/prisma`) está montado.
 

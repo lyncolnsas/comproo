@@ -67,6 +67,16 @@ Para que todo roteador conectado responda em um subdomínio próprio (ex: `mkroc
 2. **Idempotência estrita**: Todas as chamadas de provisionamento usam `ensureWalledGardenRules`, que varre regras existentes, deduplica entradas antigas e apenas insere as regras faltantes.
 3. **Isolamento de IPs Docker**: O sincronizador de rede (`network-sync.ts`) nunca deve injetar IPs de containers Docker (`172.16.x.x`) ou DNS local (`portal.wifi.local`) no MikroTik quando `DEPLOYMENT_MODE === 'vps'`.
 
+### 1.6 Admin Peers & Acesso Remoto Winbox
+1. **Suporte a Windows & Mobile**: Além dos MikroTiks, técnicos podem ingressar no túnel WireGuard através de peers administrativos gerados em `/dashboard/vpn`.
+2. **Winbox Direto via VPN**: Ao conectar no túnel pelo Windows ou celular, o Winbox abre diretamente no IP VPN do MikroTik (`10.8.0.2:8291`).
+3. **Firewall no MikroTik**: A chain `input` DEVE permitir a subnet `10.8.0.0/24` na porta TCP 8291:
+   `/ip firewall filter add chain=input action=accept src-address=10.8.0.0/24 dst-port=8291 protocol=tcp comment="MG: Allow Winbox via WireGuard VPN" place-before=1`
+
+### 1.7 Automação e Diagnóstico com Coolify MCP Server (v2.0.0)
+1. **Ferramenta Autônoma**: O servidor MCP em `CooliFy - MCP` permite aos agentes de IA verificar a VPS e containers com 1 clique.
+2. **Validação Instantânea**: Rode `npm test` dentro de `CooliFy - MCP` para diagnosticar SSH, Docker, Coolify API e WireGuard.
+
 ---
 
 ## 2. Deploy em Nova VPS do Zero (Checklist Rápido)
