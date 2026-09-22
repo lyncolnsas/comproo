@@ -2,17 +2,23 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { getMikrotikClient } from '@/lib/session';
+import { verifyCustomerJwt } from '@/lib/jwt';
 
 export const dynamic = 'force-dynamic';
 
 async function getLeadIdFromCookies(): Promise<string | null> {
   try {
     const cookieStore = await cookies();
-    return cookieStore.get('portal_session')?.value ?? null;
+    const token = cookieStore.get('portal_session')?.value;
+    if (!token) return null;
+
+    const payload = await verifyCustomerJwt(token);
+    return payload?.leadId ?? null;
   } catch {
     return null;
   }
 }
+
 
 // Format MikroTik time strings (e.g. "1d2h3m") into readable formats
 function parseMkTime(mkTime: string): string {

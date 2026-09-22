@@ -2,20 +2,40 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyJwt } from '@/lib/jwt';
 
+// Rotas públicas explícitas sob /api/portal/ permitidas para clientes e Hotspot
+const PUBLIC_PORTAL_API_PREFIXES = [
+  '/api/portal/register',
+  '/api/portal/customer/',
+  '/api/portal/status',
+  '/api/portal/payment-status',
+  '/api/portal/safari-bypass',
+  '/api/portal/whatsapp-flow/',
+  '/api/portal/whatsapp-redirect',
+  '/api/portal/whatsapp-support',
+  '/api/portal/waiting-list',
+  '/api/portal/asset',
+  '/api/portal/bg',
+  '/api/portal/logo',
+  '/api/portal/preview',
+];
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
+  const isPublicPortalApi = PUBLIC_PORTAL_API_PREFIXES.some((prefix) => path.startsWith(prefix));
+
   // Define rotas públicas
   const isPublicRoute = 
     path === '/' || 
     path.startsWith('/api/auth') || 
     path.startsWith('/portal') || 
-    path.startsWith('/api/portal/') || 
+    isPublicPortalApi || 
     path.startsWith('/api/webhook') ||
     path.startsWith('/uploads/') ||
     path.startsWith('/fonts') ||
     path === '/icon.png' ||
     (path.startsWith('/api/vpn/router/') && path.includes('/cert-file'));
+
   
   const token = request.cookies.get('system_auth')?.value;
   

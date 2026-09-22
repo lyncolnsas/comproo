@@ -1,13 +1,35 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MikrotikAPI } from '@/lib/routeros';
+import { signCustomerJwt } from '@/lib/jwt';
+import { customerRateLimiter } from '@/lib/rate-limiter';
+import { timingSafeCompare, dummyVerifyPassword } from '@/lib/auth-crypto';
+import { isVpsMode } from '@/lib/domain';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
+  const clientIp = customerRateLimiter.getClientIp(request);
+
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { username, password, whatsapp } = body;
+
+    const accountIdentifier = (whatsapp || username || '').trim();
+
+    // 1. Proteção de Rate Limiting
+    const rateStatus = customerRateLimiter.checkCompound(clientIp, accountIdentifier);
+    if (!rateStatus.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Muitas tentativas incorretas. Tente novamente em ${Math.ceil(
+            rateStatus.retryAfterSeconds / 60
+          )} minuto(s).`,
+        },
+        { status: 429 }
+      );
+    }
 
     let lead = null;
 
@@ -58,11 +80,14 @@ export async function POST(request: Request) {
       }
 
       if (!lead) {
+        customerRateLimiter.recordFailure(clientIp, accountIdentifier);
         return NextResponse.json(
           { success: false, message: 'Número de WhatsApp não encontrado. Por favor, realize o cadastro primeiro.' },
           { status: 404 }
         );
       }
+
+      customerRateLimiter.recordSuccess(clientIp, accountIdentifier);
     } else if (username && password) {
       // Login via hotspot credentials
       lead = await prisma.hotspotLead.findFirst({
@@ -89,17 +114,23 @@ export async function POST(request: Request) {
       }
 
       if (!lead) {
+        dummyVerifyPassword(password);
+        customerRateLimiter.recordFailure(clientIp, accountIdentifier);
         return NextResponse.json(
           { success: false, message: 'Usuário não encontrado.' },
           { status: 404 }
         );
       }
-      if (lead.password && lead.password !== password) {
+
+      if (lead.password && !timingSafeCompare(lead.password, password)) {
+        customerRateLimiter.recordFailure(clientIp, accountIdentifier);
         return NextResponse.json(
           { success: false, message: 'Senha incorreta.' },
           { status: 401 }
         );
       }
+
+      customerRateLimiter.recordSuccess(clientIp, accountIdentifier);
     } else {
       return NextResponse.json(
         { success: false, message: 'Forneça (username + password) ou número de WhatsApp.' },
@@ -134,6 +165,18 @@ export async function POST(request: Request) {
       vouchers = [];
     }
 
+    // Assina token JWT criptografado para o cookie portal_session
+    const customerToken = await signCustomerJwt({
+      leadId: lead.id,
+      phone: lead.whatsappNumber || lead.phone,
+      hotspotUser: lead.hotspotUser,
+    });
+
+    const isHttps =
+      request.url.startsWith('https://') ||
+      request.headers.get('x-forwarded-proto') === 'https' ||
+      isVpsMode();
+
     const response = NextResponse.json({
       success: true,
       data: {
@@ -143,6 +186,15 @@ export async function POST(request: Request) {
         whatsappNumber: lead.whatsappNumber || lead.phone,
         vouchers,
       },
+    });
+
+    // Injeta o cookie portal_session com token assinado
+    response.cookies.set('portal_session', customerToken, {
+      httpOnly: true,
+      secure: isHttps,
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60, // 30 dias
+      path: '/',
     });
 
     // Limpeza de regra temporária de WhatsApp (failsafe além do script nativo on-login do MikroTik)
@@ -174,3 +226,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: 'Erro interno.' }, { status: 500 });
   }
 }
+

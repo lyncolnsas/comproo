@@ -55,22 +55,29 @@ async function main() {
   const userCount = await prisma.user.count();
   
   if (userCount === 0) {
-    console.log('Nenhum usuário encontrado. Criando usuário administrador padrão...');
+    console.log('Nenhum usuário encontrado. Criando usuário administrador inicial...');
+    const crypto = require('crypto');
+    const salt = crypto.randomBytes(16).toString('hex');
+    const derivedKey = crypto.scryptSync('123', salt, 64);
+    const hashedPassword = `scrypt$${salt}$${derivedKey.toString('hex')}`;
+
     await prisma.user.create({
       data: {
         username: 'admin',
-        password: '123',
+        password: hashedPassword,
         name: 'Administrador',
         role: 'ADMIN'
       }
     });
-    console.log('Usuário criado com sucesso!');
+    console.log('Usuário inicial provisionado com hash criptográfico seguro (scrypt)!');
     console.log('Login: admin');
     console.log('Senha: 123');
+    console.log('⚠️ [AVISO DE SEGURANÇA]: Altere a senha do usuário "admin" imediatamente após o primeiro login.');
   } else {
     console.log('O banco de dados já possui usuários. Nenhuma ação necessária.');
   }
 }
+
 
 main()
   .catch((e) => {

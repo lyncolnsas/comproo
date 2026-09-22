@@ -1,8 +1,22 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MikrotikAPI } from '@/lib/routeros';
+import { cookies } from 'next/headers';
+import { verifyJwt } from '@/lib/jwt';
 
 export const dynamic = 'force-dynamic';
+
+async function checkAdminAuth(): Promise<boolean> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('system_auth')?.value;
+    if (!token) return false;
+    const payload = await verifyJwt(token);
+    return !!payload;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * API Administrativa para Gerenciamento de Clientes Bloqueados (Blacklist).
@@ -11,10 +25,15 @@ export const dynamic = 'force-dynamic';
 
 // Listar clientes bloqueados
 export async function GET() {
+  if (!(await checkAdminAuth())) {
+    return NextResponse.json({ success: false, message: 'Não autorizado.' }, { status: 401 });
+  }
+
   try {
     const list = await prisma.blockedClient.findMany({
       orderBy: { blockedAt: 'desc' }
     });
+
 
     return NextResponse.json({
       success: true,
@@ -27,9 +46,14 @@ export async function GET() {
 
 // Bloquear manualmente um cliente (por MAC, CPF ou Telefone)
 export async function POST(request: Request) {
+  if (!(await checkAdminAuth())) {
+    return NextResponse.json({ success: false, message: 'Não autorizado.' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { mac, cpf, phone, reason } = body;
+
 
     if (!mac && !cpf && !phone) {
       return NextResponse.json({
@@ -88,8 +112,13 @@ export async function POST(request: Request) {
 
 // Desbloquear cliente (por ID ou MAC)
 export async function DELETE(request: Request) {
+  if (!(await checkAdminAuth())) {
+    return NextResponse.json({ success: false, message: 'Não autorizado.' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
+
     const id = searchParams.get('id');
     const mac = searchParams.get('mac');
 

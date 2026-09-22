@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MercadoPagoService } from '@/services/mercadopago';
 import { cookies } from 'next/headers';
+import { verifyCustomerJwt } from '@/lib/jwt';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,11 +14,16 @@ function generateVoucherCode(): string {
 async function getLeadId(): Promise<string | null> {
   try {
     const cookieStore = await cookies();
-    return cookieStore.get('portal_session')?.value ?? null;
+    const token = cookieStore.get('portal_session')?.value;
+    if (!token) return null;
+
+    const payload = await verifyCustomerJwt(token);
+    return payload?.leadId ?? null;
   } catch {
     return null;
   }
 }
+
 
 export async function POST(request: Request) {
   try {

@@ -6,8 +6,10 @@ import { MercadoPagoService } from '@/services/mercadopago';
 import fs from 'fs';
 import path from 'path';
 import { resolveTemplateDir } from '@/lib/portal-template-utils';
-import { getMaskedPortalDomain, getMaskedPortalUrl } from '@/lib/domain';
+import { getMaskedPortalDomain, getMaskedPortalUrl, isVpsMode } from '@/lib/domain';
 import { getCustomTemplate, applyTemplateTags, getFlowConfig } from '@/services/whatsapp-custom-messages';
+import { signCustomerJwt } from '@/lib/jwt';
+
 
 interface PortalConfig {
   enabled?: boolean;
@@ -825,7 +827,7 @@ export async function POST(request: Request) {
     const bypassUrl = `${portalUrl}/api/portal/safari-bypass?url=${encodeURIComponent(finalDst)}`;
 
     const userAgent = request.headers.get('user-agent') || '';
-    return createResponse({ 
+    const res = createResponse({ 
       success: true, 
       message: 'Cadastro realizado com sucesso!',
       data: {
@@ -837,6 +839,32 @@ export async function POST(request: Request) {
       },
       config
     }, isForm, 200, userAgent, linkOrig);
+
+    if (lead?.id) {
+      try {
+        const customerToken = await signCustomerJwt({
+          leadId: lead.id,
+          phone: lead.whatsappNumber || lead.phone,
+          hotspotUser: lead.hotspotUser,
+        });
+        const isHttps =
+          request.url.startsWith('https://') ||
+          request.headers.get('x-forwarded-proto') === 'https' ||
+          isVpsMode();
+        res.cookies.set('portal_session', customerToken, {
+          httpOnly: true,
+          secure: isHttps,
+          sameSite: 'lax',
+          maxAge: 30 * 24 * 60 * 60,
+          path: '/',
+        });
+      } catch (tokenErr) {
+        console.warn('[Register] Erro ao injetar portal_session:', tokenErr);
+      }
+    }
+
+    return res;
+
 
   } catch (error: any) {
     console.error('Unhandled Registration Error:', error);

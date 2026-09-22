@@ -4,7 +4,7 @@ interface RateLimitRecord {
   blockedUntil: number;
 }
 
-class AuthRateLimiter {
+export class AuthRateLimiter {
   private attemptsMap: Map<string, RateLimitRecord> = new Map();
   private readonly maxAttempts: number;
   private readonly windowMs: number;
@@ -22,25 +22,50 @@ class AuthRateLimiter {
   }
 
   /**
-   * Obtém o IP do cliente a partir dos cabeçalhos da requisição
+   * Valida sintaxe de endereço IPv4 ou IPv6 simples
+   */
+  private isValidIp(ip: string): boolean {
+    if (!ip || ip.length > 45) return false;
+    const ipv4Regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
+    const ipv6Regex = /^[a-fA-F0-9:]+$/;
+    return ipv4Regex.test(ip) || ipv6Regex.test(ip);
+  }
+
+  /**
+   * Obtém o IP real do cliente priorizando cabeçalhos confiáveis de proxy reverso
+   * e sanitizando contra header injection.
    */
   public getClientIp(request: Request): string {
+    // 1. Cloudflare Connecting IP (confiável quando na borda CF)
+    const cfIp = request.headers.get('cf-connecting-ip');
+    if (cfIp) {
+      const clean = cfIp.trim();
+      if (this.isValidIp(clean)) return clean;
+    }
+
+    // 2. Traefik / Nginx Real IP
+    const realIp = request.headers.get('x-real-ip');
+    if (realIp) {
+      const clean = realIp.trim();
+      if (this.isValidIp(clean)) return clean;
+    }
+
+    // 3. X-Forwarded-For (pega o primeiro IP válido da cadeia)
     const forwarded = request.headers.get('x-forwarded-for');
     if (forwarded) {
-      const first = forwarded.split(',')[0].trim();
-      if (first) return first;
+      const parts = forwarded.split(',').map((s) => s.trim());
+      for (const part of parts) {
+        if (this.isValidIp(part)) {
+          return part;
+        }
+      }
     }
-    const realIp = request.headers.get('x-real-ip');
-    if (realIp) return realIp.trim();
-
-    const cfIp = request.headers.get('cf-connecting-ip');
-    if (cfIp) return cfIp.trim();
 
     return '127.0.0.1';
   }
 
   /**
-   * Verifica se o identificador (IP ou usuário) está bloqueado por limite de taxa.
+   * Verifica se um identificador simples está bloqueado.
    */
   public check(identifier: string): {
     allowed: boolean;
@@ -68,7 +93,7 @@ class AuthRateLimiter {
       };
     }
 
-    // Se a janela de tempo expirou, reseta o histórico do IP
+    // Se a janela de tempo expirou, reseta o histórico
     if (now - record.firstAttempt > this.windowMs) {
       this.attemptsMap.delete(identifier);
       return {
@@ -87,9 +112,58 @@ class AuthRateLimiter {
   }
 
   /**
-   * Registra uma falha de autenticação. Bloqueia se atingir o limite.
+   * Verifica rate limit composto (IP e IP:Usuário) para barrar tanto
+   * força bruta direta quanto password spraying contra contas específicas.
    */
-  public recordFailure(identifier: string): {
+  public checkCompound(
+    ip: string,
+    account?: string
+  ): {
+    allowed: boolean;
+    remainingAttempts: number;
+    retryAfterSeconds: number;
+  } {
+    const ipStatus = this.check(ip);
+    if (!ipStatus.allowed) return ipStatus;
+
+    if (account) {
+      const accountKey = `acc:${account.toLowerCase().trim()}`;
+      const accountStatus = this.check(accountKey);
+      if (!accountStatus.allowed) return accountStatus;
+
+      return {
+        allowed: true,
+        remainingAttempts: Math.min(ipStatus.remainingAttempts, accountStatus.remainingAttempts),
+        retryAfterSeconds: 0,
+      };
+    }
+
+    return ipStatus;
+  }
+
+  /**
+   * Registra falha para IP e opcionalmente para conta.
+   */
+  public recordFailure(
+    identifier: string,
+    account?: string
+  ): {
+    blocked: boolean;
+    remainingAttempts: number;
+    retryAfterSeconds: number;
+  } {
+    const res = this.recordSingleFailure(identifier);
+
+    if (account) {
+      const accountKey = `acc:${account.toLowerCase().trim()}`;
+      const accRes = this.recordSingleFailure(accountKey);
+      if (accRes.blocked) return accRes;
+    }
+
+    return res;
+  }
+
+  private recordSingleFailure(identifier: string): {
     blocked: boolean;
     remainingAttempts: number;
     retryAfterSeconds: number;
@@ -128,8 +202,11 @@ class AuthRateLimiter {
   /**
    * Reseta o histórico em caso de sucesso no login
    */
-  public recordSuccess(identifier: string): void {
+  public recordSuccess(identifier: string, account?: string): void {
     this.attemptsMap.delete(identifier);
+    if (account) {
+      this.attemptsMap.delete(`acc:${account.toLowerCase().trim()}`);
+    }
   }
 
   /**
@@ -145,5 +222,12 @@ class AuthRateLimiter {
   }
 }
 
-// Instância singleton para proteção global de autenticação
+// 1. Rate Limiter para Login Administrativo (5 tentativas, janela de 15m, lockout de 15m)
 export const loginRateLimiter = new AuthRateLimiter(5, 15, 15);
+
+// 2. Rate Limiter para Portal de Clientes (10 tentativas, janela de 10m, lockout de 10m)
+export const customerRateLimiter = new AuthRateLimiter(10, 10, 10);
+
+// 3. Rate Limiter para Conexão de Roteador MikroTik (5 tentativas, janela de 10m, lockout de 10m)
+export const connectRateLimiter = new AuthRateLimiter(5, 10, 10);
+

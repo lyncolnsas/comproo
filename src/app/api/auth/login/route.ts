@@ -1,37 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { signJwt } from '@/lib/jwt';
-import { hashPassword, verifyPassword } from '@/lib/auth-crypto';
+import { hashPassword, verifyPassword, dummyVerifyPassword } from '@/lib/auth-crypto';
 import { loginRateLimiter } from '@/lib/rate-limiter';
+import { isVpsMode } from '@/lib/domain';
 
 export async function POST(request: Request) {
   const clientIp = loginRateLimiter.getClientIp(request);
 
   try {
-    // 1. Verificação de Rate Limiting (Proteção de Força Bruta)
-    const rateStatus = loginRateLimiter.check(clientIp);
-    if (!rateStatus.allowed) {
-      console.warn(
-        `[AUTH BLOCKED] IP: ${clientIp} bloqueado temporariamente por excesso de tentativas de login.`
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Muitas tentativas incorretas. Acesso bloqueado temporariamente. Tente novamente em ${Math.ceil(
-            rateStatus.retryAfterSeconds / 60
-          )} minuto(s).`,
-          retryAfter: rateStatus.retryAfterSeconds,
-        },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': String(rateStatus.retryAfterSeconds),
-          },
-        }
-      );
-    }
-
-    // 2. Extração e validação do corpo da requisição
+    // 1. Extração e validação prévia do corpo da requisição
     const body = await request.json().catch(() => null);
     if (!body || typeof body.username !== 'string' || typeof body.password !== 'string') {
       return NextResponse.json(
@@ -47,6 +25,29 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, message: 'Usuário e senha não podem estar em branco.' },
         { status: 400 }
+      );
+    }
+
+    // 2. Verificação de Rate Limiting Composto (Protege contra força bruta no IP e Password Spraying na conta)
+    const rateStatus = loginRateLimiter.checkCompound(clientIp, cleanUsername);
+    if (!rateStatus.allowed) {
+      console.warn(
+        `[AUTH BLOCKED] IP: ${clientIp} ou Conta: '${cleanUsername}' bloqueados temporariamente por excesso de tentativas.`
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Muitas tentativas incorretas. Acesso bloqueado temporariamente. Tente novamente em ${Math.ceil(
+            rateStatus.retryAfterSeconds / 60
+          )} minuto(s).`,
+          retryAfter: rateStatus.retryAfterSeconds,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateStatus.retryAfterSeconds),
+          },
+        }
       );
     }
 
@@ -94,19 +95,21 @@ export async function POST(request: Request) {
           }
         }
 
-        // Reseta o histórico de falhas do IP
-        loginRateLimiter.recordSuccess(clientIp);
+        // Reseta o histórico de falhas do IP e da conta
+        loginRateLimiter.recordSuccess(clientIp, cleanUsername);
         console.log(
           `[AUTH SUCCESS] Usuário '${user.username}' autenticado com sucesso a partir do IP: ${clientIp}.`
         );
 
         const isHttps =
           request.url.startsWith('https://') ||
-          request.headers.get('x-forwarded-proto') === 'https';
+          request.headers.get('x-forwarded-proto') === 'https' ||
+          isVpsMode();
 
         const token = await signJwt({
           username: user.username,
           name: user.name || 'Admin',
+          role: user.role || 'ADMIN',
         });
 
         const response = NextResponse.json({
@@ -124,10 +127,13 @@ export async function POST(request: Request) {
 
         return response;
       }
+    } else {
+      // Mitigação de timing attack: consome os mesmos ciclos de CPU que um usuário existente (CWE-208 / CWE-204)
+      dummyVerifyPassword(password);
     }
 
-    // 6. Registro de falha no Rate Limiter e resposta segura
-    const failureResult = loginRateLimiter.recordFailure(clientIp);
+    // 6. Registro de falha no Rate Limiter (IP e conta) e resposta segura
+    const failureResult = loginRateLimiter.recordFailure(clientIp, cleanUsername);
     console.warn(
       `[AUTH FAILED] Tentativa inválida para usuário '${cleanUsername}' a partir do IP: ${clientIp}. Tentativas restantes: ${failureResult.remainingAttempts}`
     );

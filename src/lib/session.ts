@@ -187,9 +187,10 @@ export async function updateSessionIp(newIp: string): Promise<void> {
   const newToken = await encryptData({ ...creds, ip: newIp });
   cookieStore.set('mikro_session', newToken, {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 60 * 60 * 24,
     path: '/',
   });
 }
+

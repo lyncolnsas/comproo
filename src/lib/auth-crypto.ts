@@ -7,6 +7,10 @@ import crypto from 'crypto';
 const SCRYPT_PREFIX = 'scrypt$';
 const KEY_LEN = 64;
 
+// Hash fixo pré-gerado para execução constante quando o usuário não existir no banco
+const DUMMY_SALT = '0123456789abcdef0123456789abcdef';
+const DUMMY_HASH = crypto.scryptSync('dummy_password_constant_timing', DUMMY_SALT, KEY_LEN);
+
 /**
  * Gera um hash criptográfico seguro com scrypt e salt aleatório de 16 bytes.
  */
@@ -14,6 +18,37 @@ export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString('hex');
   const derivedKey = crypto.scryptSync(password, salt, KEY_LEN);
   return `${SCRYPT_PREFIX}${salt}$${derivedKey.toString('hex')}`;
+}
+
+/**
+ * Executa uma verificação simulada com scryptSync para consumir o mesmo tempo de CPU
+ * quando um usuário não existir no banco, prevenindo enumeração por timing attack (CWE-208 / CWE-204).
+ */
+export function dummyVerifyPassword(providedPassword: string): void {
+  try {
+    const derivedKey = crypto.scryptSync(providedPassword || 'dummy', DUMMY_SALT, KEY_LEN);
+    crypto.timingSafeEqual(derivedKey, DUMMY_HASH);
+  } catch {
+    // Propositalmente ignorado para manter tempo uniforme
+  }
+}
+
+/**
+ * Compara duas strings em tempo constante para mitigar timing attacks.
+ */
+export function timingSafeCompare(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+
+  if (bufA.length !== bufB.length) {
+    // Executa comparação dummy com mesmo buffer para manter tempo constante
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+
+  return crypto.timingSafeEqual(bufA, bufB);
 }
 
 /**
@@ -25,6 +60,7 @@ export function verifyPassword(
   storedPasswordHash: string
 ): { isValid: boolean; needsUpgrade: boolean } {
   if (!providedPassword || !storedPasswordHash) {
+    dummyVerifyPassword(providedPassword);
     return { isValid: false, needsUpgrade: false };
   }
 
@@ -32,6 +68,7 @@ export function verifyPassword(
   if (storedPasswordHash.startsWith(SCRYPT_PREFIX)) {
     const parts = storedPasswordHash.split('$');
     if (parts.length !== 3) {
+      dummyVerifyPassword(providedPassword);
       return { isValid: false, needsUpgrade: false };
     }
 
@@ -43,6 +80,7 @@ export function verifyPassword(
       const originalBuffer = Buffer.from(originalHashHex, 'hex');
 
       if (derivedKey.length !== originalBuffer.length) {
+        crypto.timingSafeEqual(derivedKey, derivedKey);
         return { isValid: false, needsUpgrade: false };
       }
 
@@ -58,17 +96,7 @@ export function verifyPassword(
   // Tratamento de senha legada em texto puro (migração suave)
   // Compara em tempo constante gerando buffers de mesmo tamanho
   try {
-    const providedBuffer = Buffer.from(providedPassword, 'utf8');
-    const storedBuffer = Buffer.from(storedPasswordHash, 'utf8');
-
-    let isValid = false;
-    if (providedBuffer.length === storedBuffer.length) {
-      isValid = crypto.timingSafeEqual(providedBuffer, storedBuffer);
-    } else {
-      // Dummy check para manter o tempo constante
-      crypto.timingSafeEqual(providedBuffer, providedBuffer);
-    }
-
+    const isValid = timingSafeCompare(providedPassword, storedPasswordHash);
     return {
       isValid,
       needsUpgrade: isValid, // Se válida, sinaliza para salvar o hash scrypt no banco
@@ -78,3 +106,4 @@ export function verifyPassword(
     return { isValid: false, needsUpgrade: false };
   }
 }
+

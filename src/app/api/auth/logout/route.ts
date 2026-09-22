@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
+import { isVpsMode } from '@/lib/domain';
 
 export async function POST(request: Request) {
   try {
     const isHttps =
       request.url.startsWith('https://') ||
-      request.headers.get('x-forwarded-proto') === 'https';
+      request.headers.get('x-forwarded-proto') === 'https' ||
+      isVpsMode();
 
     const response = NextResponse.json({
       success: true,
@@ -20,11 +22,13 @@ export async function POST(request: Request) {
       path: '/',
     };
 
-    // Remove ambos os cookies de sessão de forma segura via cabeçalhos HTTP Set-Cookie
+    // Remove todos os cookies de sessão de forma segura via cabeçalhos HTTP Set-Cookie
     response.cookies.set('system_auth', '', expiredCookieOptions);
     response.cookies.set('mikro_session', '', expiredCookieOptions);
+    response.cookies.set('portal_session', '', expiredCookieOptions);
 
     return response;
+
   } catch (error) {
     console.error('[AUTH LOGOUT ERROR]', error);
     return NextResponse.json(
