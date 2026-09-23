@@ -84,6 +84,43 @@ export default function SecurityControl() {
     finally { setBlockSubmitting(false); }
   };
 
+  // Trial / Grace-period leads (carência usada sem pagamento)
+  const [trialLeads, setTrialLeads] = useState<any[]>([]);
+  const [trialLoading, setTrialLoading] = useState(false);
+  const [trialSearch, setTrialSearch] = useState('');
+  const [unlockingLeadId, setUnlockingLeadId] = useState<string | null>(null);
+
+  const fetchTrialLeads = async (search = '') => {
+    setTrialLoading(true);
+    try {
+      const params = search ? `?blocked=true&search=${encodeURIComponent(search)}` : '?blocked=true';
+      const res = await fetch(`/api/portal/admin/leads${params}`);
+      const data = await res.json();
+      if (data.success) {
+        // Only show leads with expired trial (used grace, no approved payment)
+        const expired = (data.data as any[]).filter(l => l.trialUsed && !l.hasApproved);
+        setTrialLeads(expired);
+      }
+    } catch (e) { console.error(e); }
+    finally { setTrialLoading(false); }
+  };
+
+  const handleUnlockLead = async (leadId: string, name: string) => {
+    if (!confirm(`Liberar "${name}"? A carência será resetada, pagamentos pendentes cancelados e o MAC desbloqueado no MikroTik.`)) return;
+    setUnlockingLeadId(leadId);
+    try {
+      const res = await fetch(`/api/portal/admin/leads?id=${leadId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setTrialLeads(prev => prev.filter(l => l.id !== leadId));
+        alert('✅ ' + data.message);
+      } else {
+        alert('Erro: ' + data.message);
+      }
+    } catch (e) { alert('Erro ao liberar cliente'); }
+    finally { setUnlockingLeadId(null); }
+  };
+
   const fetchWalledGardenRules = async () => {
     setWalledLoading(true);
     try {
@@ -153,6 +190,7 @@ export default function SecurityControl() {
       fetchKeywords();
       fetchTimeRules();
       fetchBlockedClients();
+      fetchTrialLeads();
     }, 0);
   }, []);
 
@@ -372,18 +410,18 @@ export default function SecurityControl() {
           🚫 Palavras-Chave
         </button>
         <button
-          onClick={() => { setActiveTab('blacklist'); fetchBlockedClients(); }}
+          onClick={() => { setActiveTab('blacklist'); fetchBlockedClients(); fetchTrialLeads(); }}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
             activeTab === 'blacklist'
               ? 'bg-red-600 text-white shadow-sm'
               : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/60'
           }`}
         >
-          🔒 Clientes Bloqueados
-          {blockedClients.length > 0 && (
+          🔒 Bloqueios & Carência
+          {(blockedClients.length + trialLeads.length) > 0 && (
             <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
               activeTab === 'blacklist' ? 'bg-white/20 text-white' : 'bg-red-100 text-red-700'
-            }`}>{blockedClients.length}</span>
+            }`}>{blockedClients.length + trialLeads.length}</span>
           )}
         </button>
       </div>
@@ -870,6 +908,149 @@ export default function SecurityControl() {
                 className="mt-3 flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors shadow-sm disabled:opacity-50">
                 {blockSubmitting ? <span className="animate-spin">⟳</span> : '🔒'} Bloquear Cliente
               </button>
+            </div>
+
+            {/* Grace Period / Trial Unblock Section */}
+            <div className="bg-white border border-amber-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border-b border-amber-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">⏱️</span>
+                    <h3 className="font-black text-slate-900 text-base">Liberação de Carência (15 min expirados)</h3>
+                    {trialLeads.length > 0 && (
+                      <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300">
+                        {trialLeads.length} aguardando
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Clientes que utilizaram o tempo de carência de 15 minutos sem efetuar o pagamento. Clique em <strong>Liberar Carência</strong> para resetar o tempo, remover da lista negra e permitir que o cliente gere um novo Pix ou navegue novamente.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 md:w-64">
+                    <input
+                      value={trialSearch}
+                      onChange={e => setTrialSearch(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') fetchTrialLeads(trialSearch); }}
+                      placeholder="Buscar CPF, telefone, MAC..."
+                      className="w-full bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                    />
+                    {trialSearch && (
+                      <button
+                        onClick={() => { setTrialSearch(''); fetchTrialLeads(''); }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => fetchTrialLeads(trialSearch)}
+                    disabled={trialLoading}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-xs"
+                  >
+                    {trialLoading ? '⟳' : 'Buscar'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="max-h-[500px] overflow-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+                      <th className="px-4 py-3">Cliente / Contato</th>
+                      <th className="px-4 py-3">CPF</th>
+                      <th className="px-4 py-3">MAC Address</th>
+                      <th className="px-4 py-3">Carência Usada</th>
+                      <th className="px-4 py-3">Histórico de Pix</th>
+                      <th className="px-4 py-3 text-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {trialLoading && trialLeads.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-10 text-center text-slate-400 italic">
+                          <div className="inline-block animate-pulse">Consultando clientes com carência...</div>
+                        </td>
+                      </tr>
+                    ) : trialLeads.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-10 text-center">
+                          <div className="flex flex-col items-center gap-2">
+                            <span className="text-3xl">✨</span>
+                            <p className="text-slate-600 font-medium text-sm">Nenhum cliente com carência pendente</p>
+                            <p className="text-slate-400 text-xs">Todos os cadastros recentes efetuaram pagamento ou não atingiram o limite de carência.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : trialLeads.map((lead) => (
+                      <tr key={lead.id} className="hover:bg-amber-50/40 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-bold text-slate-800">{lead.name || 'Sem nome'}</div>
+                          <div className="text-[11px] text-slate-500 font-mono">📱 {lead.phone || 'Sem telefone'}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-slate-700">{lead.cpf || '—'}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {lead.mac ? (
+                            <span className="font-mono text-xs bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded">
+                              {lead.mac}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic">Sem MAC</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {lead.trialGrantedAt ? (
+                            <div>
+                              <div className="font-bold text-amber-700">15 min expirados</div>
+                              <div className="text-[10px] text-slate-400">
+                                {new Date(lead.trialGrantedAt).toLocaleString('pt-BR')}
+                              </div>
+                            </div>
+                          ) : lead.trialBlocked ? (
+                            <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                              Bloqueado
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td className="px-4 py-3">
+                          {lead.payments && lead.payments.length > 0 ? (
+                            <div className="space-y-1">
+                              {lead.payments.map((p: any) => (
+                                <div key={p.id} className="text-[10px] flex items-center gap-1.5">
+                                  <span className={`px-1.5 py-0.2 rounded font-bold ${
+                                    p.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                                    p.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                                    'bg-slate-100 text-slate-600'
+                                  }`}>
+                                    {p.status === 'approved' ? '✓ Pago' : p.status === 'pending' ? '⏳ Pendente' : p.status}
+                                  </span>
+                                  <span className="font-semibold text-slate-700">R$ {Number(p.amount).toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">Nenhum Pix gerado</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => handleUnlockLead(lead.id, lead.name || lead.phone || lead.cpf || 'Cliente')}
+                            disabled={unlockingLeadId === lead.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm disabled:opacity-50"
+                          >
+                            {unlockingLeadId === lead.id ? <span className="animate-spin">⟳</span> : '🔓'}
+                            Liberar Carência
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
