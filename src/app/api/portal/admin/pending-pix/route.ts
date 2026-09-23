@@ -37,11 +37,19 @@ export async function GET(request: Request) {
     const mapped = pendingPayments.map(p => ({
       id: p.id,
       date: p.createdAt,
+      formattedDate: new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
+      }).format(new Date(p.createdAt)),
       username: p.lead.hotspotUser,
+      clientName: p.lead.name || p.lead.hotspotUser,
+      clientPhone: p.lead.phone || p.lead.whatsappNumber || '',
       plan: p.profile || 'Plano de Acesso',
       amount: p.amount,
       pixId: p.pixId,
-      giftTo: p.giftTo,
+      pixPayload: p.pixPayload || '',
+      giftTo: p.giftTo || null,
+      isVoucher: p.isVoucher || false,
     }));
 
     return NextResponse.json({ success: true, data: mapped });

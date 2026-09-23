@@ -303,62 +303,97 @@ export default function FinanceReport() {
     <main className="w-full p-4 md:p-6 space-y-6 animate-fade-in text-slate-800">
       {/* ── Pending Manual PIX Section ──────────────────────────────── */}
       {pendingPix.length > 0 && (
-        <section className="bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-6 shadow-sm mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400">
+        <section className="bg-amber-50/90 border border-amber-300 rounded-2xl p-5 shadow-sm mb-2">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-xl bg-amber-100 text-amber-700 shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-extrabold text-slate-900">Pagamentos PIX Pendentes de Aprovação</h2>
-              <p className="text-xs text-slate-600 font-medium mt-0.5">
-                Verifique o recebimento em sua conta bancária antes de aprovar. Ao aprovar, o voucher é ativado imediatamente.
+              <h2 className="text-base font-extrabold text-slate-900">
+                ⏳ {pendingPix.length} Pagamento{pendingPix.length > 1 ? 's' : ''} PIX Aguardando Liberação Manual
+              </h2>
+              <p className="text-xs text-amber-800 font-medium mt-0.5">
+                Confirme o recebimento na sua conta bancária antes de aprovar. O acesso é liberado imediatamente após aprovação.
               </p>
             </div>
           </div>
-          
-          <div className="overflow-x-auto custom-scrollbar bg-white rounded-xl border border-slate-200 shadow-sm mt-4">
-            <table className="w-full text-sm text-left">
-              <thead className="text-[11px] uppercase tracking-wider bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">Data / Hora</th>
-                  <th className="px-4 py-3">Usuário</th>
-                  <th className="px-4 py-3">Plano</th>
-                  <th className="px-4 py-3">Valor</th>
-                  <th className="px-4 py-3 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {pendingPix.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-600 font-medium">
-                      {new Date(p.date).toLocaleString('pt-BR')}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-slate-900">{p.username}</td>
-                    <td className="px-4 py-3 text-slate-700">
-                      <span className="font-semibold">{p.plan}</span>
-                      {p.giftTo && <span className="block text-[10px] text-blue-600 font-medium">Presente p/: {p.giftTo}</span>}
-                    </td>
-                    <td className="px-4 py-3 text-emerald-600 font-extrabold text-sm">{formatBRL(p.amount)}</td>
-                    <td className="px-4 py-3 flex gap-2 justify-end">
-                      <button 
-                        onClick={() => handleRejectPix(p.id)}
-                        className="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors border border-rose-200 shadow-sm"
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {pendingPix.map((p) => (
+              <div key={p.id} className="bg-white border border-amber-200 rounded-xl p-4 shadow-sm flex flex-col gap-3">
+                {/* Header: cliente + data */}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-black text-slate-900 text-sm leading-tight">{p.clientName || p.username}</p>
+                    <p className="text-[11px] text-slate-500 font-mono mt-0.5">@{p.username}</p>
+                    {p.clientPhone && (
+                      <p className="text-[11px] text-blue-600 font-semibold mt-0.5">📱 {p.clientPhone}</p>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-slate-500 whitespace-nowrap font-medium shrink-0">
+                    {p.formattedDate || new Date(p.date).toLocaleString('pt-BR')}
+                  </span>
+                </div>
+
+                {/* Plano + Presente */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg border border-slate-200">
+                    🎟️ {p.plan}
+                  </span>
+                  {p.isVoucher && (
+                    <span className="text-[11px] font-bold bg-purple-50 text-purple-700 px-2 py-0.5 rounded-lg border border-purple-200">
+                      Voucher
+                    </span>
+                  )}
+                  {p.giftTo && (
+                    <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg border border-blue-200">
+                      🎁 Para: {p.giftTo}
+                    </span>
+                  )}
+                </div>
+
+                {/* Valor */}
+                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                  <span className="text-xs font-bold text-slate-600">Valor a receber:</span>
+                  <span className="text-lg font-black text-emerald-700">{formatBRL(p.amount)}</span>
+                </div>
+
+                {/* Chave PIX */}
+                {p.pixPayload && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wide mb-1">Chave PIX enviada ao cliente:</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-[11px] text-slate-800 font-mono break-all flex-1">{p.pixPayload}</code>
+                      <button
+                        onClick={() => navigator.clipboard?.writeText(p.pixPayload)}
+                        className="text-slate-400 hover:text-blue-600 shrink-0 p-1 rounded transition-colors"
+                        title="Copiar chave PIX"
                       >
-                        Rejeitar
+                        📋
                       </button>
-                      <button 
-                        onClick={() => handleApprovePix(p.id)}
-                        className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
-                      >
-                        Aprovar e Habilitar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ações */}
+                <div className="flex gap-2 mt-auto pt-1">
+                  <button
+                    onClick={() => handleRejectPix(p.id)}
+                    className="flex-1 py-2 text-xs font-bold rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors border border-rose-200"
+                  >
+                    ✕ Rejeitar
+                  </button>
+                  <button
+                    onClick={() => handleApprovePix(p.id)}
+                    className="flex-1 py-2 text-xs font-black rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
+                  >
+                    ✓ Aprovar e Liberar
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       )}

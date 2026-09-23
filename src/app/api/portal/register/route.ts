@@ -622,10 +622,12 @@ export async function POST(request: Request) {
             // Fallback: Check manual PIX key if Mercado Pago is not configured
             const manualKeyConfig = await prisma.systemConfig.findUnique({ where: { key: 'PIX_MANUAL_KEY' } });
             if (manualKeyConfig?.value) {
-              const pixId = `manual-pix-${Date.now()}`;
+              // ⚠️ MUST start with 'MANUAL_' so the admin panel can find it via pending-pix
+              const pixId = `MANUAL_reg_${Date.now()}`;
+              const pixKey = manualKeyConfig.value;
               pixData = {
                 pixId,
-                pixPayload: manualKeyConfig.value,
+                pixPayload: pixKey,
                 pixQrCodeBase64: '',
                 amount: selectedPlan.price,
                 planTitle: selectedPlan.title,
@@ -635,7 +637,7 @@ export async function POST(request: Request) {
                 data: {
                   leadId: lead.id,
                   pixId,
-                  pixPayload: manualKeyConfig.value,
+                  pixPayload: pixKey,
                   pixQrCodeBase64: '',
                   amount: selectedPlan.price,
                   profile: selectedPlan.profile,
@@ -643,6 +645,18 @@ export async function POST(request: Request) {
                   macAddress: clientMac || null
                 }
               });
+
+              // Notificar admin via WhatsApp sobre novo pedido manual
+              (async () => {
+                try {
+                  const adminNumbers = await whatsappService.getOnlineOfficialNumbers();
+                  if (adminNumbers.length > 0) {
+                    const adminMsg = `🔔 *Novo Pedido PIX Manual!*\n\n👤 *Cliente:* ${finalName}\n📱 *WhatsApp:* ${rawPhone || 'não informado'}\n📋 *CPF:* ${rawCpf || 'não informado'}\n🎟️ *Plano:* ${selectedPlan.title}\n💰 *Valor:* R$ ${Number(selectedPlan.price).toFixed(2)}\n🆔 *ID:* ${pixId}\n\n🔑 *Chave PIX enviada ao cliente:*\n\`${pixKey}\`\n\n➡️ Acesse o painel em /dashboard/finance para aprovar ou rejeitar.`;
+                    // Envia para o próprio número conectado (admin number)
+                    await whatsappService.sendWhatsAppMessage('admin', adminNumbers[0], adminMsg).catch(() => {});
+                  }
+                } catch (e) { console.warn('[PIX Manual] Erro ao notificar admin:', e); }
+              })();
             }
           }
         } catch (mpErr: any) {
@@ -778,6 +792,14 @@ export async function POST(request: Request) {
                 const rawTemplate = await getCustomTemplate(step.key);
                 const sendOpts = await getTriggerSendOptions(step.key);
 
+                // Monta chave PIX para incluir na mensagem quando pagamento é manual
+                const pixChave = pixData?.pixPayload && pixData.pixId?.startsWith('MANUAL_')
+                  ? pixData.pixPayload
+                  : '';
+                const pixValor = pixData?.amount
+                  ? `R$ ${Number(pixData.amount).toFixed(2).replace('.', ',')}`
+                  : '';
+
                 const msgBody = applyTemplateTags(rawTemplate, {
                   cliente: finalName,
                   usuario: hotspotUser,
@@ -786,6 +808,8 @@ export async function POST(request: Request) {
                   rede_wifi: wifiName,
                   canais_oficiais: officialNumbersSection,
                   link_portal: `${portalUrl}/portal/planos`,
+                  chave_pix: pixChave ? `\n\n💳 *Pagamento PIX:*\nChave: \`${pixChave}\`\nValor: ${pixValor}\n_Envie o comprovante após o pagamento para agilizar a liberação._` : '',
+                  valor_pix: pixValor,
                 });
 
                 const res = await whatsappService.sendWhatsAppMessage('admin', targetPhone, msgBody, {
