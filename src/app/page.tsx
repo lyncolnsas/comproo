@@ -8,7 +8,9 @@ export default function SystemLogin() {
   const [step, setStep] = useState<LoginStep>('CREDENTIALS');
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+
   const [emergencyToken, setEmergencyToken] = useState('');
   const [maskedPhone, setMaskedPhone] = useState('');
   const [emergencyAvailable, setEmergencyAvailable] = useState(false);
@@ -232,19 +234,30 @@ export default function SystemLogin() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider mb-1.5">
-                Senha
-              </label>
-              <input
-                id="login-password"
-                type="password"
-                required
-                value={pass}
-                onChange={(e) => setPass(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-slate-800 border border-slate-600 focus:border-blue-500 text-white rounded-xl px-4 py-2.5 text-sm font-semibold outline-none transition-all placeholder:text-slate-500"
-                autoComplete="current-password"
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-200 uppercase tracking-wider">
+                  Senha
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="text-[11px] text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                >
+                  {showPass ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  id="login-password"
+                  type={showPass ? 'text' : 'password'}
+                  required
+                  value={pass}
+                  onChange={(e) => setPass(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-800 border border-slate-600 focus:border-blue-500 text-white rounded-xl px-4 py-2.5 text-sm font-semibold outline-none transition-all placeholder:text-slate-500 pr-10"
+                  autoComplete="current-password"
+                />
+              </div>
             </div>
 
             <button
