@@ -212,10 +212,11 @@ export async function POST(request: Request) {
       maskedPhone,
       username: cleanUsername,
     });
-  } catch (error) {
-    console.error('[OTP REQUEST UNHANDLED ERROR]', error);
+  } catch (error: any) {
+    console.error('[OTP REQUEST UNHANDLED ERROR]', error?.stack || error);
+    const detail = error?.message ? `: ${error.message}` : '';
     return NextResponse.json(
-      { success: false, message: 'Erro interno. Tente novamente.' },
+      { success: false, message: `Erro interno ao autenticar${process.env.NODE_ENV !== 'production' ? detail : '. Tente novamente.'}` },
       { status: 500 }
     );
   }
