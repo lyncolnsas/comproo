@@ -53,7 +53,11 @@ export async function POST(request: Request) {
     if (user) {
       const { isValid } = verifyPassword(password, user.password);
       credentialsValid = isValid;
+      if (!isValid) {
+        console.warn(`[AUTH DEBUG] Password check failed for '${cleanUsername}'. Provided length: ${password.length}, Stored hash starts with: ${user.password.slice(0, 15)}`);
+      }
     } else {
+      console.warn(`[AUTH DEBUG] User not found in DB: '${cleanUsername}'`);
       // Timing attack mitigation
       dummyVerifyPassword(password);
     }
@@ -61,6 +65,7 @@ export async function POST(request: Request) {
     if (!credentialsValid) {
       const failureResult = loginRateLimiter.recordFailure(clientIp, cleanUsername);
       console.warn(`[OTP REQUEST FAILED] Credenciais inválidas para '${cleanUsername}' do IP: ${clientIp}`);
+
 
       // Módulo 3: alerta de brute-force quando o bloqueio é atingido
       if (failureResult.blocked) {
