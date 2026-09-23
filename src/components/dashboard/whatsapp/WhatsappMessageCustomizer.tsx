@@ -1174,8 +1174,12 @@ export function WhatsappMessageCustomizer() {
 
           {/* Instrução */}
           <div className="px-6 py-3 bg-emerald-50 border-b border-emerald-100">
-            <p className="text-[11px] text-emerald-700 leading-relaxed">
-              <strong>Como popular a biblioteca:</strong> Crie um grupo no WhatsApp e adicione o número do bot. Configure o JID do grupo em <em>Configurações → WhatsApp → JID do Grupo de Biblioteca</em>. Tudo que você enviar nesse grupo (imagens, vídeos, áudios) aparece automaticamente aqui — e o bot reenvia <strong>sem fazer upload</strong>, como se fosse um humano encaminhando.
+            <p className="text-[11px] text-emerald-800 leading-relaxed">
+              <strong>Como popular a biblioteca:</strong> Crie um grupo no WhatsApp e adicione o número cadastrado nele. Em seguida, na aba <em>Aparelhos Conectados</em>, clique em <strong>&quot;Escolher Grupo&quot;</strong> no aparelho desejado e selecione o grupo pelo nome.
+              <br />
+              <span className="text-[10px] text-emerald-600 font-medium">
+                💡 Cada número pode ter seu próprio grupo (enviando fotos/banners diferentes por número) ou todos os 4 números podem compartilhar o mesmo grupo. Tudo que for enviado no grupo é salvo aqui e reenviado <strong>como reencaminhamento humano</strong>, sem re-upload!
+              </span>
             </p>
           </div>
 
@@ -1189,7 +1193,7 @@ export function WhatsappMessageCustomizer() {
               <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
                 <Library className="w-10 h-10 text-slate-200" />
                 <p className="text-sm font-semibold text-slate-400">Biblioteca vazia</p>
-                <p className="text-[11px] text-slate-400 max-w-xs">Configure o JID do grupo e envie mídias pelo WhatsApp para elas aparecerem aqui automaticamente.</p>
+                <p className="text-[11px] text-slate-400 max-w-xs">Vincule o grupo pelo nome no card do seu aparelho WhatsApp e envie fotos, vídeos ou áudios nele para aparecerem aqui automaticamente.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

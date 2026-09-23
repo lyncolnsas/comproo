@@ -129,6 +129,8 @@ model WhatsappInstance {
   lastSeen      DateTime?     // Último batimento de heartbeat/conexão
   dailyCount    Int           @default(0) // Contador de mensagens do dia
   profilePicUrl String?
+  libraryGroupJid   String?       // JID do grupo de biblioteca vinculado (ex: 120363xxx@g.us)
+  libraryGroupName  String?       // Nome amigável do grupo salvo
   createdAt     DateTime      @default(now())
   routings      LeadRouting[]
 }
@@ -205,6 +207,7 @@ model MediaLibrary {
   messageJson  String             // JSON do proto.IMessage original completo
   sourceJid    String             // JID do grupo de origem (ex: 120363xxxx@g.us)
   messageId    String             // ID da mensagem original no WhatsApp
+  instanceId   String?            // ID da instância que capturou (opcional)
   createdAt    DateTime @default(now())
 }
 

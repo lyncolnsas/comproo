@@ -8,7 +8,7 @@ import {
   QrCode, CheckCircle2, AlertTriangle, Zap, LogOut, RotateCw,
   Eye, MessageSquare, Clock, Layers, Timer, MousePointerClick, Pause,
   ToggleLeft, ToggleRight, X, Smartphone, Activity, Server, ArrowRight,
-  Sliders, MessageCircle
+  Sliders, MessageCircle, Users, FolderPlus, Check, Search, Library
 } from 'lucide-react';
 import { WhatsappMessageCustomizer } from '@/components/dashboard/whatsapp/WhatsappMessageCustomizer';
 
@@ -25,6 +25,8 @@ interface WhatsappInstance {
   lastSeen?: string | null;
   dailyCount?: number;
   profilePicUrl?: string | null;
+  libraryGroupJid?: string | null;
+  libraryGroupName?: string | null;
 }
 
 interface ModeInfo {
@@ -195,9 +197,88 @@ export default function WhatsappConnection() {
   const [newMetaPhoneId, setNewMetaPhoneId] = useState('');
   const [newMetaToken, setNewMetaToken] = useState('');
 
+  // Group selection modal state (Biblioteca de Mídias)
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [selectedGroupInstance, setSelectedGroupInstance] = useState<WhatsappInstance | null>(null);
+  const [groupsList, setGroupsList] = useState<{ jid: string; subject: string; participantsCount: number; creation?: number; desc?: string }[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [savingGroup, setSavingGroup] = useState(false);
+  const [groupSearchQuery, setGroupSearchQuery] = useState('');
+  const [applyGroupToAll, setApplyGroupToAll] = useState(false);
+
   const showFeedback = (success: boolean, message: string) => {
     setFeedback({ success, message });
     setTimeout(() => setFeedback(null), 5000);
+  };
+
+  const handleOpenGroupModal = async (inst: WhatsappInstance) => {
+    setSelectedGroupInstance(inst);
+    setIsGroupModalOpen(true);
+    setGroupSearchQuery('');
+    setApplyGroupToAll(false);
+    setLoadingGroups(true);
+    setGroupsList([]);
+
+    try {
+      const res = await fetch(`/api/admin/whatsapp-groups?instanceId=${inst.id}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.groups)) {
+        setGroupsList(data.groups);
+      } else {
+        showFeedback(false, data.error || 'Nenhum grupo encontrado neste aparelho');
+      }
+    } catch {
+      showFeedback(false, 'Falha ao buscar grupos no WhatsApp');
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const handleSelectGroup = async (group: { jid: string; subject: string }) => {
+    if (!selectedGroupInstance) return;
+    setSavingGroup(true);
+    try {
+      const res = await fetch('/api/admin/whatsapp-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instanceId: selectedGroupInstance.id,
+          groupJid: group.jid,
+          groupName: group.subject,
+          applyToAll: applyGroupToAll,
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showFeedback(true, data.message || 'Grupo vinculado com sucesso!');
+        setIsGroupModalOpen(false);
+        loadData();
+      } else {
+        showFeedback(false, data.error || 'Erro ao vincular grupo');
+      }
+    } catch {
+      showFeedback(false, 'Falha na comunicação com o servidor');
+    } finally {
+      setSavingGroup(false);
+    }
+  };
+
+  const handleUnbindGroup = async (instanceId: string) => {
+    if (!confirm('Deseja desvincular o grupo de biblioteca deste aparelho?')) return;
+    try {
+      const res = await fetch(`/api/admin/whatsapp-groups?instanceId=${instanceId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        showFeedback(true, 'Grupo desvinculado com sucesso!');
+        loadData();
+      } else {
+        showFeedback(false, data.error || 'Erro ao desvincular');
+      }
+    } catch {
+      showFeedback(false, 'Erro ao desvincular');
+    }
   };
 
   const loadData = useCallback(async () => {
@@ -733,6 +814,58 @@ export default function WhatsappConnection() {
                                 <span className="font-bold text-slate-900">{inst.dailyCount}</span>
                               </div>
                             )}
+
+                            {/* Grupo da Biblioteca de Mídias */}
+                            <div className="bg-slate-50/90 border border-slate-200/80 rounded-xl p-2.5 text-xs mb-1">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="flex items-center gap-1.5 font-bold text-slate-700 text-[10px] uppercase tracking-wider">
+                                  <Library className="w-3.5 h-3.5 text-emerald-600" />
+                                  Grupo de Mídias
+                                </span>
+                                {inst.status === 'connected' ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenGroupModal(inst)}
+                                    className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <FolderPlus className="w-3 h-3" />
+                                    {inst.libraryGroupJid ? 'Alterar' : 'Escolher Grupo'}
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400">Requer Conexão</span>
+                                )}
+                              </div>
+                              {inst.libraryGroupJid ? (
+                                <div className="flex items-center justify-between gap-1.5 bg-emerald-50/80 border border-emerald-200 rounded-lg px-2.5 py-1.5">
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-emerald-950 text-xs truncate flex items-center gap-1">
+                                      <Users className="w-3 h-3 text-emerald-600 shrink-0" />
+                                      {inst.libraryGroupName || 'Grupo Conectado'}
+                                    </p>
+                                    <p className="text-[10px] font-mono text-emerald-700/80 truncate">
+                                      {inst.libraryGroupJid}
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUnbindGroup(inst.id)}
+                                    className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer shrink-0 transition-colors"
+                                    title="Desvincular grupo deste número"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <p className="text-[10px] text-slate-600 leading-tight">
+                                  Nenhum grupo vinculado.{' '}
+                                  {inst.status === 'connected' ? (
+                                    <span>Clique em <strong>Escolher Grupo</strong> para ler seus grupos no WhatsApp.</span>
+                                  ) : (
+                                    <span>Conecte o aparelho para selecionar.</span>
+                                  )}
+                                </p>
+                              )}
+                            </div>
                           </div>
 
                           {/* Botões de Ação */}
@@ -1274,6 +1407,190 @@ export default function WhatsappConnection() {
         </div>
       )}
 
+      {/* MODAL: SELEÇÃO DE GRUPO DA BIBLIOTECA DE MÍDIAS */}
+      {isGroupModalOpen && selectedGroupInstance && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                  <Library className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800">
+                    Escolher Grupo da Biblioteca
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Aparelho: <span className="font-semibold text-slate-700">{selectedGroupInstance.name}</span>
+                    {selectedGroupInstance.number ? ` (${selectedGroupInstance.number})` : ''}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGroupModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Explicação da flexibilidade */}
+            <div className="mt-4 p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl text-xs text-emerald-900 leading-relaxed">
+              <p className="font-semibold flex items-center gap-1.5 mb-1">
+                <span>💡</span> Como funciona o reencaminhamento humano:
+              </p>
+              <p>
+                Crie um grupo no WhatsApp e adicione este número nele. Qualquer imagem, banner, vídeo ou áudio enviado no grupo é salvo automaticamente nesta biblioteca para reenvio sem upload repetido.
+              </p>
+              <p className="mt-1 text-emerald-800 font-medium">
+                • <strong>Grupos individuais:</strong> Cada número pode ter seu próprio grupo com banners e mídias exclusivas.
+                <br />
+                • <strong>Grupo único compartilhado:</strong> Ou adicione os 4 números no mesmo grupo e marque a caixa abaixo para que todos usem as mesmas mídias.
+              </p>
+            </div>
+
+            {/* Barra de busca e atualizar */}
+            <div className="mt-4 flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Pesquisar grupo pelo nome..."
+                  value={groupSearchQuery}
+                  onChange={(e) => setGroupSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenGroupModal(selectedGroupInstance)}
+                disabled={loadingGroups}
+                title="Recarregar grupos do WhatsApp"
+                className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all disabled:opacity-50"
+              >
+                <RefreshCcw className={`w-4 h-4 ${loadingGroups ? 'animate-spin text-emerald-600' : ''}`} />
+              </button>
+            </div>
+
+            {/* Lista de Grupos */}
+            <div className="mt-3 flex-1 overflow-y-auto min-h-[220px] max-h-[340px] pr-1 space-y-2">
+              {loadingGroups ? (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
+                  <RefreshCcw className="w-6 h-6 animate-spin text-emerald-600" />
+                  <span className="text-xs font-medium">Consultando grupos onde este número participa...</span>
+                </div>
+              ) : groupsList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 px-4 text-center border-2 border-dashed border-slate-200 rounded-2xl">
+                  <Users className="w-8 h-8 text-slate-300 mb-2" />
+                  <p className="text-xs font-semibold text-slate-700">Nenhum grupo encontrado</p>
+                  <p className="text-[11px] text-slate-500 mt-1 max-w-sm">
+                    Certifique-se de que o aparelho está conectado e já foi adicionado a pelo menos um grupo no WhatsApp.
+                  </p>
+                </div>
+              ) : (
+                (() => {
+                  const filtered = groupsList.filter((g) =>
+                    g.subject.toLowerCase().includes(groupSearchQuery.toLowerCase())
+                  );
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="py-8 text-center text-xs text-slate-400">
+                        Nenhum grupo corresponde à busca &quot;{groupSearchQuery}&quot;
+                      </div>
+                    );
+                  }
+
+                  return filtered.map((g) => {
+                    const isCurrent = selectedGroupInstance.libraryGroupJid === g.jid;
+                    return (
+                      <div
+                        key={g.jid}
+                        className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                          isCurrent
+                            ? 'bg-emerald-50/60 border-emerald-300'
+                            : 'bg-white hover:bg-slate-50 border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            isCurrent ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            <Users className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-xs font-bold text-slate-800 truncate">
+                                {g.subject}
+                              </h4>
+                              {isCurrent && (
+                                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                                  <Check className="w-2.5 h-2.5" /> Ativo
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 truncate">
+                              {g.participantsCount} participantes • <span className="font-mono text-[9px] text-slate-300">{g.jid.split('@')[0]}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSelectGroup(g)}
+                          disabled={savingGroup}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                            isCurrent
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
+                              : 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm'
+                          }`}
+                        >
+                          {savingGroup ? 'Salvando...' : isCurrent ? 'Selecionado' : 'Usar Este'}
+                        </button>
+                      </div>
+                    );
+                  });
+                })()
+              )}
+            </div>
+
+            {/* Checkbox aplicar para todos os 4 números */}
+            <div className="mt-4 pt-3 border-t border-slate-100">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={applyGroupToAll}
+                  onChange={(e) => setApplyGroupToAll(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
+                />
+                <span className="text-xs text-slate-700 font-medium">
+                  <strong>Vincular este mesmo grupo para os outros números cadastrados</strong>
+                  <br />
+                  <span className="text-[11px] text-slate-500 font-normal">
+                    Permite que todos os 4 números enviem os mesmos banners, imagens e vídeos da mesma biblioteca.
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] text-slate-400">
+                {groupsList.length} grupo(s) detectado(s)
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsGroupModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </main>
   );

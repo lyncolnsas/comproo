@@ -787,6 +787,16 @@ class WhatsappSpecialist {
   logout(instanceId?: string) {
     this.logoutBaileys(instanceId);
   }
+
+  async fetchInstanceGroups(instanceId: string) {
+    const adapter = this.getBaileysAdapter();
+    return await adapter.fetchInstanceGroups(instanceId);
+  }
+
+  setInstanceLibraryGroup(instanceId: string, groupJid: string | null, groupName: string | null) {
+    const adapter = this.getBaileysAdapter();
+    adapter.setInstanceLibraryGroup(instanceId, groupJid, groupName);
+  }
 }
 
 // ─── Singleton global (compatível com Next.js hot reload) ───────────────────

@@ -110,6 +110,8 @@ export interface BaileysSessionInstance {
   isConnecting: boolean;
   lastSeen: Date | null;
   reconnectTimeout?: NodeJS.Timeout;
+  libraryGroupJid?: string | null;
+  libraryGroupName?: string | null;
 }
 
 // ─── BaileysAdapter (Multi-Instance Manager) ──────────────────────────────────
@@ -210,9 +212,22 @@ export class BaileysAdapter implements IWhatsappAdapter {
         status: 'disconnected',
         sessionDir,
         isConnecting: false,
-        lastSeen: null
+        lastSeen: null,
+        libraryGroupJid: null,
+        libraryGroupName: null,
       };
       this.sessions.set(instanceId, session);
+
+      // Carrega grupo de biblioteca salvo no banco
+      prisma.whatsappInstance.findUnique({
+        where: { id: instanceId },
+        select: { libraryGroupJid: true, libraryGroupName: true }
+      }).then(inst => {
+        if (inst && session) {
+          session.libraryGroupJid = inst.libraryGroupJid || null;
+          session.libraryGroupName = inst.libraryGroupName || null;
+        }
+      }).catch(() => {});
     }
 
     if (session.isConnecting) return session;
@@ -331,14 +346,22 @@ export class BaileysAdapter implements IWhatsappAdapter {
             if (!msg.message) continue;
             const remoteJid = msg.key.remoteJid || '';
 
-            // ── Captura de mídia do grupo de biblioteca ─────────────────────
+            // ── Captura de mídia do grupo de biblioteca (por aparelho ou global) ─
             if (remoteJid.endsWith('@g.us') && !msg.key.fromMe) {
               try {
-                const libGroupJid = await prisma.systemConfig
-                  .findUnique({ where: { key: 'WHATSAPP_MEDIA_LIBRARY_GROUP' } })
-                  .then(r => r?.value || '');
+                const instanceGroupJid = session?.libraryGroupJid;
+                let isTargetGroup = Boolean(instanceGroupJid && remoteJid === instanceGroupJid);
 
-                if (libGroupJid && remoteJid === libGroupJid) {
+                if (!isTargetGroup) {
+                  const globalLibGroupJid = await prisma.systemConfig
+                    .findUnique({ where: { key: 'WHATSAPP_MEDIA_LIBRARY_GROUP' } })
+                    .then(r => r?.value || '');
+                  if (globalLibGroupJid && remoteJid === globalLibGroupJid) {
+                    isTargetGroup = true;
+                  }
+                }
+
+                if (isTargetGroup) {
                   const msgContent = msg.message;
                   // Detecta tipo de mídia
                   const mediaTypeMap: Record<string, string> = {
@@ -376,9 +399,11 @@ export class BaileysAdapter implements IWhatsappAdapter {
                         messageJson: JSON.stringify(msg),
                         sourceJid: remoteJid,
                         messageId: msg.key.id || '',
+                        instanceId: session?.id || null,
                       }
                     });
-                    console.log(`[Baileys][${session!.id}] Mídia capturada para biblioteca: ${mediaType} — "${caption}"`);
+                    const groupDisplayName = session?.libraryGroupName || remoteJid;
+                    console.log(`[Baileys][${session!.id}] Mídia capturada para biblioteca: ${mediaType} — "${caption}" (Grupo: ${groupDisplayName})`);
                   }
                 }
               } catch (libErr) {
@@ -841,6 +866,52 @@ export class BaileysAdapter implements IWhatsappAdapter {
       return null;
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * Busca em tempo real todos os grupos nos quais esta instância participa.
+   * Executa groupFetchAllParticipating() nativo do Baileys no socket do aparelho.
+   */
+  async fetchInstanceGroups(instanceId: string): Promise<Array<{
+    jid: string;
+    subject: string;
+    participantsCount: number;
+    creation?: number;
+    desc?: string;
+  }>> {
+    const session = this.sessions.get(instanceId);
+    if (!session || !this.isSocketReady(session)) {
+      throw new Error(`Aparelho "${session?.name || instanceId}" não está conectado ao WhatsApp. Conecte-o antes de consultar os grupos.`);
+    }
+
+    try {
+      const rawGroups = await session.sock.groupFetchAllParticipating();
+      const groupsList = Object.values(rawGroups || {}).map((g: any) => ({
+        jid: g.id as string,
+        subject: (g.subject as string) || 'Grupo sem nome',
+        participantsCount: Array.isArray(g.participants) ? g.participants.length : 0,
+        creation: g.creation as number | undefined,
+        desc: g.desc ? g.desc.toString() : '',
+      }));
+
+      // Ordena alfabeticamente pelo nome do grupo
+      groupsList.sort((a, b) => a.subject.localeCompare(b.subject, 'pt-BR', { sensitivity: 'base' }));
+      return groupsList;
+    } catch (err: any) {
+      console.error(`[Baileys][${instanceId}] Erro ao buscar grupos participantes:`, err);
+      throw new Error(`Falha ao ler grupos do WhatsApp: ${err.message || err}`);
+    }
+  }
+
+  /**
+   * Atualiza em memória o grupo de biblioteca desta instância
+   */
+  setInstanceLibraryGroup(instanceId: string, groupJid: string | null, groupName: string | null): void {
+    const session = this.sessions.get(instanceId);
+    if (session) {
+      session.libraryGroupJid = groupJid;
+      session.libraryGroupName = groupName;
     }
   }
 }
