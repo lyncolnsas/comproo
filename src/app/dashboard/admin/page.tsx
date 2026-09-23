@@ -5,7 +5,9 @@ import Link from 'next/link';
 
 export default function AdminSettings() {
   const [dbStatus] = useState('Conectado');
+  const [currentUsername, setCurrentUsername] = useState('');
   const [username, setUsername] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -49,6 +51,16 @@ export default function AdminSettings() {
         setFreeWifiMode(data.data.free_wifi_mode === 'true');
         setMaxUsers(data.data.MAX_HOTSPOT_USERS || '0');
         setAdminPhone(data.data.ADMIN_WHATSAPP_PHONE || '');
+      }
+    } catch (e) {}
+
+    // Busca usuário atual autenticado
+    try {
+      const res = await fetch('/api/system/users');
+      const data = await res.json();
+      if (data.success && data.currentUser) {
+        setCurrentUsername(data.currentUser.username);
+        setUsername(data.currentUser.username);
       }
     } catch (e) {}
 
@@ -191,18 +203,31 @@ export default function AdminSettings() {
 
   const handleUserUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentPassword) {
+      alert('Informe sua senha atual para confirmar a alteração de segurança.');
+      return;
+    }
+    if (!password || password.length < 8) {
+      alert('A nova senha deve ter no mínimo 8 caracteres.');
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch('/api/system/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({
+          newUsername: username.trim(),
+          currentPassword,
+          newPassword: password.trim()
+        })
       });
       const data = await res.json();
-      alert(data.message);
       if (data.success) {
-        setUsername('');
-        setPassword('');
+        alert(data.message || 'Credenciais atualizadas com sucesso! Você será redirecionado para a tela de login.');
+        window.location.href = '/';
+      } else {
+        alert(data.message || 'Erro ao atualizar credenciais.');
       }
     } catch (err) {
       alert('Erro de conexão ao salvar.');
@@ -583,24 +608,35 @@ export default function AdminSettings() {
           {/* Panel User Card */}
           <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 md:p-6 flex flex-col justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 mb-1">
-                Credenciais do Sistema
-              </h3>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <h3 className="text-sm font-bold text-slate-900">
+                  Credenciais de Acesso
+                </h3>
+                {currentUsername && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                    Ativo: <b>{currentUsername}</b>
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                Modifique as credenciais de segurança locais para acessar este painel do MikroGestor.
+                Atualize o login do administrador. Por segurança, requer sua senha atual e desconecta as sessões antigas.
               </p>
 
-              <form onSubmit={handleUserUpdate} className="space-y-4">
+              <form onSubmit={handleUserUpdate} className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Novo Usuário Admin</label>
-                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required placeholder="Ex: admin" className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs focus:bg-white dark:focus:bg-[#141d30] focus:border-blue-500 outline-none" />
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Novo Nome de Usuário</label>
+                  <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required placeholder="Ex: lyncoln" className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs focus:bg-white dark:focus:bg-[#141d30] focus:border-blue-500 outline-none font-medium" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nova Senha</label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs focus:bg-white dark:focus:bg-[#141d30] focus:border-blue-500 outline-none" />
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Senha Atual (Confirmação)</label>
+                  <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required placeholder="Sua senha atual" className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs focus:bg-white dark:focus:bg-[#141d30] focus:border-blue-500 outline-none" />
                 </div>
-                <button type="submit" disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50">
-                  {saving ? 'Salvando...' : 'Salvar Credenciais'}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nova Senha Forte</label>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Mínimo 8 caracteres" className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs focus:bg-white dark:focus:bg-[#141d30] focus:border-blue-500 outline-none" />
+                </div>
+                <button type="submit" disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50 mt-1">
+                  {saving ? 'Atualizando e Protegendo...' : 'Salvar Novas Credenciais'}
                 </button>
               </form>
             </div>

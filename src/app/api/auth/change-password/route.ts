@@ -115,10 +115,21 @@ export async function PATCH(request: Request) {
       data: updates,
     });
 
+    // Se o usuário era 'admin' e mudou de nome, ou se houver outro 'admin' no banco, elimina
+    if (updates.username && updates.username !== 'admin') {
+      await prisma.user.deleteMany({
+        where: {
+          username: 'admin',
+          id: { not: user.id }
+        }
+      });
+    }
+
     const changedFields = [
       updates.username ? 'usuário' : null,
       updates.password ? 'senha' : null,
     ].filter(Boolean).join(' e ');
+
 
     console.log(`[SECURITY] ${changedFields} atualizado(s) para o usuário '${user.username}'.`);
 
