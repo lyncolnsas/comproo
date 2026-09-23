@@ -20,6 +20,7 @@
    - [5.1 Admin Peers (Windows & Mobile) e Acesso Remoto Winbox](#51-admin-peers-windows--mobile-e-acesso-remoto-winbox)
    - [5.2 Subdomínios Dinâmicos & SSL Let's Encrypt por Roteador](#52-subdomínios-dinâmicos--ssl-lets-encrypt-por-roteador)
    - [5.3 Gestão e Operação Autônoma via Coolify MCP Server](#53-gestão-e-operação-autônoma-via-coolify-mcp-server)
+   - [5.4 WhatsApp Multi-Instâncias (Pool de 2 a 8 Números) e Biblioteca de Mídias](#54-whatsapp-multi-instâncias-pool-de-2-a-8-números-e-biblioteca-de-mídias)
 6. [Método Alternativo: Deploy Direto via Docker Compose](#6-método-alternativo-deploy-direto-via-docker-compose)
 7. [Troubleshooting Playbook (Resolução Imediata de Problemas)](#7-troubleshooting-playbook-resolução-imediata-de-problemas)
 8. [Comandos de Emergência e Manutenção](#8-comandos-de-emergência-e-manutenção)
@@ -333,8 +334,30 @@ Com ele, agentes de IA (Antigravity IDE, Claude Desktop, Cursor) têm permissão
 Para validar a integração do MCP com qualquer VPS a qualquer momento:
 ```bash
 cd "C:\Users\lynco\OneDrive\Documentos\-Projetos\CooliFy - MCP"
-npm test
 ```
+
+---
+
+### 5.4 WhatsApp Multi-Instâncias (Pool de 2 a 8 Números) e Biblioteca de Mídias
+
+O MikroGestor possui um motor de mensageria via WhatsApp Baileys projetado para alto volume, alta disponibilidade e proteção contra bloqueios da Meta:
+
+1. **Pool de 2 a 8 Números Concorrentes**:
+   - O painel em `/dashboard/whatsapp` permite conectar múltiplos números simultaneamente via QR Code independente.
+   - **Persistência Total no SQLite**: As credenciais de autenticação Baileys são salvas na tabela `BaileysAuth` dentro de `/app/prisma/dev.db`. Como esse diretório é montado no volume persistente do host (`/data/mikrogestor/prisma`), **as sessões nunca deslogam após redeploys do container**.
+   - **Rotatividade Circular (Round-Robin Real)**: As mensagens enviadas pelo sistema (cadastro, PIX gerado, pagamento aprovado, etc.) alternam ciclicamente entre todos os números com status `ready`.
+   - **Failover Automático**: Se um número desconectar ou falhar no envio, o sistema tenta imediatamente os outros números ativos da fila sem perder a mensagem.
+
+2. **Grupo Central de Mídias & Auto-Inclusão Autônoma (Zero-Touch)**:
+   - O administrador cria um único grupo no WhatsApp (ex: `Mikrogestor-Mídias`) e cadastra o JID do grupo em `/dashboard/settings`.
+   - **Entrada Automática**: Quando um 2º, 3º ou 8º número é emparelhado no painel, ele **não precisa ser adicionado manualmente ao grupo**! Uma instância ativa já presente no grupo consulta o código de convite (`groupInviteCode`) e a nova instância entra automaticamente via `groupAcceptInvite`.
+
+3. **Encaminhamento Nativo de Mídias (Sem Re-Upload)**:
+   - Ao postar vídeos, fotos ou áudios no grupo da biblioteca, o sistema cataloga a mensagem e armazena os identificadores criptográficos da Meta.
+   - Nos modelos de mensagens (`/dashboard/whatsapp/templates`), o operador vincula a mídia desejada a cada gatilho (ex: `Gatilho de Boas-Vindas` ou `Gatilho de Aprovação`).
+   - O envio aos clientes ocorre via **forwarding nativo** (`relayMessage` com `generateForwardMessageContent`). O servidor nunca faz download nem re-upload de arquivos pesados, economizando 100% de CPU/banda e reduzindo drasticamente o risco de banimento por spam repetitivo.
+
+> 📖 **Documentação Técnica Aprofundada**: Para arquitetura completa, fluxo de mensagens, chaves de gatilhos e diagnósticos, consulte `docs/ARQUITETURA_WHATSAPP_MULTI_NUMEROS_E_FORWARD.md`.
 
 ---
 

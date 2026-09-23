@@ -110,7 +110,11 @@ O instalador configura automaticamente o **PM2** para manter o MikroGestor rodan
 - 🎨 **Portal Studio Pro com 25 Nichos Temáticos** e 16 animações exclusivas em Canvas HTML5.
 - 📱 **Captura de Leads e Cadastro via Formulário Responsivo**.
 - 🎫 **Geração, Impressão e Gestão de Vouchers em Lote**.
-- 💬 **Fluxo de Conexão e Verificação via WhatsApp Baileys** (persistência SQLite).
-- 💳 **Integração de Pagamento Mercado Pago PIX**.
-- 🛡️ **Segurança Walled Garden, Bloqueio de Horários e Palavras-chave**.
+- 💬 **Pool WhatsApp Multi-Device (2 até 8 números simultâneos)**:
+  - 🔄 **Balanceamento Round-Robin** com failover automático e anti-bloqueio.
+  - 👥 **Grupo Central de Mídias com Auto-Inclusão Autônoma** via código de convite.
+  - 🚀 **Biblioteca de Mídias com Forward Nativo (`relayMessage`)**: reenvia vídeos e fotos aos clientes como reencaminhamento humano sem gastar upload do servidor.
+  - 📚 Veja a documentação técnica: [ARQUITETURA_WHATSAPP_MULTI_NUMEROS_E_FORWARD.md](docs/ARQUITETURA_WHATSAPP_MULTI_NUMEROS_E_FORWARD.md).
+- 💳 **Integração de Pagamento Mercado Pago PIX** com liberação imediata e carência temporária de 15 minutos.
+- 🛡️ **Segurança Walled Garden Ultra-Restrito, Anti-Tethering (TTL=1) e Bloqueio de Inadimplentes**.
 - 🚀 **Pronto para Produção com Coolify, Docker, PM2 e SQLite WAL Mode**.

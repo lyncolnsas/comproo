@@ -52,4 +52,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
       `/ip firewall mangle add chain=postrouting out-interface=bridge action=change-ttl new-ttl=set:1 comment="MikroGestor: Anti-Tethering (Bloqueio Compartilhamento)"`
     - Todos os pacotes chegam aos smartphones com TTL=1. Caso o cliente tente compartilhar a conexão via Roteador Wi-Fi (Hotspot Pessoal), Bluetooth ou USB, o kernel do celular decrementa o TTL para 0 e descarta o pacote, impedindo que dispositivos dependentes naveguem.
     - No perfil de usuário Hotspot (`/ip/hotspot/user/profile`), o parâmetro `shared-users=1` deve ser sempre forçado.
+16. **ARQUITETURA WHATSAPP: POOL DE 2 A 8 NÚMEROS, AUTO-INCLUSÃO E FORWARD NATIVO**:
+    - **Pool Multi-Device (2 a 8 Números)**: O sistema suporta múltiplos aparelhos Baileys simultâneos operando em Round-Robin circular com failover automático para blindagem anti-bloqueio.
+    - **Grupo Central de Mídias**: Todos os aparelhos conectados compartilham o mesmo grupo (`libraryGroupJid`). Mídias enviadas no grupo são salvas na `MediaLibrary` com o ID original da Meta.
+    - **Auto-Inclusão Autônoma no Grupo**: Ao conectar qualquer aparelho (`connection === 'open'`), o sistema detecta se o número já é participante. Se não for, obtém o código de convite via Baileys (`groupInviteCode`) e ingressa automaticamente no grupo com `groupAcceptInvite`, dispensando intervenção manual.
+    - **Reencaminhamento Humano (`relayMessage`)**: O reenvio de mídias cadastradas na biblioteca utiliza `generateForwardMessageContent` e `relayMessage`. Não faz upload repetido de arquivo (economia de 100% de banda do servidor e simulação de reencaminhamento humano).
+    - **Envio de Gatilhos**: Todas as rotas de envio de mensagens devem consultar `getTriggerSendOptions(key)` em `src/services/whatsapp-custom-messages.ts` e repassar `{ media, forwardLibraryId }` para `whatsappService.sendWhatsAppMessage`.
 

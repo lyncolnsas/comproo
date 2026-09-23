@@ -28,21 +28,16 @@ Esses arquivos devem ser **removidos** (se obsoletos) ou movidos para uma pasta 
 
 ## 3. Arquitetura e Boas Práticas (Single Responsibility)
 
-### O "Deus" `whatsapp.ts`
-O arquivo `src/services/whatsapp.ts` possui mais de 700 linhas e assumiu responsabilidades demais. Ele não apenas gerencia as conexões do WhatsApp (Baileys), mas também:
-- Faz sincronização automática de IP e DNS no MikroTik (`[AutoSync] DNS portal.wifi.local`).
-- Manipula estado de banco de dados (`prisma`).
-- Lida com fila e retentativas.
-
-**Melhoria sugerida:** Refatorar o `whatsapp.ts` dividindo-o em módulos menores:
-- `whatsapp-connection.ts` (Apenas baileys auth e sockets)
-- `mikrotik-sync.ts` (Sincronização de IP e Walled Garden)
-- `whatsapp-queue.ts` (Gerenciamento de mensagens e filas)
+### O Desacoplamento e Evolução da Mensageria (`whatsapp.ts` e `whatsapp-baileys.ts`)
+O serviço de mensageria foi completamente modernizado e desacoplado:
+- **`src/services/whatsapp-baileys.ts`**: Camada dedicada exclusivamente ao ciclo de vida de sockets Baileys, persistência de credenciais no SQLite via Prisma (`BaileysAuth`), pool dinâmico de 2 a 8 números simultâneos e auto-inclusão autônoma em grupo de biblioteca de mídias via código de convite (`groupAcceptInvite`).
+- **`src/services/whatsapp.ts`**: Focado no despacho de mensagens, roteamento circular Round-Robin real entre números conectados, failover automático e encaminhamento nativo de mídias Meta (`relayMessage` + `generateForwardMessageContent`) sem re-upload de arquivos.
+- **`src/services/network-sync.ts`**: Centraliza a sincronização de DNS (`portal.wifi.local`) e regras de Walled Garden no MikroTik, removendo 100% de código de rede do serviço de mensageria.
 
 ### Log de Erros Síncrono Bloqueante no Portal
-A rota `register/route.ts` faz uso intensivo de logs em arquivos de texto usando `fs.appendFileSync` (`error.log`).
+A rota `register/route.ts` fazia uso intensivo de logs em arquivos de texto usando `fs.appendFileSync` (`error.log`).
 - Em Node.js, métodos síncronos de sistema de arquivos (`Sync`) bloqueiam o *Event Loop*. Se muitos usuários se cadastrarem simultaneamente no hotspot, o servidor inteiro vai travar.
-- **Melhoria sugerida:** Substituir `fs.appendFileSync` por fluxos assíncronos (`fs.promises.appendFile`) ou integrar uma biblioteca de logs moderna (como `Pino` ou `Winston`).
+- **Melhoria implementada:** Substituído `fs.appendFileSync` por fluxos assíncronos (`fs.promises.appendFile`) em todas as rotas da aplicação.
 
 ---
 
@@ -65,4 +60,6 @@ Foram encontrados inúmeros `console.error` espalhados pelo backend:
 2. [x] **Ajuste de ESLint:** Configurado `eslint.config.mjs` com isolamento de regras para backend (desativando falsos positivos de hooks em Baileys) e frontend (regras de compilação do React 19 / Next.js 16). ESLint agora passa com **0 erros**.
 3. [x] **Refatoração de Logs:** Substituídos todos os `fs.appendFileSync` bloqueantes em rotas críticas (`register`, `safari-bypass`) por versões assíncronas via `fs.promises.appendFile`.
 4. [x] **Tipagem e Compilação:** Compilação TypeScript (`tsc --noEmit`) e Build Next.js (`next build`) executando com **100% de sucesso (0 erros)** em todas as 59 rotas da aplicação.
-5. [x] **Desacoplamento do WhatsApp:** Criado serviço dedicado `src/services/network-sync.ts` para sincronização de DNS (`portal.wifi.local`) e Walled Garden IP no MikroTik, retirando responsabilidades não relacionadas a mensageria de `src/services/whatsapp.ts`.
+5. [x] **Desacoplamento do WhatsApp & Rede:** Criado serviço dedicado `src/services/network-sync.ts` para sincronização de DNS e Walled Garden IP no MikroTik.
+6. [x] **Pool Multi-Números WhatsApp (2 a 8 Números):** Criado `src/services/whatsapp-baileys.ts` com gerenciamento de múltiplas instâncias concorrentes, persistência completa no SQLite (`BaileysAuth`), Round-Robin circular real e failover automático em caso de desconexão.
+7. [x] **Biblioteca Central de Mídias & Forwarding Nativo:** Implementado encaminhamento nativo de fotos, vídeos e áudios a partir de grupo central do WhatsApp sem re-upload, com auto-inclusão autônoma de novas instâncias via código de convite.

@@ -77,6 +77,12 @@ Para que todo roteador conectado responda em um subdomínio próprio (ex: `mkroc
 1. **Ferramenta Autônoma**: O servidor MCP em `CooliFy - MCP` permite aos agentes de IA verificar a VPS e containers com 1 clique.
 2. **Validação Instantânea**: Rode `npm test` dentro de `CooliFy - MCP` para diagnosticar SSH, Docker, Coolify API e WireGuard.
 
+### 1.8 WhatsApp Multi-Instâncias (2 a 8 Números) & Forward Nativo
+1. **Persistência Total no SQLite**: O Baileys armazena credenciais em `BaileysAuth` dentro de `/app/prisma/dev.db`. O volume persistente montado no host garante que os números conectados nunca deslogam após rebuilds.
+2. **Auto-Inclusão em Grupo**: Novas instâncias conectadas ingressam autonomamente no grupo central da biblioteca via código de convite (`groupAcceptInvite`), eliminando necessidade de adicionar números manualmente.
+3. **Encaminhamento Nativo de Mídias**: Mídias enviadas no grupo da biblioteca são catalogadas e reencaminhadas (`relayMessage` + `generateForwardMessageContent`) aos clientes sem re-upload, poupando CPU/banda e reduzindo riscos de banimento.
+4. **Round-Robin com Failover**: O sistema alterna disparos entre todos os números saudáveis e executa fallback automático caso uma instância falhe.
+
 ---
 
 ## 2. Deploy em Nova VPS do Zero (Checklist Rápido)
