@@ -12,8 +12,9 @@ export async function GET() {
   try {
     const keys = WHATSAPP_TRIGGERS.map(t => t.key);
     const mediaKeys = keys.map(k => `${k}_MEDIA`);
+    const forwardKeys = keys.map(k => `${k}_FORWARD_ID`);
     const configs = await prisma.systemConfig.findMany({
-      where: { key: { in: [...keys, ...mediaKeys, 'PORTAL_SALES_MODE'] } }
+      where: { key: { in: [...keys, ...mediaKeys, ...forwardKeys, 'PORTAL_SALES_MODE'] } }
     });
 
     const configMap = configs.reduce((acc: Record<string, string>, curr) => {
@@ -36,12 +37,15 @@ export async function GET() {
         }
       } catch {}
 
+      const forwardLibraryId = configMap[`${t.key}_FORWARD_ID`] || '';
+
       return {
         ...t,
         currentTemplate: configMap[t.key] || t.defaultTemplate,
         isCustomized: Boolean(configMap[t.key] && configMap[t.key] !== t.defaultTemplate),
         mediaUrl,
-        mediaType
+        mediaType,
+        forwardLibraryId
       };
     });
 
@@ -54,7 +58,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { key, template, action, mode, flowConfig, mediaUrl, mediaType } = body;
+    const { key, template, action, mode, flowConfig, mediaUrl, mediaType, forwardLibraryId } = body;
 
     // Ação para salvar o fluxograma completo
     if (action === 'saveFlow') {
@@ -108,15 +112,18 @@ export async function POST(request: Request) {
     const mediaKey = `${key}_MEDIA`;
 
     if (action === 'reset') {
-      // Remove do banco para restaurar padrão
-      await prisma.systemConfig.deleteMany({ where: { key: { in: [key, mediaKey] } } });
+      // Remove do banco para restaurar padrão (texto + mídia + forward)
+      await prisma.systemConfig.deleteMany({
+        where: { key: { in: [key, mediaKey, `${key}_FORWARD_ID`] } }
+      });
       return NextResponse.json({
         success: true,
         message: 'Mensagem restaurada para o padrão de fábrica.',
         template: triggerDef.defaultTemplate,
         isCustomized: false,
         mediaUrl: '',
-        mediaType: 'image'
+        mediaType: 'image',
+        forwardLibraryId: ''
       });
     }
 
@@ -127,16 +134,32 @@ export async function POST(request: Request) {
       create: { key, value: String(template) }
     });
 
-    // Salva ou remove personalização de mídia
-    if (mediaUrl && mediaUrl.trim().length > 0) {
-      const mediaValue = JSON.stringify({ url: mediaUrl.trim(), type: mediaType || 'image' });
+    const forwardKey = `${key}_FORWARD_ID`;
+
+    // Forward nativo (biblioteca) tem precedência sobre URL
+    if (forwardLibraryId && forwardLibraryId.trim().length > 0) {
+      // Salva forward ID e limpa media URL (são mutuamente exclusivos)
       await prisma.systemConfig.upsert({
-        where: { key: mediaKey },
-        update: { value: mediaValue },
-        create: { key: mediaKey, value: mediaValue }
+        where: { key: forwardKey },
+        update: { value: forwardLibraryId.trim() },
+        create: { key: forwardKey, value: forwardLibraryId.trim() }
       });
-    } else {
       await prisma.systemConfig.deleteMany({ where: { key: mediaKey } });
+    } else {
+      // Remove forward ID
+      await prisma.systemConfig.deleteMany({ where: { key: forwardKey } });
+
+      // Salva ou remove personalização de mídia via URL
+      if (mediaUrl && mediaUrl.trim().length > 0) {
+        const mediaValue = JSON.stringify({ url: mediaUrl.trim(), type: mediaType || 'image' });
+        await prisma.systemConfig.upsert({
+          where: { key: mediaKey },
+          update: { value: mediaValue },
+          create: { key: mediaKey, value: mediaValue }
+        });
+      } else {
+        await prisma.systemConfig.deleteMany({ where: { key: mediaKey } });
+      }
     }
 
     return NextResponse.json({
@@ -144,8 +167,9 @@ export async function POST(request: Request) {
       message: 'Modelo de mensagem salvo com sucesso!',
       template,
       isCustomized: template !== triggerDef.defaultTemplate,
-      mediaUrl: mediaUrl?.trim() || '',
-      mediaType: mediaType || 'image'
+      mediaUrl: forwardLibraryId ? '' : (mediaUrl?.trim() || ''),
+      mediaType: mediaType || 'image',
+      forwardLibraryId: forwardLibraryId?.trim() || ''
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error?.message || 'Erro ao salvar modelo' }, { status: 500 });

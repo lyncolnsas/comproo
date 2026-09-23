@@ -3,6 +3,7 @@ import fs from 'fs';
 import { prisma } from '@/lib/prisma';
 import type { IWhatsappAdapter, SendMessageOptions, SendMessageResult } from './whatsapp-interface';
 import { usePrismaAuthState } from './baileys-prisma-auth';
+import { generateForwardMessageContent } from '@whiskeysockets/baileys';
 
 // ─── Template text converters (Meta → Baileys free text) ─────────────────────
 
@@ -327,9 +328,68 @@ export class BaileysAdapter implements IWhatsappAdapter {
         try {
           if (chatUpdate.type !== 'notify') return;
           for (const msg of chatUpdate.messages || []) {
-            if (!msg.message || msg.key.fromMe) continue;
-            const remoteJid = msg.key.remoteJid;
-            if (!remoteJid || remoteJid.includes('@g.us')) continue;
+            if (!msg.message) continue;
+            const remoteJid = msg.key.remoteJid || '';
+
+            // ── Captura de mídia do grupo de biblioteca ─────────────────────
+            if (remoteJid.endsWith('@g.us') && !msg.key.fromMe) {
+              try {
+                const libGroupJid = await prisma.systemConfig
+                  .findUnique({ where: { key: 'WHATSAPP_MEDIA_LIBRARY_GROUP' } })
+                  .then(r => r?.value || '');
+
+                if (libGroupJid && remoteJid === libGroupJid) {
+                  const msgContent = msg.message;
+                  // Detecta tipo de mídia
+                  const mediaTypeMap: Record<string, string> = {
+                    imageMessage: 'image',
+                    videoMessage: 'video',
+                    audioMessage: 'audio',
+                    documentMessage: 'document',
+                    documentWithCaptionMessage: 'document',
+                    stickerMessage: 'image',
+                  };
+                  const contentKey = Object.keys(msgContent)[0];
+                  const mediaType = mediaTypeMap[contentKey];
+
+                  if (mediaType) {
+                    const innerMsg = (msgContent as any)[contentKey];
+                    const caption =
+                      innerMsg?.caption ||
+                      innerMsg?.fileName ||
+                      `${mediaType}-${Date.now()}`;
+                    const mimeType = innerMsg?.mimetype || null;
+
+                    // Gera thumbnail base64 para imagens
+                    let thumbnailUrl: string | null = null;
+                    if (innerMsg?.jpegThumbnail) {
+                      const buf = Buffer.from(innerMsg.jpegThumbnail);
+                      thumbnailUrl = `data:image/jpeg;base64,${buf.toString('base64')}`;
+                    }
+
+                    await prisma.mediaLibrary.create({
+                      data: {
+                        caption,
+                        mediaType,
+                        mimeType,
+                        thumbnailUrl,
+                        messageJson: JSON.stringify(msg),
+                        sourceJid: remoteJid,
+                        messageId: msg.key.id || '',
+                      }
+                    });
+                    console.log(`[Baileys][${session!.id}] Mídia capturada para biblioteca: ${mediaType} — "${caption}"`);
+                  }
+                }
+              } catch (libErr) {
+                console.error(`[Baileys][${session!.id}] Erro ao catalogar mídia na biblioteca:`, libErr);
+              }
+              continue; // não processa grupos como chatbot
+            }
+
+            // ── Chatbot: apenas mensagens individuais ───────────────────────
+            if (msg.key.fromMe) continue;
+            if (remoteJid.includes('@g.us')) continue;
 
             const text =
               msg.message.conversation ||
@@ -615,15 +675,34 @@ export class BaileysAdapter implements IWhatsappAdapter {
 
     try {
       const sendMediaIfPresent = async () => {
+        // 1. Prioridade: Forward nativo da Biblioteca (sem re-upload)
+        if (options?.forwardLibraryId) {
+          try {
+            const libEntry = await prisma.mediaLibrary.findUnique({
+              where: { id: options.forwardLibraryId }
+            });
+            if (libEntry) {
+              const originalMsg = JSON.parse(libEntry.messageJson);
+              const forwardContent = generateForwardMessageContent(originalMsg, false);
+              await session.sock.relayMessage(jid, forwardContent, {});
+              await sleep(1500);
+              return; // forward concluído, não executa upload
+            }
+            console.warn(`[Baileys][${session.id}] forwardLibraryId "${options.forwardLibraryId}" não encontrado. Tentando fallback de URL.`);
+          } catch (fwdErr) {
+            console.error(`[Baileys][${session.id}] Erro ao fazer forward da biblioteca:`, fwdErr);
+          }
+        }
+
+        // 2. Fallback: Upload via URL pública
         if (options?.media?.url && options?.media?.type) {
           try {
-            // For audio, we might want ptt: true (voice note), but default is fine.
             const msgPayload: any = { [options.media.type]: { url: options.media.url } };
             if (options.media.type === 'audio') {
-              msgPayload.mimetype = 'audio/mp4'; // recommended by Baileys for generic audio
+              msgPayload.mimetype = 'audio/mp4';
             }
             await session.sock.sendMessage(jid, msgPayload);
-            await sleep(1500); // pause to let the media process
+            await sleep(1500);
           } catch (mediaErr) {
             console.error(`[Baileys][${session.id}] Erro ao enviar mídia para ${jid}:`, mediaErr);
           }

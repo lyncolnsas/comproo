@@ -362,3 +362,17 @@ export async function getCustomTemplateMedia(key: string): Promise<{ url: string
   }
   return undefined;
 }
+
+/**
+ * Retorna o ID da MediaLibrary vinculada ao template (se houver).
+ * Tem precedência sobre getCustomTemplateMedia — forward nativo sem re-upload.
+ */
+export async function getCustomTemplateForwardId(key: string): Promise<string | undefined> {
+  try {
+    const row = await prisma.systemConfig.findUnique({ where: { key: `${key}_FORWARD_ID` } });
+    return row?.value || undefined;
+  } catch (err) {
+    console.error(`[WhatsAppCustomMessages] Erro ao buscar forwardId para template ${key}:`, err);
+  }
+  return undefined;
+}

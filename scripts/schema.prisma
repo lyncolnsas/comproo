@@ -193,3 +193,18 @@ model BlockedClient {
   active    Boolean  @default(true)
 }
 
+/// Biblioteca de mídias capturadas do grupo privado para forward nativo via Baileys.
+/// O campo messageJson contém o proto.IMessage serializado em JSON — tudo que o
+/// Baileys precisa para gerar um forwardMessage sem re-upload para a Meta.
+model MediaLibrary {
+  id           String   @id @default(uuid())
+  caption      String?            // Legenda/nome dado pelo admin
+  mediaType    String             // image | video | audio | document
+  mimeType     String?            // video/mp4, image/jpeg, etc.
+  thumbnailUrl String?            // URL de miniatura para preview (base64 ou URL)
+  messageJson  String             // JSON do proto.IMessage original completo
+  sourceJid    String             // JID do grupo de origem (ex: 120363xxxx@g.us)
+  messageId    String             // ID da mensagem original no WhatsApp
+  createdAt    DateTime @default(now())
+}
+

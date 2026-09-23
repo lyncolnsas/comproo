@@ -6,6 +6,12 @@ export interface SendMessageOptions {
   skipStandby?: boolean;
   pinnedInstanceId?: string;
   preferredEngine?: 'meta' | 'baileys';
+  /**
+   * Quando definido, o Baileys usará relayMessage (forward nativo) em vez
+   * de upload. O valor deve ser o ID de um registro na tabela MediaLibrary.
+   * Tem precedência sobre o campo media.url.
+   */
+  forwardLibraryId?: string;
   media?: {
     url: string;
     type: 'image' | 'video' | 'audio' | 'document';
