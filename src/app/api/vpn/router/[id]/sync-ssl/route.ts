@@ -60,22 +60,41 @@ export async function POST(
     const certName = `mg-ssl-${slug}`;
 
     // 3. Executa download e importação do certificado diretamente no MikroTik via script temporário
+    //
+    // SOLUÇÃO DO BUG "certificado duplicado":
+    // - RouterOS cria "mg-ssl-slug", "mg-ssl-slug_0", "mg-ssl-slug_1" quando o nome já existe
+    // - A limpeza usa `name~"certName"` (wildcard) para remover TODAS as entradas residuais
+    // - Após importar cert + key com o mesmo nome, RouterOS faz merge → entra KLT (private-key=yes)
+    // - Selecionamos ESPECIFICAMENTE a entrada com private-key=yes usando $kCert->0
     const syncCmds = `
 :do {
-  :log info "[MikroGestor] Sincronizando certificado SSL para ${router.subdomain}..."
+  :log info "[MikroGestor] Limpando certificados antigos para ${router.subdomain}..."
+  :foreach c in=[/certificate find where name~"${certName}"] do={ :do { /certificate remove $c } on-error={} }
+  :delay 1s
+  :log info "[MikroGestor] Baixando certificado (cert) para ${router.subdomain}..."
   /tool fetch url="https://www.mikrogestor.com/api/vpn/router/${router.id}/cert-file?type=cert" dst-path="mg-cert.pem" check-certificate=no
-  :delay 2s
-  /tool fetch url="https://www.mikrogestor.com/api/vpn/router/${router.id}/cert-file?type=key" dst-path="mg-key.pem" check-certificate=no
-  :delay 2s
-  :do { /certificate remove [find name="${certName}"] } on-error={}
+  :delay 3s
   /certificate import file-name=mg-cert.pem passphrase="" name="${certName}"
   :delay 2s
+  :log info "[MikroGestor] Baixando chave privada (key) para ${router.subdomain}..."
+  /tool fetch url="https://www.mikrogestor.com/api/vpn/router/${router.id}/cert-file?type=key" dst-path="mg-key.pem" check-certificate=no
+  :delay 3s
   /certificate import file-name=mg-key.pem passphrase="" name="${certName}"
   :delay 2s
   :do { /file remove [find name="mg-cert.pem"] } on-error={}
   :do { /file remove [find name="mg-key.pem"] } on-error={}
-  :do { /ip service set www-ssl certificate="${certName}" disabled=no port=443 } on-error={}
-  :do { /ip hotspot profile set [find name=hsprof_hotspot] ssl-certificate="${certName}" https=yes dns-name="${router.subdomain}" } on-error={}
+  :local kCert [/certificate find where name~"${certName}" private-key=yes]
+  :if ([:len $kCert] > 0) do={
+    :local kName [/certificate get ($kCert->0) name]
+    :log info "[MikroGestor] Cert KLT selecionado: $kName"
+    :do { /ip service set www-ssl certificate=$kName disabled=no port=443 } on-error={}
+    :do { /ip hotspot profile set [find name=hsprof_hotspot] ssl-certificate=$kName https=yes dns-name="${router.subdomain}" login-by=cookie,https,http-chap } on-error={}
+    :log info "[MikroGestor] SSL ${router.subdomain} ativo com certificado KLT: $kName"
+  } else={
+    :do { /ip service set www-ssl certificate="${certName}" disabled=no port=443 } on-error={}
+    :do { /ip hotspot profile set [find name=hsprof_hotspot] ssl-certificate="${certName}" https=yes dns-name="${router.subdomain}" login-by=cookie,https,http-chap } on-error={}
+    :log warning "[MikroGestor] KLT nao encontrado, aplicado nome base ${certName}"
+  }
   :log info "[MikroGestor] Certificado SSL ${router.subdomain} injetado com sucesso!"
 } on-error={
   :log error "[MikroGestor] Erro ao sincronizar certificado SSL para ${router.subdomain}"
@@ -99,12 +118,13 @@ export async function POST(
       // Executa script
       await conn.rosApi.write('/system/script/run', ['=.id=' + (scriptItem.id || scriptItem['.id'])]);
 
-      // Aguarda 4 segundos para conclusão dos fetches e imports
-      await new Promise((r) => setTimeout(r, 4000));
+      // Aguarda tempo suficiente para os fetches e imports completarem (2x fetch + import time)
+      await new Promise((r) => setTimeout(r, 18000));
 
       // Limpa o script temporário
       await scriptsMenu.remove(scriptItem.id || scriptItem['.id']).catch(() => {});
     }
+
 
     // 4. Atualiza o banco de dados com status SSL ativo
     const expiresAt = new Date(Date.now() + 85 * 24 * 60 * 60 * 1000);

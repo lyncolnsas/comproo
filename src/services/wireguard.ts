@@ -387,18 +387,37 @@ PersistentKeepalive = 25
       ? (process.env.PORTAL_PUBLIC_DOMAIN.startsWith("www.") ? process.env.PORTAL_PUBLIC_DOMAIN : `www.${process.env.PORTAL_PUBLIC_DOMAIN}`)
       : "www.mikrogestor.com";
 
+    const certSlug = slug || 'cert';
+    const certName = `mg-ssl-${certSlug}`;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Script RouterOS v7 inline — REGRA: linha única, sem barra invertida (\)
+    // O `source=` do /system script add deve ser uma string sem quebras reais.
+    //
+    // Lógica:
+    // 1. Remove TODOS os certs com nome~"certName" (inclui _0, _1 do RouterOS)
+    // 2. Baixa cert + key e importa com mesmo nome → RouterOS faz merge (KLT)
+    // 3. Seleciona APENAS o que tem private-key=yes (flag K = KLT) → sem ambiguidade
+    // 4. Aplica em www-ssl e hsprof_hotspot
+    // ─────────────────────────────────────────────────────────────────────────
+    const syncSource = `:do { :log info "[MikroGestor] Iniciando sync SSL para ${subdomain}..."; :foreach c in=[/certificate find where name~"${certName}"] do={ :do { /certificate remove $c } on-error={} }; :delay 1s; /tool fetch url="https://${certHost}/api/vpn/router/${routerId}/cert-file?type=cert" dst-path="mg-cert.pem" check-certificate=no; :delay 3s; /certificate import file-name=mg-cert.pem passphrase="" name="${certName}"; :delay 2s; /tool fetch url="https://${certHost}/api/vpn/router/${routerId}/cert-file?type=key" dst-path="mg-key.pem" check-certificate=no; :delay 3s; /certificate import file-name=mg-key.pem passphrase="" name="${certName}"; :delay 2s; :do { /file remove [find name="mg-cert.pem"] } on-error={}; :do { /file remove [find name="mg-key.pem"] } on-error={}; :local kCert [/certificate find where name~"${certName}" private-key=yes]; :if ([:len $kCert] > 0) do={ :local kName [/certificate get ($kCert->0) name]; :log info "[MikroGestor] Cert KLT selecionado: $kName"; :do { /ip service set www-ssl certificate=$kName disabled=no port=443 } on-error={}; :do { /ip hotspot profile set [find name=hsprof_hotspot] ssl-certificate=$kName https=yes dns-name="${subdomain}" login-by=cookie,https,http-chap } on-error={}; :log info "[MikroGestor] SSL ${subdomain} ativo com KLT: $kName"; } else={ :do { /ip service set www-ssl certificate="${certName}" disabled=no port=443 } on-error={}; :do { /ip hotspot profile set [find name=hsprof_hotspot] ssl-certificate="${certName}" https=yes dns-name="${subdomain}" login-by=cookie,https,http-chap } on-error={}; :log warning "[MikroGestor] KLT nao encontrado, usando nome base ${certName}"; }; } on-error={ :log warning "[MikroGestor] Falha SSL sync para ${subdomain}. Tentando novamente no proximo ciclo."; }`;
+
     const sslBlock = subdomain && routerId
       ? `
 # --- 6. CERTIFICADO SSL E AUTO-RENOVACAO (SUBDOMINIO ${subdomain}) ---
+# Limpa agendadores e script anterior
 :do { /system scheduler remove [find name=mg-renew-ssl] } on-error={}
+:do { /system scheduler remove [find name=mg-ssl-init] } on-error={}
 :do { /system script remove [find name=mg-sync-ssl] } on-error={}
 
-/system script add name=mg-sync-ssl policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon comment="MikroGestor: Sincroniza e renova SSL para ${subdomain}" source=":do { :log info \\"[MikroGestor] Baixando certificado SSL para ${subdomain}...\\"; /tool fetch url=\\"https://${certHost}/api/vpn/router/${routerId}/cert-file?type=cert\\" dst-path=\\"mg-cert.pem\\" check-certificate=no; :delay 2s; /tool fetch url=\\"https://${certHost}/api/vpn/router/${routerId}/cert-file?type=key\\" dst-path=\\"mg-key.pem\\" check-certificate=no; :delay 2s; :do { /certificate remove [find name=\\"mg-ssl-${slug || 'cert'}\\"] } on-error={}; /certificate import file-name=mg-cert.pem passphrase=\\"\\" name=\\"mg-ssl-${slug || 'cert'}\\"; :delay 2s; /certificate import file-name=mg-key.pem passphrase=\\"\\" name=\\"mg-ssl-${slug || 'cert'}\\"; :delay 2s; :do { /file remove [find name=\\"mg-cert.pem\\"] } on-error={}; :do { /file remove [find name=\\"mg-key.pem\\"] } on-error={}; :do { /ip service set www-ssl certificate=\\"mg-ssl-${slug || 'cert'}\\" disabled=no port=443 } on-error={}; :do { /ip hotspot profile set [find name=hsprof_hotspot] ssl-certificate=\\"mg-ssl-${slug || 'cert'}\\" https=yes dns-name=\\"${subdomain}\\" login-by=cookie,https,http-chap } on-error={}; :log info \\"[MikroGestor] Certificado SSL ${subdomain} importado com sucesso! Hotspot HTTPS ativado.\\"; } on-error={ :log warning \\"[MikroGestor] Falha na sincronizacao SSL (pode estar aguardando emissao). Tentando novamente no proximo ciclo.\\"; }"
+# Registra script de sincronizacao SSL (com selecao KLT automatica)
+/system script add name=mg-sync-ssl policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon comment="MikroGestor: SSL auto-sync ${subdomain}" source="${syncSource.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"
 
-/system scheduler add name=mg-renew-ssl interval=15d start-time=startup policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon on-event=mg-sync-ssl comment="MikroGestor: Renovacao automatica de SSL a cada 15 dias"
+# Agendador de renovacao automatica a cada 15 dias (LE expira em 90d)
+/system scheduler add name=mg-renew-ssl interval=15d start-time=startup policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon on-event=mg-sync-ssl comment="MikroGestor: Renovacao SSL a cada 15d"
 
-:do { /system scheduler remove [find name=mg-ssl-init] } on-error={}
-/system scheduler add name=mg-ssl-init interval=0s start-time=(/system clock get time + 10s) policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon on-event=":do { /system script run mg-sync-ssl; /system scheduler remove [find name=mg-ssl-init]; } on-error={}" comment="MikroGestor: Disparo inicial de SSL"
+# Disparo inicial: executa o sync 30s apos instalar o script (se aguardando)
+/system scheduler add name=mg-ssl-init interval=0s start-time=(/system clock get time + 30s) policy=ftp,reboot,read,write,policy,test,password,sniff,sensitive,romon on-event=":do { /system script run mg-sync-ssl; /system scheduler remove [find name=mg-ssl-init]; } on-error={}" comment="MikroGestor: Disparo inicial SSL"
 `
       : "";
 
