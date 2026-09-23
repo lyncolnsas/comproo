@@ -376,3 +376,18 @@ export async function getCustomTemplateForwardId(key: string): Promise<string | 
   }
   return undefined;
 }
+
+/**
+ * Retorna opções completas de envio para o gatilho (mídia ou forward nativo da biblioteca)
+ */
+export async function getTriggerSendOptions(key: string): Promise<{
+  media?: { url: string; type: 'image' | 'video' | 'audio' | 'document' };
+  forwardLibraryId?: string;
+}> {
+  const forwardLibraryId = await getCustomTemplateForwardId(key);
+  const media = await getCustomTemplateMedia(key);
+  return {
+    forwardLibraryId: forwardLibraryId || undefined,
+    media: media || undefined,
+  };
+}

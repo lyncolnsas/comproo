@@ -797,6 +797,19 @@ class WhatsappSpecialist {
     const adapter = this.getBaileysAdapter();
     adapter.setInstanceLibraryGroup(instanceId, groupJid, groupName);
   }
+
+  async syncAllInstancesToGroup(groupJid: string, groupName: string) {
+    const adapter = this.getBaileysAdapter();
+    await adapter.syncAllInstancesToGroup(groupJid, groupName);
+  }
+
+  async ensureInstanceInLibraryGroup(instanceId: string) {
+    const adapter = this.getBaileysAdapter();
+    const session = adapter.getAllSessions().find(s => s.id === instanceId);
+    if (session) {
+      await adapter.ensureInstanceInLibraryGroup(session);
+    }
+  }
 }
 
 // ─── Singleton global (compatível com Next.js hot reload) ───────────────────

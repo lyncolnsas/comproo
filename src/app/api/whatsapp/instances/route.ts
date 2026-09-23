@@ -58,14 +58,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, data: instance });
     }
 
-    // Engine: Baileys (Multi-Device)
+    // Engine: Baileys (Multi-Device - suporta de 2 até 8 números conectados)
+    // Se já existir um grupo central configurado, herda automaticamente para o novo aparelho
+    let inheritedGroupJid: string | null = null;
+    let inheritedGroupName: string | null = null;
+    try {
+      const globalGroup = await prisma.systemConfig.findUnique({
+        where: { key: 'WHATSAPP_MEDIA_LIBRARY_GROUP' }
+      });
+      if (globalGroup?.value) {
+        inheritedGroupJid = globalGroup.value;
+        const anyInst = await prisma.whatsappInstance.findFirst({
+          where: { libraryGroupJid: inheritedGroupJid },
+          select: { libraryGroupName: true }
+        });
+        inheritedGroupName = anyInst?.libraryGroupName || 'Grupo Central de Mídias';
+      }
+    } catch {}
+
     const instance = await prisma.whatsappInstance.create({
       data: {
         name: name || 'Novo WhatsApp Conectado',
         number: number || null,
         engine: 'baileys',
         status: 'waiting_qr',
-        active: true
+        active: true,
+        libraryGroupJid: inheritedGroupJid,
+        libraryGroupName: inheritedGroupName,
       }
     });
 

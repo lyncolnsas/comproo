@@ -56,7 +56,7 @@ export async function POST(req: Request) {
         create: { key: 'WHATSAPP_MEDIA_LIBRARY_GROUP', value: groupJid },
       });
 
-      // 3. Atualiza instâncias ativas na memória
+      // 3. Atualiza instâncias ativas na memória e dispara auto-inclusão de todos no grupo
       const instances = await prisma.whatsappInstance.findMany({
         where: { engine: 'baileys' },
         select: { id: true }
@@ -65,9 +65,14 @@ export async function POST(req: Request) {
         whatsappService.setInstanceLibraryGroup(inst.id, groupJid, cleanGroupName);
       }
 
+      // Dispara em background a auto-inclusão de todos os 2 até 8 números no grupo
+      whatsappService.syncAllInstancesToGroup(groupJid, cleanGroupName).catch(err => {
+        console.error('[whatsapp-groups] Erro na auto-inclusão de todas as instâncias no grupo:', err);
+      });
+
       return NextResponse.json({
         success: true,
-        message: `Grupo "${cleanGroupName}" vinculado a todos os números com sucesso!`
+        message: `Grupo "${cleanGroupName}" vinculado e sincronizado em todos os aparelhos!`
       });
     }
 
@@ -81,6 +86,11 @@ export async function POST(req: Request) {
     });
 
     whatsappService.setInstanceLibraryGroup(instanceId, groupJid, cleanGroupName);
+
+    // Garante auto-inclusão deste aparelho no grupo
+    whatsappService.ensureInstanceInLibraryGroup(instanceId).catch(err => {
+      console.error(`[whatsapp-groups] Erro na auto-inclusão do aparelho ${instanceId} no grupo:`, err);
+    });
 
     return NextResponse.json({
       success: true,

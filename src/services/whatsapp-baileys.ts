@@ -303,6 +303,11 @@ export class BaileysAdapter implements IWhatsappAdapter {
             }
           }).catch(() => {});
 
+          // Auto-inclusão autônoma no grupo central de mídias (compartilhado entre 2 até 8 números)
+          this.ensureInstanceInLibraryGroup(session!).catch(err => {
+            console.error(`[Baileys][AutoGroup][${session!.id}] Erro ao sincronizar com grupo central:`, err?.message || err);
+          });
+
           if (this.onConnected) {
             try {
               this.onConnected(session!.id);
@@ -648,93 +653,128 @@ export class BaileysAdapter implements IWhatsappAdapter {
   // ─── Public Send Implementation ─────────────────────────────────────────────
 
   async sendMessage(to: string, text: string, options?: SendMessageOptions): Promise<SendMessageResult> {
-    const session = this.getSession(options?.pinnedInstanceId);
-    if (!session || !this.isSocketReady(session)) {
-      console.error(`[BaileysManager] Nenhum socket pronto para envio para ${to}. Fixado: ${options?.pinnedInstanceId || 'nenhum'}`);
-      return { success: false, error: 'Aparelho Baileys offline ou desconectado' };
+    const readySessions = Array.from(this.sessions.values()).filter(s => this.isSocketReady(s));
+    if (readySessions.length === 0) {
+      console.error(`[BaileysManager] Nenhum aparelho Baileys pronto para envio para ${to}.`);
+      return { success: false, error: 'Nenhum aparelho WhatsApp conectado no momento' };
     }
 
+    // Se houver sessão fixada válida, prioriza ela; senão usa Round-Robin entre os aparelhos conectados (2 até 8 números)
+    let sessionPool: BaileysSessionInstance[] = [];
+    if (options?.pinnedInstanceId) {
+      const pinned = this.sessions.get(options.pinnedInstanceId);
+      if (pinned && this.isSocketReady(pinned)) {
+        sessionPool = [pinned, ...readySessions.filter(s => s.id !== pinned.id)];
+      }
+    }
+
+    if (sessionPool.length === 0) {
+      // Rotação Round-Robin circular perfeita
+      const startIndex = this.roundRobinIndex % readySessions.length;
+      this.roundRobinIndex = (this.roundRobinIndex + 1) % readySessions.length;
+      sessionPool = [
+        ...readySessions.slice(startIndex),
+        ...readySessions.slice(0, startIndex)
+      ];
+    }
+
+    let lastError: any = null;
+
+    // Tenta enviar com as sessões disponíveis na ordem da rotação (com failover automático)
+    for (const session of sessionPool) {
+      try {
+        const result = await this.sendViaSingleSession(session, to, text, options);
+        if (result.success) {
+          return result;
+        }
+        lastError = result.error;
+      } catch (err: any) {
+        lastError = err?.message || err;
+        console.warn(`[BaileysManager] Falha de envio no aparelho ${session.name} (${session.number || session.id}): ${lastError}. Tentando próximo número da rotação...`);
+      }
+    }
+
+    return { success: false, error: lastError || 'Falha ao enviar mensagem em todos os números disponíveis' };
+  }
+
+  private async sendViaSingleSession(session: BaileysSessionInstance, to: string, text: string, options?: SendMessageOptions): Promise<SendMessageResult> {
     const cfg = await this.loadMaskingConfig();
     const jid = await this.resolveJid(session, to);
 
-    try {
-      const sendMediaIfPresent = async () => {
-        // 1. Prioridade: Forward nativo da Biblioteca (sem re-upload)
-        if (options?.forwardLibraryId) {
-          try {
-            const libEntry = await prisma.mediaLibrary.findUnique({
-              where: { id: options.forwardLibraryId }
-            });
-            if (libEntry) {
-              const originalMsg = JSON.parse(libEntry.messageJson);
-              const forwardContent = generateForwardMessageContent(originalMsg, false);
-              await session.sock.relayMessage(jid, forwardContent, {});
-              await sleep(1500);
-              return; // forward concluído, não executa upload
-            }
-            console.warn(`[Baileys][${session.id}] forwardLibraryId "${options.forwardLibraryId}" não encontrado. Tentando fallback de URL.`);
-          } catch (fwdErr) {
-            console.error(`[Baileys][${session.id}] Erro ao fazer forward da biblioteca:`, fwdErr);
-          }
-        }
-
-        // 2. Fallback: Upload via URL pública
-        if (options?.media?.url && options?.media?.type) {
-          try {
-            const msgPayload: any = { [options.media.type]: { url: options.media.url } };
-            if (options.media.type === 'audio') {
-              msgPayload.mimetype = 'audio/mp4';
-            }
-            await session.sock.sendMessage(jid, msgPayload);
+    const sendMediaIfPresent = async () => {
+      // 1. Prioridade: Forward nativo da Biblioteca (sem re-upload, mesmo ID de mídia da Meta)
+      if (options?.forwardLibraryId) {
+        try {
+          const libEntry = await prisma.mediaLibrary.findUnique({
+            where: { id: options.forwardLibraryId }
+          });
+          if (libEntry) {
+            const originalMsg = JSON.parse(libEntry.messageJson);
+            const forwardContent = generateForwardMessageContent(originalMsg, false);
+            await session.sock.relayMessage(jid, forwardContent, {});
             await sleep(1500);
-          } catch (mediaErr) {
-            console.error(`[Baileys][${session.id}] Erro ao enviar mídia para ${jid}:`, mediaErr);
+            return; // forward concluído com sucesso
           }
+          console.warn(`[Baileys][${session.id}] forwardLibraryId "${options.forwardLibraryId}" não encontrado. Tentando fallback de URL.`);
+        } catch (fwdErr) {
+          console.error(`[Baileys][${session.id}] Erro ao fazer forward da biblioteca:`, fwdErr);
         }
-      };
-
-      // Immediate transactional send (credentials / vouchers / PIX)
-      if (options?.skipStandby || !cfg.enabled) {
-        if (cfg.enabled && cfg.simulateTyping) {
-          try {
-            await session.sock.sendPresenceUpdate('composing', jid);
-            await sleep(randomBetween(800, 1500));
-            await session.sock.sendPresenceUpdate('paused', jid);
-          } catch {}
-        }
-        await sendMediaIfPresent();
-        await session.sock.sendMessage(jid, { text });
-        console.log(`[Baileys][${session.id}] Mensagem enviada com sucesso para ${jid}`);
-        this.incrementDailyCount(session.id);
-        return { success: true, instanceId: session.id };
       }
 
-      // Standby delay simulation
-      if (cfg.standbyEnabled) {
-        const delayMs = randomBetween(cfg.standbyMinSeconds * 1000, cfg.standbyMaxSeconds * 1000);
-        await sleep(delayMs);
+      // 2. Fallback: Upload via URL pública
+      if (options?.media?.url && options?.media?.type) {
+        try {
+          const msgPayload: any = { [options.media.type]: { url: options.media.url } };
+          if (options.media.type === 'audio') {
+            msgPayload.mimetype = 'audio/mp4';
+          }
+          await session.sock.sendMessage(jid, msgPayload);
+          await sleep(1500);
+        } catch (mediaErr) {
+          console.error(`[Baileys][${session.id}] Erro ao enviar mídia para ${jid}:`, mediaErr);
+        }
       }
+    };
 
+    // Immediate transactional send (credentials / vouchers / PIX)
+    if (options?.skipStandby || !cfg.enabled) {
+      if (cfg.enabled && cfg.simulateTyping) {
+        try {
+          await session.sock.sendPresenceUpdate('composing', jid);
+          await sleep(randomBetween(800, 1500));
+          await session.sock.sendPresenceUpdate('paused', jid);
+        } catch {}
+      }
       await sendMediaIfPresent();
-
-      const chunks = cfg.typingDelayBetweenChunks ? splitIntoChunks(text) : [text];
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        if (cfg.simulateTyping) {
-          await this.simulateTypingPresence(session, jid, chunk, cfg);
-        }
-        await session.sock.sendMessage(jid, { text: chunk });
-        if (i < chunks.length - 1) {
-          await sleep(randomBetween(1200, 3500));
-        }
-      }
-
+      await session.sock.sendMessage(jid, { text });
+      console.log(`[Baileys][${session.id}] Mensagem enviada com sucesso para ${jid} via aparelho ${session.name} (${session.number})`);
       this.incrementDailyCount(session.id);
       return { success: true, instanceId: session.id };
-    } catch (err: any) {
-      console.error(`[Baileys][${session.id}] Erro ao enviar mensagem para ${jid}:`, err?.message || err);
-      return { success: false, instanceId: session.id, error: err?.message || 'Falha no envio' };
     }
+
+    // Standby delay simulation
+    if (cfg.standbyEnabled) {
+      const delayMs = randomBetween(cfg.standbyMinSeconds * 1000, cfg.standbyMaxSeconds * 1000);
+      await sleep(delayMs);
+    }
+
+    await sendMediaIfPresent();
+
+    const chunks = cfg.typingDelayBetweenChunks ? splitIntoChunks(text) : [text];
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      if (cfg.simulateTyping) {
+        await this.simulateTypingPresence(session, jid, chunk, cfg);
+      }
+      await session.sock.sendMessage(jid, { text: chunk });
+      if (i < chunks.length - 1) {
+        await sleep(randomBetween(1200, 3500));
+      }
+    }
+
+    this.incrementDailyCount(session.id);
+    console.log(`[Baileys][${session.id}] Mensagem enviada com sucesso para ${jid} via aparelho ${session.name} (${session.number})`);
+    return { success: true, instanceId: session.id };
   }
 
   async sendTemplate(
@@ -1004,6 +1044,150 @@ export class BaileysAdapter implements IWhatsappAdapter {
     } catch (err: any) {
       console.error(`[Baileys][MediaLibrary] Erro ao processar mensagem do grupo:`, err);
       return false;
+    }
+  }
+
+  /**
+   * Garante que um aparelho conectado (seja ele o 1º ou o 8º) esteja automaticamente
+   * inserido no grupo central de mídias compartilhado.
+   * Se não estiver, adiciona via admin ou ingressa via código de convite.
+   */
+  async ensureInstanceInLibraryGroup(session: BaileysSessionInstance): Promise<void> {
+    if (!this.isSocketReady(session) || !session.sock || !session.number) return;
+
+    try {
+      // 1. Identifica o grupo central
+      let targetGroupJid = session.libraryGroupJid;
+      let targetGroupName = session.libraryGroupName;
+
+      if (!targetGroupJid) {
+        // Busca do fallback global ou de qualquer outra instância
+        const globalGroup = await prisma.systemConfig.findUnique({
+          where: { key: 'WHATSAPP_MEDIA_LIBRARY_GROUP' }
+        });
+        if (globalGroup?.value) {
+          targetGroupJid = globalGroup.value;
+          const anyInst = await prisma.whatsappInstance.findFirst({
+            where: { libraryGroupJid: targetGroupJid },
+            select: { libraryGroupName: true }
+          });
+          targetGroupName = anyInst?.libraryGroupName || 'Grupo Central';
+        } else {
+          // Busca de qualquer instância que já tenha grupo configurado
+          const anyInst = await prisma.whatsappInstance.findFirst({
+            where: { engine: 'baileys', libraryGroupJid: { not: null } },
+            select: { libraryGroupJid: true, libraryGroupName: true }
+          });
+          if (anyInst?.libraryGroupJid) {
+            targetGroupJid = anyInst.libraryGroupJid;
+            targetGroupName = anyInst.libraryGroupName;
+          }
+        }
+      }
+
+      if (!targetGroupJid) {
+        // Nenhum grupo configurado no sistema ainda
+        return;
+      }
+
+      // Sincroniza em memória e no banco para esta instância
+      session.libraryGroupJid = targetGroupJid;
+      session.libraryGroupName = targetGroupName;
+      await prisma.whatsappInstance.update({
+        where: { id: session.id },
+        data: { libraryGroupJid: targetGroupJid, libraryGroupName: targetGroupName }
+      }).catch(() => {});
+
+      const rawNumber = session.number.replace(/\D/g, '');
+      const userJid = `${rawNumber}@s.whatsapp.net`;
+
+      // 2. Verifica se o novo número já é participante do grupo
+      let isAlreadyMember = false;
+      let existingSessionInGroup: BaileysSessionInstance | null = null;
+      let adminSessionInGroup: BaileysSessionInstance | null = null;
+
+      for (const s of this.sessions.values()) {
+        if (this.isSocketReady(s) && s.sock) {
+          try {
+            const metadata = await s.sock.groupMetadata(targetGroupJid);
+            if (metadata && Array.isArray(metadata.participants)) {
+              existingSessionInGroup = s;
+              const hasUser = metadata.participants.some(p => p.id.replace(/\D/g, '').includes(rawNumber));
+              if (hasUser) {
+                isAlreadyMember = true;
+                break;
+              }
+              const currentSelfJid = s.sock.user?.id?.replace(/\D/g, '') || '';
+              const selfParticipant = metadata.participants.find(p => p.id.replace(/\D/g, '').includes(currentSelfJid));
+              if (selfParticipant && (selfParticipant.admin === 'admin' || selfParticipant.admin === 'superadmin')) {
+                adminSessionInGroup = s;
+              }
+            }
+          } catch {}
+        }
+      }
+
+      if (isAlreadyMember) {
+        console.log(`[Baileys][AutoGroup] ✅ Aparelho ${session.name} (${rawNumber}) já é membro do grupo central "${targetGroupName || targetGroupJid}".`);
+        return;
+      }
+
+      console.log(`[Baileys][AutoGroup] Aparelho ${session.name} (${rawNumber}) NÃO está no grupo central. Ingressando automaticamente...`);
+
+      // 3. Método 1: Adição direta por uma sessão que seja administradora
+      if (adminSessionInGroup) {
+        try {
+          console.log(`[Baileys][AutoGroup] Adicionando ${rawNumber} ao grupo via admin (${adminSessionInGroup.name})...`);
+          await adminSessionInGroup.sock.groupParticipantsUpdate(targetGroupJid, [userJid], 'add');
+          console.log(`[Baileys][AutoGroup] ✅ ${rawNumber} adicionado ao grupo central com sucesso via admin!`);
+          return;
+        } catch (addErr: any) {
+          console.warn(`[Baileys][AutoGroup] Falha ao adicionar via admin (${addErr?.message || addErr}). Tentando via convite...`);
+        }
+      }
+
+      // 4. Método 2: Ingressar via código de convite (dispensa ser admin)
+      let inviteCode: string | null = null;
+      if (existingSessionInGroup) {
+        try {
+          inviteCode = await existingSessionInGroup.sock.groupInviteCode(targetGroupJid);
+        } catch {}
+      }
+
+      // Tenta gerar código de convite por qualquer sessão no grupo
+      if (!inviteCode) {
+        for (const s of this.sessions.values()) {
+          if (this.isSocketReady(s) && s.sock && s.id !== session.id) {
+            try {
+              inviteCode = await s.sock.groupInviteCode(targetGroupJid);
+              if (inviteCode) break;
+            } catch {}
+          }
+        }
+      }
+
+      if (inviteCode) {
+        console.log(`[Baileys][AutoGroup] Aparelho ${session.name} entrando no grupo via código "${inviteCode}"...`);
+        await session.sock.groupAcceptInvite(inviteCode);
+        console.log(`[Baileys][AutoGroup] ✅ Aparelho ${session.name} (${rawNumber}) entrou no grupo central com sucesso via convite!`);
+      } else {
+        console.warn(`[Baileys][AutoGroup] Não foi possível obter o código de convite do grupo ${targetGroupJid}. Se necessário, adicione ${rawNumber} manualmente ao grupo.`);
+      }
+    } catch (err: any) {
+      console.error(`[Baileys][AutoGroup] Erro ao sincronizar aparelho no grupo:`, err?.message || err);
+    }
+  }
+
+  /**
+   * Sincroniza todas as instâncias conectadas para o mesmo grupo central
+   */
+  async syncAllInstancesToGroup(groupJid: string, groupName: string): Promise<void> {
+    for (const session of this.sessions.values()) {
+      session.libraryGroupJid = groupJid;
+      session.libraryGroupName = groupName;
+      if (this.isSocketReady(session)) {
+        this.ensureInstanceInLibraryGroup(session).catch(() => {});
+      }
     }
   }
 }
