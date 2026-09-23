@@ -33,6 +33,14 @@ export default function AdminSettings() {
   const [maxUsers, setMaxUsers] = useState<string>('0');
   const [savingMaxUsers, setSavingMaxUsers] = useState(false);
 
+  // 2FA WhatsApp & Emergency Tokens
+  const [adminPhone, setAdminPhone] = useState('');
+  const [savingPhone, setSavingPhone] = useState(false);
+  const [emergencyTokens, setEmergencyTokens] = useState<string[]>([]);
+  const [tokenStatus, setTokenStatus] = useState<{ available: number; used: number }>({ available: 0, used: 0 });
+  const [generatingTokens, setGeneratingTokens] = useState(false);
+  const [tokenMessage, setTokenMessage] = useState('');
+
   const fetchSystemConfig = async () => {
     try {
       const res = await fetch('/api/config/system');
@@ -40,9 +48,70 @@ export default function AdminSettings() {
       if (data.success && data.data) {
         setFreeWifiMode(data.data.free_wifi_mode === 'true');
         setMaxUsers(data.data.MAX_HOTSPOT_USERS || '0');
+        setAdminPhone(data.data.ADMIN_WHATSAPP_PHONE || '');
+      }
+    } catch (e) {}
+
+    // Busca status dos tokens de emergência
+    try {
+      const res = await fetch('/api/auth/emergency-tokens');
+      const data = await res.json();
+      if (data.success) {
+        setTokenStatus({ available: data.available, used: data.used });
       }
     } catch (e) {}
   };
+
+  const handleSaveAdminPhone = async () => {
+    setSavingPhone(true);
+    try {
+      const res = await fetch('/api/config/system', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'ADMIN_WHATSAPP_PHONE', value: adminPhone.trim() })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Telefone do Administrador atualizado com sucesso para 2FA!');
+      } else {
+        alert('Erro ao salvar telefone.');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao salvar telefone.');
+    } finally {
+      setSavingPhone(false);
+    }
+  };
+
+  const handleGenerateEmergencyTokens = async () => {
+    if (!confirm('Deseja gerar novos Tokens de Emergência? Os tokens não utilizados anteriores serão invalidados e uma cópia será enviada ao seu grupo de segurança do WhatsApp.')) return;
+    setGeneratingTokens(true);
+    setTokenMessage('');
+    try {
+      const res = await fetch('/api/auth/emergency-tokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sendToGroup: true })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEmergencyTokens(data.tokens || []);
+        setTokenStatus({ available: data.tokens?.length || 8, used: 0 });
+        if (data.sentToGroup) {
+          setTokenMessage('✅ 8 novos tokens gerados e enviados para o grupo do WhatsApp!');
+        } else {
+          setTokenMessage('⚠️ Tokens gerados! Anote-os agora (não foi possível enviar ao grupo: ' + (data.groupMessageError || 'grupo não configurado') + ').');
+        }
+      } else {
+        alert(data.message || 'Erro ao gerar tokens.');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao gerar tokens de emergência.');
+    } finally {
+      setGeneratingTokens(false);
+    }
+  };
+
 
   const handleToggleFreeWifi = async () => {
     setSavingFreeWifi(true);
@@ -536,6 +605,100 @@ export default function AdminSettings() {
               </form>
             </div>
           </div>
+
+          {/* 2FA WhatsApp OTP Card */}
+          <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 md:p-6 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">🔐</span>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Autenticação de Dois Fatores (2FA WhatsApp)
+                </h3>
+              </div>
+              <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                Ao fazer login, um código OTP de 6 dígitos será enviado ao WhatsApp do administrador.
+              </p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Número do WhatsApp (com DDI e DDD)
+                  </label>
+                  <input
+                    type="text"
+                    value={adminPhone}
+                    onChange={(e) => setAdminPhone(e.target.value)}
+                    placeholder="Ex: 5511999998888"
+                    className="w-full bg-slate-50 dark:bg-[#0e1524] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 text-xs focus:bg-white dark:focus:bg-[#141d30] focus:border-blue-500 outline-none"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    {adminPhone.trim() ? '✅ 2FA ativo para este número' : '⚠️ Deixe vazio para desativar o 2FA'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveAdminPhone}
+                  disabled={savingPhone}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  {savingPhone ? 'Salvando...' : 'Salvar Número 2FA'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Tokens de Emergência Offline Card */}
+          <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 md:p-6 flex flex-col justify-between border-amber-300/60 bg-amber-50/20">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📴</span>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Tokens de Emergência Offline
+                  </h3>
+                </div>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                  {tokenStatus.available} disponíveis
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                Proteção máxima contra invasores que desconectem todos os WhatsApps. Tokens de uso único enviados para o grupo privado de backup.
+              </p>
+
+              {tokenMessage && (
+                <div className="mb-3 p-2.5 rounded-xl bg-amber-100 border border-amber-300 text-xs font-semibold text-amber-900 leading-relaxed">
+                  {tokenMessage}
+                </div>
+              )}
+
+              {emergencyTokens.length > 0 && (
+                <div className="mb-4 p-3 bg-slate-900 text-white rounded-xl font-mono text-xs space-y-1 max-h-48 overflow-y-auto">
+                  <p className="text-[10px] text-amber-400 font-bold uppercase mb-2">Guarde estes tokens agora (exibição única):</p>
+                  {emergencyTokens.map((tok, idx) => (
+                    <div key={idx} className="flex justify-between items-center py-0.5 border-b border-slate-800">
+                      <span className="text-slate-400">{idx + 1}.</span>
+                      <span className="font-bold text-emerald-400">{tok}</span>
+                      <span className="text-[10px] text-slate-500">1x uso</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleGenerateEmergencyTokens}
+                disabled={generatingTokens}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {generatingTokens ? (
+                  <span>Gerando e enviando para o grupo...</span>
+                ) : (
+                  <span>🔄 Gerar Novos Tokens & Enviar ao WhatsApp</span>
+                )}
+              </button>
+            </div>
+          </div>
+
 
           {/* DB Status Card */}
           <div className="bg-white border border-slate-200/80 shadow-sm rounded-2xl p-5 flex items-center gap-3">
