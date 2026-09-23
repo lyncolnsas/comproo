@@ -27,6 +27,7 @@ interface WhatsappInstance {
   profilePicUrl?: string | null;
   libraryGroupJid?: string | null;
   libraryGroupName?: string | null;
+  groupJoinError?: string | null;
 }
 
 interface ModeInfo {
@@ -866,6 +867,27 @@ export default function WhatsappConnection() {
                                 </p>
                               )}
                             </div>
+
+                            {/* ⚠️ Aviso de falha de ingresso no grupo */}
+                            {inst.groupJoinError && (
+                              <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-300 rounded-xl px-3 py-2.5">
+                                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[10px] font-black text-amber-800 uppercase tracking-wide mb-0.5">Falha ao ingressar no grupo</p>
+                                  <p className="text-[11px] text-amber-700 leading-snug break-words">{inst.groupJoinError}</p>
+                                  {inst.status === 'connected' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleInstanceAction(inst.id, 'restart')}
+                                      className="mt-1.5 text-[10px] font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 cursor-pointer flex items-center gap-1"
+                                    >
+                                      <RotateCw className="w-3 h-3" />
+                                      Tentar novamente (reiniciar)
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Botões de Ação */}

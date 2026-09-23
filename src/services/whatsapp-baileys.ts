@@ -124,6 +124,13 @@ export class BaileysAdapter implements IWhatsappAdapter {
   private maskingConfig: MaskingConfig = { ...DEFAULT_MASKING };
   private maskingConfigLoaded = false;
   private baseDir = path.join(process.cwd(), 'baileys_sessions');
+  /**
+   * Lock de serialização para ingresso no grupo central.
+   * Evita race condition quando múltiplas sessões conectam simultaneamente
+   * e tentam usar o mesmo código de convite ao mesmo tempo.
+   * Chave: groupJid → Promise em andamento (ou undefined se livre).
+   */
+  private _groupJoinLock: Map<string, Promise<void>> = new Map();
 
   constructor(onMessageReceived?: MessageHandler) {
     this.onMessageReceived = onMessageReceived;
@@ -304,14 +311,16 @@ export class BaileysAdapter implements IWhatsappAdapter {
           }).catch(() => {});
 
           // Auto-inclusão autônoma no grupo central de mídias (compartilhado entre 2 até 8 números)
-          // Delay de 3s: aguarda o socket estabilizar completamente antes de tentar entrar no grupo.
+          // Delay de 5s: aguarda o socket estabilizar completamente antes de tentar entrar no grupo.
           // Crítico em reconexões com código 515 (restart required), onde o flood de histórico
           // (potencialmente milhares de mensagens) pode impedir o ACK do groupAcceptInvite.
+          // 5s (em vez de 3s) reduz a janela de race condition quando múltiplos aparelhos
+          // conectam quase ao mesmo tempo (restart do container, por exemplo).
           setTimeout(() => {
             this.ensureInstanceInLibraryGroup(session!).catch(err => {
               console.error(`[Baileys][AutoGroup][${session!.id}] Erro ao sincronizar com grupo central:`, err?.message || err);
             });
-          }, 3000);
+          }, 5000);
 
           if (this.onConnected) {
             try {
@@ -1095,13 +1104,9 @@ export class BaileysAdapter implements IWhatsappAdapter {
         return;
       }
 
-      // Sincroniza em memória e no banco para esta instância
+      // Sincroniza somente em memória agora — salva no banco APENAS após confirmar ingresso
       session.libraryGroupJid = targetGroupJid;
       session.libraryGroupName = targetGroupName;
-      await prisma.whatsappInstance.update({
-        where: { id: session.id },
-        data: { libraryGroupJid: targetGroupJid, libraryGroupName: targetGroupName }
-      }).catch(() => {});
 
       const rawNumber = session.number.replace(/\D/g, '');
       const userJid = `${rawNumber}@s.whatsapp.net`;
@@ -1134,10 +1139,31 @@ export class BaileysAdapter implements IWhatsappAdapter {
 
       if (isAlreadyMember) {
         console.log(`[Baileys][AutoGroup] ✅ Aparelho ${session.name} (${rawNumber}) já é membro do grupo central "${targetGroupName || targetGroupJid}".`);
+        // Confirma no banco e limpa qualquer erro anterior
+        await prisma.whatsappInstance.update({
+          where: { id: session.id },
+          data: { libraryGroupJid: targetGroupJid, libraryGroupName: targetGroupName ?? null, groupJoinError: null }
+        }).catch(() => {});
         return;
       }
 
       console.log(`[Baileys][AutoGroup] Aparelho ${session.name} (${rawNumber}) NÃO está no grupo central. Ingressando automaticamente...`);
+
+      // Helper para confirmar ingresso no banco e limpar erro
+      const confirmJoinInDb = async () => {
+        await prisma.whatsappInstance.update({
+          where: { id: session.id },
+          data: { libraryGroupJid: targetGroupJid, libraryGroupName: targetGroupName ?? null, groupJoinError: null }
+        }).catch(() => {});
+      };
+
+      // Helper para registrar falha de ingresso no banco
+      const saveJoinErrorInDb = async (errorMsg: string) => {
+        await prisma.whatsappInstance.update({
+          where: { id: session.id },
+          data: { groupJoinError: errorMsg }
+        }).catch(() => {});
+      };
 
       // 3. Método 1: Adição direta por uma sessão que seja administradora
       if (adminSessionInGroup) {
@@ -1145,33 +1171,45 @@ export class BaileysAdapter implements IWhatsappAdapter {
           console.log(`[Baileys][AutoGroup] Adicionando ${rawNumber} ao grupo via admin (${adminSessionInGroup.name})...`);
           await adminSessionInGroup.sock.groupParticipantsUpdate(targetGroupJid, [userJid], 'add');
           console.log(`[Baileys][AutoGroup] ✅ ${rawNumber} adicionado ao grupo central com sucesso via admin!`);
+          await confirmJoinInDb();
           return;
         } catch (addErr: any) {
           console.warn(`[Baileys][AutoGroup] Falha ao adicionar via admin (${addErr?.message || addErr}). Tentando via convite...`);
         }
       }
 
-      // 4. Método 2: Ingressar via código de convite (dispensa ser admin)
-      let inviteCode: string | null = null;
-      if (existingSessionInGroup) {
-        try {
-          inviteCode = await existingSessionInGroup.sock.groupInviteCode(targetGroupJid);
-        } catch {}
-      }
+      // 4. Método 2: Ingressar via código de convite com LOCK de serialização.
+      // Problema original: múltiplas sessões conectando ao mesmo tempo obtêm o MESMO código
+      // de convite e tentam usá-lo simultaneamente — apenas a primeira funciona, as demais
+      // recebem 'not-authorized'. O lock garante que apenas uma sessão ingresse por vez.
+      const doJoinWithLock = async (): Promise<void> => {
+        let inviteCode: string | null = null;
 
-      // Tenta gerar código de convite por qualquer sessão no grupo
-      if (!inviteCode) {
-        for (const s of this.sessions.values()) {
-          if (this.isSocketReady(s) && s.sock && s.id !== session.id) {
-            try {
-              inviteCode = await s.sock.groupInviteCode(targetGroupJid);
-              if (inviteCode) break;
-            } catch {}
-          }
+        // Obtém código de convite de uma sessão já no grupo (admin obrigatório para groupInviteCode)
+        const sessionsToTry = [...this.sessions.values()].filter(
+          s => this.isSocketReady(s) && s.sock && s.id !== session.id
+        );
+        // Prioriza sessão admin, depois qualquer outra no grupo
+        const orderedSessions = [
+          ...(adminSessionInGroup ? [adminSessionInGroup] : []),
+          ...(existingSessionInGroup && existingSessionInGroup !== adminSessionInGroup ? [existingSessionInGroup] : []),
+          ...sessionsToTry.filter(s => s !== adminSessionInGroup && s !== existingSessionInGroup),
+        ];
+
+        for (const s of orderedSessions) {
+          try {
+            inviteCode = await s.sock.groupInviteCode(targetGroupJid);
+            if (inviteCode) break;
+          } catch {}
         }
-      }
 
-      if (inviteCode) {
+        if (!inviteCode) {
+          const msg = `Não foi possível obter o link de convite do grupo. Verifique se algum número conectado é administrador do grupo.`;
+          console.warn(`[Baileys][AutoGroup] ${msg} (${rawNumber})`);
+          await saveJoinErrorInDb(msg);
+          return;
+        }
+
         // Retry com backoff: até 3 tentativas com 5s de intervalo.
         // Necessário porque após reconexão código-515 o socket pode rejeitar groupAcceptInvite
         // enquanto ainda está processando a sincronização do histórico.
@@ -1184,22 +1222,50 @@ export class BaileysAdapter implements IWhatsappAdapter {
             joined = true;
             break;
           } catch (inviteErr: any) {
-            console.warn(`[Baileys][AutoGroup] Tentativa ${attempt}/3 falhou para ${session.name}: ${inviteErr?.message || inviteErr}`);
+            const errMsg = inviteErr?.message || String(inviteErr);
+            console.warn(`[Baileys][AutoGroup] Tentativa ${attempt}/3 falhou para ${session.name}: ${errMsg}`);
+            if (errMsg.includes('not-authorized')) {
+              // O número foi banido/removido do grupo pelo WhatsApp — não adianta tentar mais
+              const msg = `Número bloqueado pelo WhatsApp para ingressar no grupo automaticamente (not-authorized). Adicione manualmente o número ${rawNumber} ao grupo "${targetGroupName || targetGroupJid}" e reinicie a conexão.`;
+              console.error(`[Baileys][AutoGroup] ❌ ${session.name}: ${msg}`);
+              await saveJoinErrorInDb(msg);
+              break;
+            }
             if (attempt < 3) {
               await sleep(5000); // aguarda 5s antes da próxima tentativa
-              // Re-gera o código de convite (pode ter expirado ou o grupo pode ter gerado novo)
-              if (existingSessionInGroup) {
-                try { inviteCode = await existingSessionInGroup.sock.groupInviteCode(targetGroupJid) || inviteCode; } catch {}
+              // Re-gera o código de convite (o anterior pode ter sido consumido por outra sessão)
+              for (const s of orderedSessions) {
+                try {
+                  const newCode = await s.sock.groupInviteCode(targetGroupJid);
+                  if (newCode) { inviteCode = newCode; break; }
+                } catch {}
               }
             }
           }
         }
-        if (!joined) {
-          console.error(`[Baileys][AutoGroup] ❌ Todas as ${3} tentativas falharam para ${session.name} (${rawNumber}). Adicione manualmente ao grupo "${targetGroupName || targetGroupJid}".`);
+
+        if (joined) {
+          await confirmJoinInDb();
+        } else {
+          const msg = `Todas as tentativas de ingresso no grupo falharam para o número ${rawNumber}. Adicione manualmente ao grupo "${targetGroupName || targetGroupJid}" e reinicie a conexão.`;
+          console.error(`[Baileys][AutoGroup] ❌ ${session.name}: ${msg}`);
+          await saveJoinErrorInDb(msg);
         }
-      } else {
-        console.warn(`[Baileys][AutoGroup] Não foi possível obter o código de convite do grupo ${targetGroupJid}. Se necessário, adicione ${rawNumber} manualmente ao grupo.`);
-      }
+      };
+
+      // Serializa usando lock por groupJid: se já há uma operação em andamento para o mesmo grupo,
+      // aguarda ela terminar antes de iniciar a próxima (evita usar o mesmo código simultaneamente)
+      const existingLock = this._groupJoinLock.get(targetGroupJid) ?? Promise.resolve();
+      const newLock = existingLock.then(() => doJoinWithLock()).catch(() => {});
+      this._groupJoinLock.set(targetGroupJid, newLock);
+      // Limpa o lock após conclusão para não acumular memória
+      newLock.finally(() => {
+        if (this._groupJoinLock.get(targetGroupJid) === newLock) {
+          this._groupJoinLock.delete(targetGroupJid);
+        }
+      });
+      await newLock;
+
     } catch (err: any) {
       console.error(`[Baileys][AutoGroup] Erro ao sincronizar aparelho no grupo:`, err?.message || err);
     }

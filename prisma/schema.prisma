@@ -131,6 +131,7 @@ model WhatsappInstance {
   profilePicUrl String?
   libraryGroupJid   String?       // JID do grupo de biblioteca vinculado (ex: 120363xxx@g.us)
   libraryGroupName  String?       // Nome amigável do grupo salvo
+  groupJoinError    String?       // Último erro de ingresso automático no grupo (null = OK)
   createdAt     DateTime      @default(now())
   routings      LeadRouting[]
 }

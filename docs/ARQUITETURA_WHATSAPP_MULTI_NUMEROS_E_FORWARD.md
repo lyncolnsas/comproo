@@ -1,5 +1,7 @@
 # Arquitetura WhatsApp: Pool de 2 a 8 Números, Auto-Inclusão e Forward Nativo de Mídias 📱🚀
 
+> **Última atualização**: Setembro 2026 — Race condition corrigido, lock de serialização de grupo, aviso visual de falha de ingresso (`groupJoinError`) implementado.
+
 Esta documentação descreve a arquitetura do motor WhatsApp do **MikroGestor**, projetada para alta disponibilidade, blindagem anti-banimento (anti-bloqueio da Meta), balanceamento de carga entre múltiplos chips e encaminhamento nativo de mídias sem re-upload.
 
 ---
