@@ -304,9 +304,14 @@ export class BaileysAdapter implements IWhatsappAdapter {
           }).catch(() => {});
 
           // Auto-inclusão autônoma no grupo central de mídias (compartilhado entre 2 até 8 números)
-          this.ensureInstanceInLibraryGroup(session!).catch(err => {
-            console.error(`[Baileys][AutoGroup][${session!.id}] Erro ao sincronizar com grupo central:`, err?.message || err);
-          });
+          // Delay de 3s: aguarda o socket estabilizar completamente antes de tentar entrar no grupo.
+          // Crítico em reconexões com código 515 (restart required), onde o flood de histórico
+          // (potencialmente milhares de mensagens) pode impedir o ACK do groupAcceptInvite.
+          setTimeout(() => {
+            this.ensureInstanceInLibraryGroup(session!).catch(err => {
+              console.error(`[Baileys][AutoGroup][${session!.id}] Erro ao sincronizar com grupo central:`, err?.message || err);
+            });
+          }, 3000);
 
           if (this.onConnected) {
             try {
@@ -1112,13 +1117,13 @@ export class BaileysAdapter implements IWhatsappAdapter {
             const metadata = await s.sock.groupMetadata(targetGroupJid);
             if (metadata && Array.isArray(metadata.participants)) {
               existingSessionInGroup = s;
-              const hasUser = metadata.participants.some(p => p.id.replace(/\D/g, '').includes(rawNumber));
+              const hasUser = metadata.participants.some((p: any) => p.id.replace(/\D/g, '').includes(rawNumber));
               if (hasUser) {
                 isAlreadyMember = true;
                 break;
               }
               const currentSelfJid = s.sock.user?.id?.replace(/\D/g, '') || '';
-              const selfParticipant = metadata.participants.find(p => p.id.replace(/\D/g, '').includes(currentSelfJid));
+              const selfParticipant = metadata.participants.find((p: any) => p.id.replace(/\D/g, '').includes(currentSelfJid));
               if (selfParticipant && (selfParticipant.admin === 'admin' || selfParticipant.admin === 'superadmin')) {
                 adminSessionInGroup = s;
               }
@@ -1167,9 +1172,31 @@ export class BaileysAdapter implements IWhatsappAdapter {
       }
 
       if (inviteCode) {
-        console.log(`[Baileys][AutoGroup] Aparelho ${session.name} entrando no grupo via código "${inviteCode}"...`);
-        await session.sock.groupAcceptInvite(inviteCode);
-        console.log(`[Baileys][AutoGroup] ✅ Aparelho ${session.name} (${rawNumber}) entrou no grupo central com sucesso via convite!`);
+        // Retry com backoff: até 3 tentativas com 5s de intervalo.
+        // Necessário porque após reconexão código-515 o socket pode rejeitar groupAcceptInvite
+        // enquanto ainda está processando a sincronização do histórico.
+        let joined = false;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            console.log(`[Baileys][AutoGroup] Aparelho ${session.name} entrando no grupo via código "${inviteCode}" (tentativa ${attempt}/3)...`);
+            await session.sock.groupAcceptInvite(inviteCode);
+            console.log(`[Baileys][AutoGroup] ✅ Aparelho ${session.name} (${rawNumber}) entrou no grupo central com sucesso via convite! (tentativa ${attempt})`);
+            joined = true;
+            break;
+          } catch (inviteErr: any) {
+            console.warn(`[Baileys][AutoGroup] Tentativa ${attempt}/3 falhou para ${session.name}: ${inviteErr?.message || inviteErr}`);
+            if (attempt < 3) {
+              await sleep(5000); // aguarda 5s antes da próxima tentativa
+              // Re-gera o código de convite (pode ter expirado ou o grupo pode ter gerado novo)
+              if (existingSessionInGroup) {
+                try { inviteCode = await existingSessionInGroup.sock.groupInviteCode(targetGroupJid) || inviteCode; } catch {}
+              }
+            }
+          }
+        }
+        if (!joined) {
+          console.error(`[Baileys][AutoGroup] ❌ Todas as ${3} tentativas falharam para ${session.name} (${rawNumber}). Adicione manualmente ao grupo "${targetGroupName || targetGroupJid}".`);
+        }
       } else {
         console.warn(`[Baileys][AutoGroup] Não foi possível obter o código de convite do grupo ${targetGroupJid}. Se necessário, adicione ${rawNumber} manualmente ao grupo.`);
       }

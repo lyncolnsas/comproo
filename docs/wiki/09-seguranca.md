@@ -1,0 +1,106 @@
+# 🛡️ Segurança & Anti-Burla
+
+> **← [Voltar ao Índice](./README.md)**
+
+O MikroGestor implementa múltiplas camadas de segurança para proteger a receita do estabelecimento e garantir que apenas clientes pagantes (ou dentro do período de cortesia) usem a rede.
+
+---
+
+## Tela de Controle de Acesso
+
+![Segurança e Controle de Acesso](../../docs/wiki/screenshots/09-seguranca.png)
+
+O painel de segurança mostra:
+- **Blacklist de MACs**: dispositivos permanentemente bloqueados
+- **Blacklist de CPFs/Telefones**: identidades bloqueadas por inadimplência
+- **Sessões ativas**: quem está online agora
+- **Tentativas de burla**: MACs aleatórios, reuso de vouchers, múltiplos cadastros
+
+---
+
+## Sistema de Bloqueio Progressivo por Inadimplência
+
+```
+Cliente usa 15 minutos de cortesia
+         │
+         └─ Pagou? ──► ✅ Acesso liberado normalmente
+         │
+         └─ Não pagou? (timer expirou)
+                  │
+                  ▼
+         1. Sessão Hotspot encerrada (API MikroTik)
+         2. Usuário desabilitado no banco de dados
+         3. MAC Address → ip-binding type=blocked no MikroTik
+         4. CPF + Telefone → blacklist interna
+```
+
+**Resultado**: o cliente não consegue voltar à rede pelo mesmo Wi-Fi, mesmo que:
+- Esqueça a rede e reconecte
+- Ative "Endereço MAC aleatório" no celular (o CPF ainda identifica)
+- Tente criar novo cadastro com telefone diferente mas mesmo CPF
+
+---
+
+## Anti-Burla por MAC Aleatório
+
+O celular moderno permite gerar MACs aleatórios para dificultar rastreamento. O MikroGestor contorna isso verificando:
+
+1. **Novo MAC aparece** tentando se cadastrar
+2. Sistema verifica CPF/Telefone → está na blacklist?
+3. **Sim** → rejeita cadastro (HTTP 403) **E** adiciona o novo MAC também à blacklist
+4. O cliente continua bloqueado independente de quantos MACs gere
+
+---
+
+## Anti-Tethering (Compartilhamento)
+
+O sistema impede que um cliente compartilhe a internet com outros dispositivos:
+
+### Mecanismo 1: TTL Manipulation (Mangle)
+```
+/ip firewall mangle add chain=postrouting out-interface=bridge 
+action=change-ttl new-ttl=set:1 
+comment="MikroGestor: Anti-Tethering"
+```
+
+Todos os pacotes saem do MikroTik com TTL=1. Quando chegam ao celular, o kernel decrementa para 0. Se o cliente ativar Hotspot Pessoal, o celular não consegue repassar os pacotes (TTL=0 é descartado).
+
+### Mecanismo 2: Shared-Users=1
+No perfil Hotspot do RouterOS, `shared-users=1` limita a 1 dispositivo simultâneo por credencial.
+
+---
+
+## Walled Garden — Controle de Acesso Antes da Autenticação
+
+O Walled Garden define o que o cliente pode acessar **antes** de pagar/se autenticar:
+
+| Tipo | Configuração | Por quê |
+|------|-------------|---------|
+| HTTP (porta 80) | `*mikrogestor.com*` | Portal de cadastro e pagamento |
+| HTTPS (porta 443) | IP exato da VPS | WhatsApp Web funciona antes de pagar (não liberamos) |
+
+> [!WARNING]
+> **NUNCA** adicione domínios de terceiros ao Walled Garden (Google Pay, Mercado Pago, WhatsApp). O cliente recebe 15 minutos de internet completa após se cadastrar — usa o app do **próprio banco** para pagar o PIX.
+
+> [!CAUTION]
+> No RouterOS v7, `dst-host` no `walled-garden/ip` **não aceita wildcards com asterisco** (fica `invalid: true`). Use o IP exato da VPS (`2.25.168.82`) e o domínio exato (`mikrogestor.com`, `www.mikrogestor.com`).
+
+---
+
+## Controle de Acesso Administrativo
+
+O painel administrativo possui:
+- **Autenticação com senha** (não exposta publicamente)
+- **Sessão com JWT** (tokens de curta duração)
+- **Rate limiting** nas rotas de API (proteção contra brute force)
+- **Logs de acesso** com IP de origem registrado
+
+---
+
+## Relacionado
+
+- [06 — Portal do Cliente (termos e cadastro)](./06-portal-cliente.md)
+- [03 — Hotspot & Planos (anti-tethering)](./03-hotspot-planos.md)
+
+---
+*← [Anterior: VPN WireGuard](./08-vpn-wireguard.md) · [Próximo: FAQ →](./10-faq.md)*

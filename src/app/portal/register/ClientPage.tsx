@@ -2272,8 +2272,14 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
 
     try {
       if (!termsAccepted) {
-        setError('Você deve aceitar os Termos de Uso e Isenção de Responsabilidade para prosseguir com o cadastro.');
+        setError('Você deve aceitar os Termos de Uso para prosseguir com o cadastro.');
         setLoading(false);
+        // Scroll suave até o checkbox e pisca-pisca para chamar atenção
+        const termsEl = document.getElementById('termsAccepted');
+        if (termsEl) {
+          termsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          termsEl.focus();
+        }
         return;
       }
 
@@ -3484,14 +3490,20 @@ export default function AutoCadastro({ initialConfig }: { initialConfig: any }) 
 
             <button 
               type="submit" 
-              disabled={loading || !!success || timerActive}
+              disabled={loading || !!success || timerActive || !termsAccepted}
               className="mg-reg-btn"
               style={{
-                background: `linear-gradient(135deg, ${colors.green || '#10b981'} 0%, ${colors.brand || '#2563eb'} 100%)`,
-                color: colors.registerButtonText || '#ffffff'
+                background: termsAccepted
+                  ? `linear-gradient(135deg, ${colors.green || '#10b981'} 0%, ${colors.brand || '#2563eb'} 100%)`
+                  : 'linear-gradient(135deg, #374151 0%, #4b5563 100%)',
+                color: colors.registerButtonText || '#ffffff',
+                opacity: (!loading && !success && !timerActive && !termsAccepted) ? 0.55 : 1,
+                cursor: (!loading && !success && !timerActive && !termsAccepted) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease',
               }}
+              title={!termsAccepted ? 'Aceite os Termos de Uso para continuar' : undefined}
             >
-              {loading ? 'Processando...' : success ? 'Conectando...' : timerActive ? `Aguarde ${timeLeft}s...` : (!isFreeWifi && saleMode && plans.length > 0 ? 'Pagar com PIX & Conectar' : registerSubmitText)}
+              {loading ? 'Processando...' : success ? 'Conectando...' : timerActive ? `Aguarde ${timeLeft}s...` : (!termsAccepted ? '🔒 Aceite os Termos para Continuar' : (!isFreeWifi && saleMode && plans.length > 0 ? 'Pagar com PIX & Conectar' : registerSubmitText))}
             </button>
           </form>
 
