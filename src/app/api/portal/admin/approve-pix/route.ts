@@ -43,8 +43,72 @@ export async function POST(request: Request) {
         where: { pixId },
         data: { status: 'rejected' }
       });
-      return NextResponse.json({ success: true, message: 'Pagamentos rejeitados.' });
+
+      // ── Regra 14: Bloqueio categórico de inadimplentes ──────────────────
+      // Admin rejeitou o pagamento → mesmo comportamento do check-expirations:
+      // derruba sessão, remove usuário, bloqueia MAC no MikroTik e no banco.
+      const lead = payment.lead;
+      const username = lead?.hotspotUser;
+      const mac = payment.macAddress ? payment.macAddress.trim().toUpperCase() : null;
+
+      // 1. Operações no MikroTik
+      try {
+        const activeRouter = await prisma.router.findFirst({ where: { active: true } });
+        if (activeRouter) {
+          const mk = new MikrotikAPI();
+          const connected = await mk.connect(activeRouter.host, activeRouter.user, activeRouter.password, activeRouter.port);
+          if (connected) {
+            if (username) {
+              await mk.removeHotspotActiveByUser(username).catch(() => null);
+              await mk.removeHotspotUserByName(username).catch(() => null);
+            }
+            if (mac) {
+              await mk.blockHotspotMac(mac, 'Pagamento rejeitado pelo admin').catch(() => null);
+            }
+            mk.disconnect();
+          }
+        }
+      } catch (mkErr) {
+        console.warn('[approve-pix/reject] Erro no MikroTik:', mkErr);
+      }
+
+      // 2. Persistência de bloqueio no banco
+      if (mac) {
+        await prisma.blockedClient.upsert({
+          where: { mac },
+          update: {
+            active: true,
+            cpf: lead?.cpf || undefined,
+            phone: lead?.phone || lead?.whatsappNumber || undefined,
+            reason: 'Pagamento PIX rejeitado pelo administrador'
+          },
+          create: {
+            mac,
+            cpf: lead?.cpf || null,
+            phone: lead?.phone || lead?.whatsappNumber || null,
+            reason: 'Pagamento PIX rejeitado pelo administrador'
+          }
+        }).catch(() => null);
+      }
+
+      if (lead?.id) {
+        await prisma.hotspotLead.update({
+          where: { id: lead.id },
+          data: { trialBlocked: true }
+        }).catch(() => null);
+      }
+
+      // 3. Notificar cliente via WhatsApp
+      const contactPhone = lead?.phone || lead?.whatsappNumber;
+      if (contactPhone) {
+        const planTitle = payment.profile || 'Plano de Acesso';
+        const rejMsg = `❌ *Pagamento não confirmado*\n\nInfelizmente seu pagamento do plano *${planTitle}* não foi identificado em nosso sistema.\n\nSua sessão foi encerrada.\n\n_Se acredita que houve um engano, entre em contato com o suporte e apresente o comprovante de pagamento._`;
+        whatsappService.sendWhatsAppMessage('admin', contactPhone, rejMsg).catch(() => null);
+      }
+
+      return NextResponse.json({ success: true, message: 'Pagamento rejeitado. Cliente bloqueado e sessão encerrada.' });
     }
+
 
     // --- APPROVE ---
     await prisma.payment.updateMany({
