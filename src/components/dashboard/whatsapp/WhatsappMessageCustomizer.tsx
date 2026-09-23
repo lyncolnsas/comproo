@@ -74,7 +74,16 @@ export function WhatsappMessageCustomizer() {
 
   // Estados da Biblioteca de Mídias
   interface LibItem { id: string; caption: string | null; mediaType: string; mimeType: string | null; thumbnailUrl: string | null; createdAt: string; }
+  interface ConfiguredGroup {
+    instanceId: string;
+    instanceName: string;
+    number?: string | null;
+    groupJid: string;
+    groupName: string;
+    status: string;
+  }
   const [libraryItems, setLibraryItems] = useState<LibItem[]>([]);
+  const [configuredGroups, setConfiguredGroups] = useState<ConfiguredGroup[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [showLibraryModal, setShowLibraryModal] = useState(false);
   const [libraryTargetKey, setLibraryTargetKey] = useState<string>('');
@@ -134,7 +143,14 @@ export function WhatsappMessageCustomizer() {
     setLibraryLoading(true);
     fetch('/api/admin/media-library')
       .then(r => r.json())
-      .then(data => { if (data.success) setLibraryItems(data.items || []); })
+      .then(data => {
+        if (data.success) {
+          setLibraryItems(data.items || []);
+          if (Array.isArray(data.configuredGroups)) {
+            setConfiguredGroups(data.configuredGroups);
+          }
+        }
+      })
       .catch(console.error)
       .finally(() => setLibraryLoading(false));
   }, []);
@@ -1169,17 +1185,40 @@ export function WhatsappMessageCustomizer() {
               <h3 className="text-sm font-bold text-slate-800">Biblioteca de Mídias</h3>
               <span className="text-[11px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">{libraryItems.length} itens</span>
             </div>
-            <button type="button" onClick={() => setShowLibraryModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer"><X className="w-5 h-5" /></button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={fetchLibrary}
+                disabled={libraryLoading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCcw className={`w-3.5 h-3.5 ${libraryLoading ? 'animate-spin' : ''}`} />
+                Atualizar Mídias
+              </button>
+              <button type="button" onClick={() => setShowLibraryModal(false)} className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
+          {/* Status dos Grupos Vinculados */}
+          {configuredGroups.length > 0 && (
+            <div className="px-6 py-2.5 bg-slate-50 border-b border-slate-200/80 flex flex-wrap gap-2 items-center">
+              <span className="text-[11px] font-bold text-slate-600">Grupos Conectados:</span>
+              {configuredGroups.map((cg) => (
+                <div key={cg.instanceId} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white border border-slate-200 text-slate-800 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-slate-500">{cg.instanceName}:</span>
+                  <strong className="text-emerald-700">{cg.groupName}</strong>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Instrução */}
-          <div className="px-6 py-3 bg-emerald-50 border-b border-emerald-100">
+          <div className="px-6 py-3 bg-emerald-50/80 border-b border-emerald-100">
             <p className="text-[11px] text-emerald-800 leading-relaxed">
-              <strong>Como popular a biblioteca:</strong> Crie um grupo no WhatsApp e adicione o número cadastrado nele. Em seguida, na aba <em>Aparelhos Conectados</em>, clique em <strong>&quot;Escolher Grupo&quot;</strong> no aparelho desejado e selecione o grupo pelo nome.
-              <br />
-              <span className="text-[10px] text-emerald-600 font-medium">
-                💡 Cada número pode ter seu próprio grupo (enviando fotos/banners diferentes por número) ou todos os 4 números podem compartilhar o mesmo grupo. Tudo que for enviado no grupo é salvo aqui e reenviado <strong>como reencaminhamento humano</strong>, sem re-upload!
-              </span>
+              <strong>Como adicionar mídias:</strong> Envie qualquer foto, banner, vídeo ou áudio no grupo vinculado no seu WhatsApp (você pode postar pelo próprio celular do bot ou como participante). O sistema captura na mesma hora e reenvia aos clientes <strong>como se fosse um humano encaminhando</strong>, sem re-upload!
             </p>
           </div>
 
@@ -1192,8 +1231,19 @@ export function WhatsappMessageCustomizer() {
             ) : libraryItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
                 <Library className="w-10 h-10 text-slate-200" />
-                <p className="text-sm font-semibold text-slate-400">Biblioteca vazia</p>
-                <p className="text-[11px] text-slate-400 max-w-xs">Vincule o grupo pelo nome no card do seu aparelho WhatsApp e envie fotos, vídeos ou áudios nele para aparecerem aqui automaticamente.</p>
+                <p className="text-sm font-semibold text-slate-600">Nenhuma mídia capturada ainda</p>
+                <p className="text-[11px] text-slate-500 max-w-sm">
+                  {configuredGroups.length > 0
+                    ? `Abra o grupo "${configuredGroups[0].groupName}" no WhatsApp, envie uma imagem ou vídeo e depois clique em "Atualizar Mídias" acima.`
+                    : 'Nenhum grupo vinculado ainda. Vá em Aparelhos WhatsApp Conectados e escolha o grupo no aparelho desejado.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={fetchLibrary}
+                  className="mt-2 inline-flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-sm cursor-pointer"
+                >
+                  <RefreshCcw className="w-3.5 h-3.5" /> Verificar Agora
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

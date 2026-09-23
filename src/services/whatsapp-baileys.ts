@@ -217,18 +217,19 @@ export class BaileysAdapter implements IWhatsappAdapter {
         libraryGroupName: null,
       };
       this.sessions.set(instanceId, session);
+    }
 
-      // Carrega grupo de biblioteca salvo no banco
-      prisma.whatsappInstance.findUnique({
+    // Garante que o grupo configurado no banco esteja sempre sincronizado em memória
+    try {
+      const dbInst = await prisma.whatsappInstance.findUnique({
         where: { id: instanceId },
         select: { libraryGroupJid: true, libraryGroupName: true }
-      }).then(inst => {
-        if (inst && session) {
-          session.libraryGroupJid = inst.libraryGroupJid || null;
-          session.libraryGroupName = inst.libraryGroupName || null;
-        }
-      }).catch(() => {});
-    }
+      });
+      if (dbInst) {
+        session.libraryGroupJid = dbInst.libraryGroupJid || null;
+        session.libraryGroupName = dbInst.libraryGroupName || null;
+      }
+    } catch {}
 
     if (session.isConnecting) return session;
     session.isConnecting = true;
@@ -341,78 +342,19 @@ export class BaileysAdapter implements IWhatsappAdapter {
       // ── Incoming Messages Listener ──────────────────────────────────────────
       session.sock.ev.on('messages.upsert', async (chatUpdate: any) => {
         try {
-          if (chatUpdate.type !== 'notify') return;
           for (const msg of chatUpdate.messages || []) {
             if (!msg.message) continue;
             const remoteJid = msg.key.remoteJid || '';
 
             // ── Captura de mídia do grupo de biblioteca (por aparelho ou global) ─
-            if (remoteJid.endsWith('@g.us') && !msg.key.fromMe) {
-              try {
-                const instanceGroupJid = session?.libraryGroupJid;
-                let isTargetGroup = Boolean(instanceGroupJid && remoteJid === instanceGroupJid);
-
-                if (!isTargetGroup) {
-                  const globalLibGroupJid = await prisma.systemConfig
-                    .findUnique({ where: { key: 'WHATSAPP_MEDIA_LIBRARY_GROUP' } })
-                    .then(r => r?.value || '');
-                  if (globalLibGroupJid && remoteJid === globalLibGroupJid) {
-                    isTargetGroup = true;
-                  }
-                }
-
-                if (isTargetGroup) {
-                  const msgContent = msg.message;
-                  // Detecta tipo de mídia
-                  const mediaTypeMap: Record<string, string> = {
-                    imageMessage: 'image',
-                    videoMessage: 'video',
-                    audioMessage: 'audio',
-                    documentMessage: 'document',
-                    documentWithCaptionMessage: 'document',
-                    stickerMessage: 'image',
-                  };
-                  const contentKey = Object.keys(msgContent)[0];
-                  const mediaType = mediaTypeMap[contentKey];
-
-                  if (mediaType) {
-                    const innerMsg = (msgContent as any)[contentKey];
-                    const caption =
-                      innerMsg?.caption ||
-                      innerMsg?.fileName ||
-                      `${mediaType}-${Date.now()}`;
-                    const mimeType = innerMsg?.mimetype || null;
-
-                    // Gera thumbnail base64 para imagens
-                    let thumbnailUrl: string | null = null;
-                    if (innerMsg?.jpegThumbnail) {
-                      const buf = Buffer.from(innerMsg.jpegThumbnail);
-                      thumbnailUrl = `data:image/jpeg;base64,${buf.toString('base64')}`;
-                    }
-
-                    await prisma.mediaLibrary.create({
-                      data: {
-                        caption,
-                        mediaType,
-                        mimeType,
-                        thumbnailUrl,
-                        messageJson: JSON.stringify(msg),
-                        sourceJid: remoteJid,
-                        messageId: msg.key.id || '',
-                        instanceId: session?.id || null,
-                      }
-                    });
-                    const groupDisplayName = session?.libraryGroupName || remoteJid;
-                    console.log(`[Baileys][${session!.id}] Mídia capturada para biblioteca: ${mediaType} — "${caption}" (Grupo: ${groupDisplayName})`);
-                  }
-                }
-              } catch (libErr) {
-                console.error(`[Baileys][${session!.id}] Erro ao catalogar mídia na biblioteca:`, libErr);
-              }
-              continue; // não processa grupos como chatbot
+            // Permite tanto notify quanto append, e NÃO descarta fromMe (permite que o próprio bot/dono envie no grupo)
+            if (remoteJid.endsWith('@g.us')) {
+              await this.processMessageForLibrary(session!, msg);
+              continue; // Não processa mensagens de grupo no chatbot de clientes
             }
 
-            // ── Chatbot: apenas mensagens individuais ───────────────────────
+            // ── Chatbot: apenas mensagens individuais recebidas de clientes ─
+            if (chatUpdate.type !== 'notify') continue;
             if (msg.key.fromMe) continue;
             if (remoteJid.includes('@g.us')) continue;
 
@@ -431,6 +373,23 @@ export class BaileysAdapter implements IWhatsappAdapter {
           }
         } catch (err) {
           console.error(`[Baileys][${session!.id}] Erro ao processar mensagem:`, err);
+        }
+      });
+
+      // ── Sincronização de Histórico (captura mídias já enviadas recentemente) ────
+      session.sock.ev.on('messaging-history.set', async (history: any) => {
+        try {
+          const messages = history?.messages || [];
+          if (messages.length > 0) {
+            console.log(`[Baileys][${session!.id}] Sincronizando histórico (${messages.length} mensagens)... Verificando mídias do grupo.`);
+            for (const msg of messages) {
+              if (msg?.key?.remoteJid?.endsWith('@g.us')) {
+                await this.processMessageForLibrary(session!, msg);
+              }
+            }
+          }
+        } catch (err) {
+          console.error(`[Baileys][${session!.id}] Erro ao ler histórico:`, err);
         }
       });
 
@@ -912,6 +871,139 @@ export class BaileysAdapter implements IWhatsappAdapter {
     if (session) {
       session.libraryGroupJid = groupJid;
       session.libraryGroupName = groupName;
+    }
+  }
+
+  /**
+   * Extrai mídia de forma robusta desembrulhando envelopes do WhatsApp
+   * (ephemeralMessage, viewOnceMessage, viewOnceMessageV2, documentWithCaptionMessage)
+   */
+  private extractMediaInfo(rawMessage: any): { mediaType: string; innerMsg: any } | null {
+    if (!rawMessage || typeof rawMessage !== 'object') return null;
+    let msg = rawMessage;
+
+    // Desempacota envelopes recursivamente
+    for (let i = 0; i < 6; i++) {
+      if (msg?.ephemeralMessage?.message) {
+        msg = msg.ephemeralMessage.message;
+        continue;
+      }
+      if (msg?.viewOnceMessage?.message) {
+        msg = msg.viewOnceMessage.message;
+        continue;
+      }
+      if (msg?.viewOnceMessageV2?.message) {
+        msg = msg.viewOnceMessageV2.message;
+        continue;
+      }
+      if (msg?.documentWithCaptionMessage?.message) {
+        msg = msg.documentWithCaptionMessage.message;
+        continue;
+      }
+      break;
+    }
+
+    if (msg.imageMessage) return { mediaType: 'image', innerMsg: msg.imageMessage };
+    if (msg.videoMessage) return { mediaType: 'video', innerMsg: msg.videoMessage };
+    if (msg.audioMessage) return { mediaType: 'audio', innerMsg: msg.audioMessage };
+    if (msg.documentMessage) return { mediaType: 'document', innerMsg: msg.documentMessage };
+    if (msg.stickerMessage) return { mediaType: 'image', innerMsg: msg.stickerMessage };
+
+    return null;
+  }
+
+  /**
+   * Processa uma mensagem vinda de grupo e salva na MediaLibrary se pertencer
+   * ao grupo configurado nesta instância ou globalmente.
+   * Não descarta msg.key.fromMe (permite que o próprio bot/dono envie a mídia no grupo).
+   */
+  private async processMessageForLibrary(session: BaileysSessionInstance, msg: any): Promise<boolean> {
+    try {
+      if (!msg || !msg.message) return false;
+      const remoteJid = msg.key?.remoteJid || '';
+      if (!remoteJid || !remoteJid.endsWith('@g.us')) return false;
+
+      // 1. Identifica o JID do grupo desta instância
+      let instanceGroupJid = session?.libraryGroupJid;
+      if (!instanceGroupJid && session?.id) {
+        const dbInst = await prisma.whatsappInstance.findUnique({
+          where: { id: session.id },
+          select: { libraryGroupJid: true, libraryGroupName: true }
+        });
+        if (dbInst?.libraryGroupJid) {
+          session.libraryGroupJid = dbInst.libraryGroupJid;
+          session.libraryGroupName = dbInst.libraryGroupName;
+          instanceGroupJid = dbInst.libraryGroupJid;
+        }
+      }
+
+      let isTargetGroup = Boolean(instanceGroupJid && remoteJid.toLowerCase() === instanceGroupJid.toLowerCase());
+
+      // Fallback: Grupo global em SystemConfig
+      if (!isTargetGroup) {
+        const globalLibGroupJid = await prisma.systemConfig
+          .findUnique({ where: { key: 'WHATSAPP_MEDIA_LIBRARY_GROUP' } })
+          .then(r => r?.value || '');
+        if (globalLibGroupJid && remoteJid.toLowerCase() === globalLibGroupJid.toLowerCase()) {
+          isTargetGroup = true;
+        }
+      }
+
+      if (!isTargetGroup) return false;
+
+      // 2. Extrai mídia
+      const mediaInfo = this.extractMediaInfo(msg.message);
+      if (!mediaInfo) {
+        console.log(`[Baileys][MediaLibrary] Mensagem recebida no grupo ${remoteJid} (sem mídia suportada). Chaves: ${Object.keys(msg.message || {})}`);
+        return true; // Mensagem pertence ao grupo, mas é texto ou formato não de mídia
+      }
+
+      const { mediaType, innerMsg } = mediaInfo;
+      const messageId = msg.key?.id || `msg-${Date.now()}`;
+
+      // Evita duplicatas se a mesma mensagem já foi catalogada
+      const existing = await prisma.mediaLibrary.findFirst({
+        where: { messageId }
+      });
+      if (existing) {
+        console.log(`[Baileys][MediaLibrary] Mídia [${messageId}] já existente na biblioteca. Ignorando.`);
+        return true;
+      }
+
+      const caption =
+        innerMsg?.caption ||
+        innerMsg?.fileName ||
+        `${mediaType.toUpperCase()} - ${new Date().toLocaleTimeString('pt-BR')}`;
+      const mimeType = innerMsg?.mimetype || null;
+
+      // Gera thumbnail base64 para preview imediato no painel
+      let thumbnailUrl: string | null = null;
+      if (innerMsg?.jpegThumbnail) {
+        try {
+          const buf = Buffer.from(innerMsg.jpegThumbnail);
+          thumbnailUrl = `data:image/jpeg;base64,${buf.toString('base64')}`;
+        } catch {}
+      }
+
+      await prisma.mediaLibrary.create({
+        data: {
+          caption,
+          mediaType,
+          mimeType,
+          thumbnailUrl,
+          messageJson: JSON.stringify(msg),
+          sourceJid: remoteJid,
+          messageId,
+          instanceId: session?.id || null,
+        }
+      });
+
+      const groupDisplayName = session?.libraryGroupName || remoteJid;
+      console.log(`[Baileys][MediaLibrary] ✅ MÍDIA CATALOGADA COM SUCESSO! Tipo: ${mediaType} — "${caption}" (Grupo: ${groupDisplayName}, Aparelho: ${session?.name || session?.id})`);
+      return true;
+    } catch (err: any) {
+      console.error(`[Baileys][MediaLibrary] Erro ao processar mensagem do grupo:`, err);
+      return false;
     }
   }
 }
