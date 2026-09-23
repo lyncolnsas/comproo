@@ -142,7 +142,27 @@ export class MikrotikAPI {
   async addHotspotUser(user: any) {
     if (!this.client) throw new Error('Not connected');
     const menu = this.client.menu('/ip/hotspot/user');
-    return await menu.add(user);
+
+    // Normaliza os campos (evita leading/trailing whitespace em profile, name, server)
+    const payload = { ...user };
+    if (typeof payload.profile === 'string') {
+      payload.profile = payload.profile.trim();
+    }
+    if (!payload.profile) {
+      payload.profile = 'default';
+    }
+
+    try {
+      return await menu.add(payload);
+    } catch (err: any) {
+      // Fallback de segurança: Se o perfil especificado não existir no MikroTik
+      if (err?.message && err.message.toLowerCase().includes('profile') && payload.profile !== 'default') {
+        console.warn(`[MikrotikAPI] Perfil "${payload.profile}" não encontrado no MikroTik (${err.message}). Aplicando fallback automático para "default".`);
+        payload.profile = 'default';
+        return await menu.add(payload);
+      }
+      throw err;
+    }
   }
 
   async removeHotspotUser(id: string) {

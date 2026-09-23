@@ -8,11 +8,12 @@ export async function PUT(request: Request, { params }: RouteContext) {
   try {
     const { id } = await params;
     const { title, profile, price, active, uptimeLimit } = await request.json();
+    const cleanProfile = typeof profile === 'string' ? profile.trim() || 'default' : undefined;
     const plan = await (prisma.whatsappPlan as any).update({
       where: { id },
       data: { 
         title, 
-        profile, 
+        ...(cleanProfile ? { profile: cleanProfile } : {}), 
         price: Number(price), 
         active,
         ...(uptimeLimit !== undefined ? { uptimeLimit } : {})

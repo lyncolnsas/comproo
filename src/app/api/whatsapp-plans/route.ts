@@ -15,10 +15,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const { title, profile, price, active, uptimeLimit } = await request.json();
+    const cleanProfile = typeof profile === 'string' ? profile.trim() || 'default' : 'default';
     const plan = await (prisma.whatsappPlan as any).create({
       data: { 
         title, 
-        profile, 
+        profile: cleanProfile, 
         price: Number(price), 
         active: active !== undefined ? Boolean(active) : true,
         uptimeLimit: uptimeLimit || 'none'

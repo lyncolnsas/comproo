@@ -714,7 +714,7 @@ export async function POST(request: Request) {
         const finalComment = commentParts.join(' | ').substring(0, 250);
 
         // Add user to MikroTik Hotspot (aplica 15m de carência apenas se houver plano pago aguardando Pix)
-        const profileName = selectedPlan?.profile || (config as any)?.profile || 'default';
+        const profileName = (selectedPlan?.profile || (config as any)?.profile || 'default').trim() || 'default';
         const userPayload: any = {
           name: hotspotUser,
           password: passwordStr,
