@@ -5,7 +5,7 @@ import Link from 'next/link';
 import RouterOffline from '@/components/RouterOffline';
 
 export default function SecurityControl() {
-  const [activeTab, setActiveTab] = useState<'walled-garden' | 'time-block' | 'keywords'>('walled-garden');
+  const [activeTab, setActiveTab] = useState<'walled-garden' | 'time-block' | 'keywords' | 'blacklist'>('walled-garden');
   const [notConnected, setNotConnected] = useState(false);
   
   // Walled Garden States
@@ -26,6 +26,63 @@ export default function SecurityControl() {
   const [keywordInput, setKeywordInput] = useState('');
   const [keywordsLoading, setKeywordsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Blacklist States
+  const [blockedClients, setBlockedClients] = useState<any[]>([]);
+  const [blacklistLoading, setBlacklistLoading] = useState(false);
+  const [unblockingId, setUnblockingId] = useState<string | null>(null);
+  const [blockMac, setBlockMac] = useState('');
+  const [blockCpf, setBlockCpf] = useState('');
+  const [blockPhone, setBlockPhone] = useState('');
+  const [blockReason, setBlockReason] = useState('');
+  const [blockSubmitting, setBlockSubmitting] = useState(false);
+
+  const fetchBlockedClients = async () => {
+    setBlacklistLoading(true);
+    try {
+      const res = await fetch('/api/portal/admin/blacklist');
+      const data = await res.json();
+      if (data.success) setBlockedClients(data.data);
+    } catch (e) { console.error(e); }
+    finally { setBlacklistLoading(false); }
+  };
+
+  const handleUnblock = async (id: string, mac?: string) => {
+    if (!confirm('Desbloquear este cliente? O MAC será removido do ip-binding do MikroTik e o cliente poderá se recadastrar.')) return;
+    setUnblockingId(id);
+    try {
+      const params = mac ? `?mac=${encodeURIComponent(mac)}` : `?id=${id}`;
+      const res = await fetch(`/api/portal/admin/blacklist${params}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setBlockedClients(prev => prev.filter(c => c.id !== id));
+        alert('✅ Cliente desbloqueado com sucesso!' + (data.data?.mkUnblocked ? '\nMAC removido do MikroTik.' : '\nAviso: não foi possível remover do MikroTik.'));
+      } else {
+        alert('Erro: ' + data.message);
+      }
+    } catch (e) { alert('Erro ao desbloquear cliente'); }
+    finally { setUnblockingId(null); }
+  };
+
+  const handleManualBlock = async () => {
+    if (!blockMac && !blockCpf && !blockPhone) { alert('Informe pelo menos um identificador.'); return; }
+    setBlockSubmitting(true);
+    try {
+      const res = await fetch('/api/portal/admin/blacklist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mac: blockMac, cpf: blockCpf, phone: blockPhone, reason: blockReason || 'Bloqueio manual pelo admin' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBlockMac(''); setBlockCpf(''); setBlockPhone(''); setBlockReason('');
+        fetchBlockedClients();
+      } else {
+        alert('Erro: ' + data.message);
+      }
+    } catch (e) { alert('Erro ao bloquear'); }
+    finally { setBlockSubmitting(false); }
+  };
 
   const fetchWalledGardenRules = async () => {
     setWalledLoading(true);
@@ -95,6 +152,7 @@ export default function SecurityControl() {
       fetchWalledGardenRules();
       fetchKeywords();
       fetchTimeRules();
+      fetchBlockedClients();
     }, 0);
   }, []);
 
@@ -312,6 +370,21 @@ export default function SecurityControl() {
           }`}
         >
           🚫 Palavras-Chave
+        </button>
+        <button
+          onClick={() => { setActiveTab('blacklist'); fetchBlockedClients(); }}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+            activeTab === 'blacklist'
+              ? 'bg-red-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/80 dark:hover:bg-slate-700/60'
+          }`}
+        >
+          🔒 Clientes Bloqueados
+          {blockedClients.length > 0 && (
+            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+              activeTab === 'blacklist' ? 'bg-white/20 text-white' : 'bg-red-100 text-red-700'
+            }`}>{blockedClients.length}</span>
+          )}
         </button>
       </div>
 
@@ -688,6 +761,115 @@ export default function SecurityControl() {
                   </table>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Blacklist Tab */}
+        {activeTab === 'blacklist' && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-black text-slate-900">🔒 Clientes Bloqueados</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Clientes bloqueados por não pagamento no prazo ou por bloqueio manual. Clique em Desbloquear para liberar o acesso.</p>
+              </div>
+              <button onClick={fetchBlockedClients} disabled={blacklistLoading}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-colors">
+                {blacklistLoading ? <span className="animate-spin">⟳</span> : '↻'} Atualizar
+              </button>
+            </div>
+
+            {/* Clients Table */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="max-h-[500px] overflow-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-slate-700 font-bold uppercase tracking-wider text-[11px]">
+                      <th className="px-4 py-3">Cliente</th>
+                      <th className="px-4 py-3">MAC Address</th>
+                      <th className="px-4 py-3">CPF / Telefone</th>
+                      <th className="px-4 py-3">Motivo</th>
+                      <th className="px-4 py-3">Bloqueado em</th>
+                      <th className="px-4 py-3 text-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {blacklistLoading && blockedClients.length === 0 ? (
+                      <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400 italic">
+                        <div className="inline-block animate-pulse">Carregando clientes bloqueados...</div>
+                      </td></tr>
+                    ) : blockedClients.length === 0 ? (
+                      <tr><td colSpan={6} className="px-4 py-10 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="text-3xl">✅</span>
+                          <p className="text-slate-500 font-medium text-sm">Nenhum cliente bloqueado</p>
+                          <p className="text-slate-400 text-xs">O sistema bloqueia automaticamente quem não paga no prazo</p>
+                        </div>
+                      </td></tr>
+                    ) : blockedClients.map((c) => (
+                      <tr key={c.id} className="hover:bg-red-50/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-bold text-slate-800">{c.phone || c.cpf || '—'}</div>
+                          {c.cpf && <div className="text-[10px] text-slate-400">CPF: {c.cpf}</div>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {c.mac ? (
+                            <span className="font-mono text-xs bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded">{c.mac}</span>
+                          ) : <span className="text-slate-400 italic">Sem MAC</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="space-y-0.5">
+                            {c.cpf && <div className="text-slate-600">CPF: <span className="font-mono">{c.cpf}</span></div>}
+                            {c.phone && <div className="text-slate-600">📱 {c.phone}</div>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-red-50 border border-red-200 text-red-700">
+                            🚫 {c.reason || 'Não pagou no prazo'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-500">
+                          {c.blockedAt ? new Date(c.blockedAt).toLocaleString('pt-BR') : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => handleUnblock(c.id, c.mac)}
+                            disabled={unblockingId === c.id}
+                            className="flex items-center gap-1.5 ml-auto px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm disabled:opacity-50"
+                          >
+                            {unblockingId === c.id ? <span className="animate-spin">⟳</span> : '🔓'}
+                            Desbloquear
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Manual Block Form */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+              <h3 className="font-black text-slate-800 mb-3 text-sm">➕ Bloquear Manualmente</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <input value={blockMac} onChange={e => setBlockMac(e.target.value)}
+                  placeholder="MAC (AA:BB:CC:DD:EE:FF)"
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500/30" />
+                <input value={blockCpf} onChange={e => setBlockCpf(e.target.value)}
+                  placeholder="CPF"
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-500/30" />
+                <input value={blockPhone} onChange={e => setBlockPhone(e.target.value)}
+                  placeholder="Telefone"
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-500/30" />
+                <input value={blockReason} onChange={e => setBlockReason(e.target.value)}
+                  placeholder="Motivo (opcional)"
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-500/30" />
+              </div>
+              <button onClick={handleManualBlock} disabled={blockSubmitting}
+                className="mt-3 flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors shadow-sm disabled:opacity-50">
+                {blockSubmitting ? <span className="animate-spin">⟳</span> : '🔒'} Bloquear Cliente
+              </button>
             </div>
           </div>
         )}
